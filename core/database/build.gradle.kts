@@ -7,7 +7,7 @@ kotlin {
     jvmToolchain(21)
     sourceSets {
         commonMain.dependencies { implementation(project(":domain")) }
-        desktopMain.dependencies {
+        getByName("desktopMain").dependencies {
             api(libs.sqlite)
             implementation(libs.coroutines.core)
         }

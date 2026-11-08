@@ -20,7 +20,7 @@ kotlin {
             implementation(project(":feature:students"))
             implementation(project(":feature:reports"))
         }
-        desktopMain.dependencies {
+        getByName("desktopMain").dependencies {
             implementation(compose.desktop.currentOs)
             implementation(project(":core:database"))
             implementation(project(":core:network"))

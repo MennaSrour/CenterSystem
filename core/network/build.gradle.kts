@@ -4,7 +4,7 @@ kotlin {
     jvmToolchain(21)
     sourceSets {
         commonMain.dependencies { api(libs.ktor.core) }
-        desktopMain.dependencies { implementation(libs.ktor.cio) }
+        getByName("desktopMain").dependencies { implementation(libs.ktor.cio) }
         commonTest.dependencies { implementation(kotlin("test")) }
     }
 }
