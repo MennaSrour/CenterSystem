@@ -1,0 +1,10 @@
+CREATE TABLE student (
+    id TEXT NOT NULL PRIMARY KEY,
+    name TEXT NOT NULL
+);
+
+selectAll:
+SELECT * FROM student ORDER BY name, id;
+
+upsert:
+INSERT OR REPLACE INTO student(id, name) VALUES (?, ?);

@@ -1,0 +1,23 @@
+[versions]
+kotlin = "2.1.21"
+compose = "1.8.2"
+sqldelight = "2.1.0"
+koin = "4.0.4"
+decompose = "3.3.0"
+ktlint = "12.2.0"
+ktor = "3.1.3"
+coroutines = "1.10.2"
+[plugins]
+kmp = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
+compose = { id = "org.jetbrains.compose", version.ref = "compose" }
+composeCompiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+sqldelight = { id = "app.cash.sqldelight", version.ref = "sqldelight" }
+ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint" }
+[libraries]
+coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
+coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
+koin = { module = "io.insert-koin:koin-core", version.ref = "koin" }
+decompose = { module = "com.arkivanov.decompose:decompose", version.ref = "decompose" }
+sqlite = { module = "app.cash.sqldelight:sqlite-driver", version.ref = "sqldelight" }
+ktor-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
+ktor-cio = { module = "io.ktor:ktor-client-cio", version.ref = "ktor" }
