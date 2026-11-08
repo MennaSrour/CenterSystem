@@ -52,7 +52,15 @@ From the repository directory on Windows PowerShell:
 
 On Linux/macOS use `./gradlew` for build/tests or development launch. Launch needs
 a graphical desktop. Windows installers must be built on Windows with JDK 21 and
-WiX Toolset 3.x on PATH (GitHub's windows-latest image supplies WiX). Installers are
+WiX Toolset 3.x. Set `WIX_PATH` to the directory containing `candle.exe` and
+`light.exe` before running packaging, for example:
+
+```powershell
+$env:WIX_PATH = "C:\Program Files (x86)\WiX Toolset v3.14\bin"
+```
+
+CI discovers the runner's preinstalled WiX 3 and exports `WIX_PATH`, so Compose
+uses it directly instead of downloading WiX during packaging. Installers are
 written under `desktopApp/build/compose/binaries/main/`. The package includes its
 Java runtime; end users do not need to install Java.
 
