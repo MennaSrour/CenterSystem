@@ -21,6 +21,11 @@ fun CenterOneTextField(
     supportingText: @Composable (() -> Unit)? = null,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
     keyboardActions: KeyboardActions = KeyboardActions.Default,
+    label: @Composable (() -> Unit)? = null,
+    readOnly: Boolean = false,
+    singleLine: Boolean = true,
+    minLines: Int = 1,
+    maxLines: Int = if (singleLine) 1 else Int.MAX_VALUE,
 ) {
     OutlinedTextField(
         value = value,
@@ -34,7 +39,11 @@ fun CenterOneTextField(
         supportingText = supportingText,
         keyboardOptions = keyboardOptions,
         keyboardActions = keyboardActions,
-        singleLine = true,
+        label = label,
+        readOnly = readOnly,
+        singleLine = singleLine,
+        minLines = minLines,
+        maxLines = maxLines,
         shape = MaterialTheme.shapes.small,
         colors =
             OutlinedTextFieldDefaults.colors(

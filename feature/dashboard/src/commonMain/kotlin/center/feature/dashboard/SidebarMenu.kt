@@ -1,17 +1,7 @@
 package center.feature.dashboard
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.automirrored.outlined.MenuBook
@@ -24,11 +14,9 @@ import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
@@ -47,12 +35,11 @@ import center.feature.dashboard.resources.schedule
 import center.feature.dashboard.resources.settings
 import center.feature.dashboard.resources.students
 import center.feature.dashboard.resources.system_offline
+import center.ui.components.CenterOneBrand
 import center.ui.components.CenterOneNavigationItem
+import center.ui.components.CenterOneSidebar
 import center.ui.components.StatusBadge
 import center.ui.components.StatusTone
-import center.ui.theme.CenterOneSpacing
-import center.ui.theme.Gold
-import center.ui.theme.Navy
 import center.ui.theme.White
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
@@ -80,45 +67,15 @@ fun SidebarMenu(
             MenuItem(DashboardDestination.Reports, Res.string.reports, "Reports", Icons.Outlined.Insights),
             MenuItem(DashboardDestination.Settings, Res.string.settings, "Settings", Icons.Outlined.Settings),
         )
-    Surface(modifier, color = Navy, contentColor = White) {
-        Column(
-            Modifier.fillMaxHeight().verticalScroll(rememberScrollState()).padding(CenterOneSpacing.Large),
-            verticalArrangement = Arrangement.spacedBy(CenterOneSpacing.Medium),
-        ) {
-            Row(
-                Modifier.fillMaxWidth().padding(vertical = 12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                Surface(shape = CircleShape, color = Gold, contentColor = Navy) {
-                    Box(
-                        Modifier.size(64.dp),
-                        contentAlignment = Alignment.Center,
-                    ) { Text("1", style = MaterialTheme.typography.headlineLarge) }
-                }
-                Column {
-                    Text(stringResource(Res.string.brand_ar), style = MaterialTheme.typography.titleLarge)
-                    Text(stringResource(Res.string.brand_en), style = MaterialTheme.typography.labelSmall, color = Gold)
-                }
-            }
+
+    CenterOneSidebar(
+        modifier = modifier,
+        header = {
+            CenterOneBrand(stringResource(Res.string.brand_ar), stringResource(Res.string.brand_en))
             HorizontalDivider(color = White.copy(alpha = 0.12f))
-            Text(
-                stringResource(Res.string.main_menu),
-                style = MaterialTheme.typography.labelSmall,
-                color = White.copy(alpha = 0.6f),
-            )
-            items.forEach { item ->
-                val title = stringResource(item.title)
-                CenterOneNavigationItem(
-                    title = title,
-                    subtitle = item.english,
-                    selected = item.destination == DashboardDestination.Home,
-                    onClick = { onEvent(DashboardEvent.Navigate(item.destination)) },
-                    icon = { Icon(item.icon, contentDescription = null, modifier = Modifier.size(22.dp)) },
-                    contentColor = White,
-                )
-            }
-            Spacer(Modifier.weight(1f))
+            Text(stringResource(Res.string.main_menu), style = MaterialTheme.typography.labelSmall, color = White.copy(alpha = 0.6f))
+        },
+        footer = {
             TextButton(onClick = { onEvent(DashboardEvent.LogOut) }) {
                 Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = null, tint = White)
                 Spacer(Modifier.size(12.dp))
@@ -128,6 +85,17 @@ fun SidebarMenu(
             StatusBadge(
                 text = stringResource(if (isOnline) Res.string.connected else Res.string.system_offline),
                 tone = if (isOnline) StatusTone.Success else StatusTone.Pending,
+            )
+        },
+    ) {
+        items.forEach { item ->
+            CenterOneNavigationItem(
+                title = stringResource(item.title),
+                subtitle = item.english,
+                selected = item.destination == DashboardDestination.Home,
+                onClick = { onEvent(DashboardEvent.Navigate(item.destination)) },
+                icon = { Icon(item.icon, contentDescription = null, modifier = Modifier.size(22.dp)) },
+                contentColor = White,
             )
         }
     }

@@ -30,3 +30,10 @@ Android-only resource APIs or absolute desktop filesystem paths.
 Use start/end padding and alignment. RTL belongs at the app/screen boundary rather
 than inside individual primitives. The dashboard supplies RTL at its root and limits
 LTR overrides to numeric IDs and times.
+
+Financials also uses the shared controlled dropdowns, selection rows, segmented
+choices, tabs, generic lazy table, info panels, sidebar/branding, outlined buttons,
+and bounded modal surfaces. Dropdown expansion and selected IDs belong to callers;
+close a dropdown after handling its selection event. `CenterOneTextField` retains
+its single-line defaults and additionally supports labels, read-only fields, and
+multiline notes.
