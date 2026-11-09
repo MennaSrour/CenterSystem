@@ -8,9 +8,18 @@ kotlin {
     jvmToolchain(21)
     sourceSets {
         commonMain.dependencies {
-            implementation(project(":domain"))
-            implementation(compose.material3)
+            implementation(project(":core:ui"))
+            implementation(compose.components.resources)
+            implementation(compose.materialIconsExtended)
         }
         commonTest.dependencies { implementation(kotlin("test")) }
+        getByName("desktopTest").dependencies {
+            implementation(compose.desktop.currentOs)
+            @OptIn(org.jetbrains.compose.ExperimentalComposeLibrary::class)
+            implementation(compose.uiTest)
+        }
     }
+}
+compose.resources {
+    packageOfResClass = "center.feature.students.resources"
 }

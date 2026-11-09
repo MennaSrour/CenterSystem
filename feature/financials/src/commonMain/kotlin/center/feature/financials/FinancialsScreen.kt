@@ -54,6 +54,7 @@ import center.feature.financials.resources.treasury_management
 import center.ui.components.BilingualHeading
 import center.ui.components.CenterOneCard
 import center.ui.components.CenterOneOutlinedButton
+import center.ui.components.CenterOnePageHeader
 import center.ui.components.CenterOnePrimaryButton
 import center.ui.components.CenterOneTabs
 import center.ui.components.CenterOneTextField
@@ -217,11 +218,11 @@ private fun FinancialsHeader(
     state: FinancialsState,
     onEvent: (FinancialsEvent) -> Unit,
 ) {
-    Row(Modifier.fillMaxWidth().padding(CenterOneSpacing.Large), verticalAlignment = Alignment.CenterVertically) {
-        Column(Modifier.weight(1f)) {
-            Text(state.dateLabel, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            BilingualHeading(stringResource(Res.string.financials), stringResource(Res.string.financials_en))
-        }
+    CenterOnePageHeader(
+        stringResource(Res.string.financials),
+        stringResource(Res.string.financials_en),
+        state.dateLabel,
+    ) {
         Surface(
             shape = MaterialTheme.shapes.small,
             color = MaterialTheme.colorScheme.secondary,
