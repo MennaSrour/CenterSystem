@@ -1,0 +1,8 @@
+<resources>
+    <string name="demo_label">عرض تجريبي — بيانات توضيحية</string>
+    <string name="demo_user">نور أحمد</string>
+    <string name="check_in_unavailable">تسجيل الحضور غير متاح في العرض التجريبي. لم يتم حفظ أي حضور.</string>
+    <string name="feature_unavailable">هذه الوظيفة غير متاحة بعد.</string>
+    <string name="activity_demo">تُعرض كل النشاطات التجريبية بالفعل.</string>
+    <string name="home">الرئيسية</string>
+</resources>

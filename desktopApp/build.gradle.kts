@@ -15,6 +15,9 @@ kotlin {
             implementation(libs.decompose)
             implementation(compose.material3)
             implementation(compose.foundation)
+            implementation(compose.components.resources)
+            implementation(project(":core:ui"))
+            implementation(project(":feature:dashboard"))
             implementation(project(":feature:reception"))
             implementation(project(":feature:billing"))
             implementation(project(":feature:students"))
@@ -44,3 +47,5 @@ compose.desktop {
         }
     }
 }
+
+compose.resources { packageOfResClass = "center.app.resources" }
