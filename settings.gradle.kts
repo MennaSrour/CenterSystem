@@ -18,3 +18,5 @@ include(":feature:reception", ":feature:billing", ":feature:students", ":feature
 include(":core:ui", ":feature:dashboard")
 
 include(":feature:financials")
+
+include(":feature:courses")

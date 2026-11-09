@@ -36,6 +36,8 @@ fun App(root: RootComponent) {
                 FinancialsRoute(root)
             } else if (stack.active.instance == Destination.Students) {
                 StudentsRoute(root)
+            } else if (stack.active.instance == Destination.Courses) {
+                CoursesRoute(root)
             } else {
                 Column {
                     Row {
@@ -54,7 +56,7 @@ fun App(root: RootComponent) {
                         }
                     }
                     when (stack.active.instance) {
-                        Destination.Dashboard, Destination.Financials, Destination.Students -> Unit
+                        Destination.Dashboard, Destination.Financials, Destination.Students, Destination.Courses -> Unit
                         Destination.Reception -> ReceptionScreen()
                         Destination.Billing -> BillingScreen()
                         Destination.Reports -> ReportsScreen()

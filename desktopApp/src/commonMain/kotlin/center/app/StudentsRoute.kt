@@ -96,11 +96,12 @@ internal fun StudentsRoute(root: RootComponent) {
                 is StudentsEvent.EditStudent, is StudentsEvent.DeleteStudent -> notify(rowActionUnavailable)
                 is StudentsEvent.Navigate ->
                     when (event.destination) {
+                        StudentsDestination.Courses -> root.navigate(Destination.Courses)
                         StudentsDestination.Home -> root.navigate(Destination.Dashboard)
                         StudentsDestination.Financials -> root.navigate(Destination.Financials)
                         StudentsDestination.Reports -> root.navigate(Destination.Reports)
                         StudentsDestination.Students -> Unit
-                        StudentsDestination.Courses, StudentsDestination.Schedule, StudentsDestination.Settings -> notify(unavailable)
+                        StudentsDestination.Schedule, StudentsDestination.Settings -> notify(unavailable)
                     }
                 StudentsEvent.OpenNotifications, StudentsEvent.RequestEnglish, StudentsEvent.LogOut -> notify(unavailable)
             }
