@@ -14,6 +14,10 @@ class RegisterStudentTest {
             }
 
             override suspend fun students(): List<Student> = saved.toList()
+
+            override fun observeStudents() = kotlinx.coroutines.flow.flowOf(saved.toList())
+
+            override suspend fun getStudentByCode(code: String) = saved.firstOrNull { it.id == code }
         }
 
     @Test

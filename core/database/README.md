@@ -81,3 +81,5 @@ Tests use real temporary SQLite files and cover migrations/reopen, CRUD, relatio
 reactive updates, foreign keys, attendance uniqueness, monthly boundaries, stored
 commission shares and pending-message filtering. The prior repository persistence
 test remains in place. Use `.\\gradlew.bat` in Windows PowerShell.
+
+Domain repository adapters and atomic payment/attendance message writes are described in [domain documentation](../../domain/README.md).

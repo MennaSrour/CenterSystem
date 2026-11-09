@@ -1,15 +1,7 @@
 package center.domain
 
-data class Student(
-    val id: String,
-    val name: String,
-)
-
-interface StudentRepository {
-    suspend fun save(student: Student)
-
-    suspend fun students(): List<Student>
-}
+typealias Student = center.domain.model.Student
+typealias StudentRepository = center.domain.repository.StudentRepository
 
 class RegisterStudent(
     private val repository: StudentRepository,
@@ -20,6 +12,7 @@ class RegisterStudent(
     ) {
         require(id.isNotBlank()) { "Student ID is required" }
         require(name.isNotBlank()) { "Student name is required" }
-        repository.save(Student(id.trim(), name.trim()))
+        val existing = repository.getStudentByCode(id.trim())
+        repository.save(existing?.copy(fullName = name.trim()) ?: Student(id.trim(), name.trim()))
     }
 }

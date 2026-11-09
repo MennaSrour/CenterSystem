@@ -38,3 +38,8 @@ WHERE class_group.teacherId = ? AND payment.paymentDate >= ? AND payment.payment
 
 countForClass:
 SELECT count(*) FROM payment WHERE classId = ?;
+
+selectForTeacher:
+SELECT payment.* FROM payment JOIN class_group ON class_group.id = payment.classId
+WHERE class_group.teacherId = ? AND payment.paymentDate >= ? AND payment.paymentDate < ?
+ORDER BY payment.paymentDate, payment.id;

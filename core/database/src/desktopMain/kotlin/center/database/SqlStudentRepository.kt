@@ -1,39 +1,31 @@
 package center.database
 
-import center.domain.Student
-import center.domain.StudentRepository
+import center.database.dao.StudentDao
+import center.database.entity.StudentEntity
+import center.domain.model.Student
+import center.domain.repository.StudentRepository
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 
 class SqlStudentRepository(
-    private val database: CenterDatabase,
-    private val dispatcher: CoroutineDispatcher = Dispatchers.IO,
+    database: CenterDatabase,
+    dispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) : StudentRepository {
-    override suspend fun save(student: Student): Unit =
-        withContext(dispatcher) {
-            database.transaction {
-                val existing = database.studentQueries.selectById(student.id).executeAsOneOrNull()
-                if (existing == null) {
-                    database.studentQueries.insertRow(student.id, student.name, "", null, "", true)
-                } else {
-                    database.studentQueries.updateRow(
-                        student.name,
-                        existing.gradeLevel,
-                        existing.studentPhone,
-                        existing.parentPhone,
-                        existing.isActive,
-                        student.id,
-                    )
-                }
-            }
-        }
+    private val dao = StudentDao(database, dispatcher)
 
-    override suspend fun students(): List<Student> =
-        withContext(dispatcher) {
-            database.studentQueries
-                .selectAll()
-                .executeAsList()
-                .map { Student(it.id, it.name) }
-        }
+    override fun observeStudents(): Flow<List<Student>> = dao.observeAll().map { rows -> rows.map { it.toDomain() } }
+
+    override suspend fun getStudentByCode(code: String): Student? = dao.observeById(code).first()?.toDomain()
+
+    override suspend fun save(student: Student) =
+        dao.save(
+            StudentEntity(student.id, student.fullName, student.gradeLevel, student.studentPhone, student.parentPhone, student.isActive),
+        )
+
+    override suspend fun students(): List<Student> = observeStudents().first()
 }
+
+private fun StudentEntity.toDomain() = Student(id, fullName, gradeLevel, studentPhone, parentPhone, isActive)
