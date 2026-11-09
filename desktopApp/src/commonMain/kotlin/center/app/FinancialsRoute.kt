@@ -156,11 +156,12 @@ internal fun FinancialsRoute(root: RootComponent) {
                 FinancialsEvent.ConfirmExpense -> expense { if (it.canConfirm) it.copy(message = notSaved) else it }
                 is FinancialsEvent.Navigate ->
                     when (event.destination) {
+                        FinancialsDestination.Courses -> root.navigate(Destination.Courses)
                         FinancialsDestination.Home -> root.navigate(Destination.Dashboard)
                         FinancialsDestination.Students -> root.navigate(Destination.Students)
                         FinancialsDestination.Reports -> root.navigate(Destination.Reports)
                         FinancialsDestination.Financials -> Unit
-                        FinancialsDestination.Courses, FinancialsDestination.Schedule, FinancialsDestination.Settings -> notify(unavailable)
+                        FinancialsDestination.Schedule, FinancialsDestination.Settings -> notify(unavailable)
                     }
                 FinancialsEvent.OpenNotifications, FinancialsEvent.RequestEnglish, FinancialsEvent.LogOut -> notify(unavailable)
             }

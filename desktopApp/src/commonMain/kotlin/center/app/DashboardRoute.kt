@@ -50,11 +50,12 @@ internal fun DashboardRoute(root: RootComponent) {
                 DashboardEvent.Retry -> state = dashboardDemoState(userName, dateLabel)
                 is DashboardEvent.Navigate ->
                     when (event.destination) {
+                        DashboardDestination.Courses -> root.navigate(Destination.Courses)
                         DashboardDestination.Home -> Unit
                         DashboardDestination.Students -> root.navigate(Destination.Students)
                         DashboardDestination.Payments -> root.navigate(Destination.Financials)
                         DashboardDestination.Reports -> root.navigate(Destination.Reports)
-                        DashboardDestination.Courses, DashboardDestination.Schedule, DashboardDestination.Settings ->
+                        DashboardDestination.Schedule, DashboardDestination.Settings ->
                             scope
                                 .launch {
                                     snackbar.showSnackbar(unavailable)
