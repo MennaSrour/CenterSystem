@@ -5,7 +5,7 @@ import com.arkivanov.decompose.router.stack.StackNavigation
 import com.arkivanov.decompose.router.stack.childStack
 import com.arkivanov.decompose.router.stack.replaceCurrent
 
-enum class Destination { Reception, Billing, Students, Reports }
+enum class Destination { Dashboard, Reception, Billing, Students, Reports }
 
 class RootComponent(
     context: ComponentContext,
@@ -15,7 +15,7 @@ class RootComponent(
         childStack(
             source = navigation,
             serializer = null,
-            initialConfiguration = Destination.Reception,
+            initialConfiguration = Destination.Dashboard,
             childFactory = { destination, _ -> destination },
         )
 

@@ -14,3 +14,5 @@ dependencyResolutionManagement {
 rootProject.name = "CenterSystem"
 include(":desktopApp", ":domain", ":core:database", ":core:network", ":core:utils")
 include(":feature:reception", ":feature:billing", ":feature:students", ":feature:reports")
+
+include(":core:ui", ":feature:dashboard")

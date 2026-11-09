@@ -2,18 +2,24 @@ package center.app
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
+import center.app.resources.Res
+import center.app.resources.home
 import center.feature.billing.BillingScreen
 import center.feature.reception.ReceptionScreen
 import center.feature.reports.ReportsScreen
 import center.feature.students.StudentsScreen
+import center.ui.theme.CenterOneTheme
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun App(root: RootComponent) {
@@ -23,18 +29,35 @@ fun App(root: RootComponent) {
         onDispose { subscription.cancel() }
     }
     val stack by state
-    MaterialTheme {
-        Column {
-            Row {
-                Destination.entries.forEach { destination ->
-                    TextButton(onClick = { root.navigate(destination) }) { Text(destination.name) }
+    CenterOneTheme {
+        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+            if (stack.active.instance == Destination.Dashboard) {
+                DashboardRoute(root)
+            } else {
+                Column {
+                    Row {
+                        Destination.entries.forEach { destination ->
+                            TextButton(onClick = { root.navigate(destination) }) {
+                                Text(
+                                    if (destination ==
+                                        Destination.Dashboard
+                                    ) {
+                                        stringResource(Res.string.home)
+                                    } else {
+                                        destination.name
+                                    },
+                                )
+                            }
+                        }
+                    }
+                    when (stack.active.instance) {
+                        Destination.Dashboard -> Unit
+                        Destination.Reception -> ReceptionScreen()
+                        Destination.Billing -> BillingScreen()
+                        Destination.Students -> StudentsScreen()
+                        Destination.Reports -> ReportsScreen()
+                    }
                 }
-            }
-            when (stack.active.instance) {
-                Destination.Reception -> ReceptionScreen()
-                Destination.Billing -> BillingScreen()
-                Destination.Students -> StudentsScreen()
-                Destination.Reports -> ReportsScreen()
             }
         }
     }

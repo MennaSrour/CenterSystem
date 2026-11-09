@@ -9,7 +9,7 @@ class RootComponentTest {
     @Test
     fun switchesBetweenTypedDestinationsWithoutGrowingStack() {
         val root = RootComponent(DefaultComponentContext(LifecycleRegistry()))
-        assertEquals(Destination.Reception, root.stack.value.active.instance)
+        assertEquals(Destination.Dashboard, root.stack.value.active.instance)
         Destination.entries.forEach { destination ->
             root.navigate(destination)
             assertEquals(destination, root.stack.value.active.instance)
