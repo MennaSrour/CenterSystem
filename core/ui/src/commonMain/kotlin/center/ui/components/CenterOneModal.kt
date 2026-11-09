@@ -19,6 +19,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -47,9 +48,10 @@ fun CenterOneModalContent(
     onClose: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
+    maxWidth: Dp = 600.dp,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    Surface(modifier.widthIn(max = 600.dp).heightIn(max = 840.dp), shape = MaterialTheme.shapes.large) {
+    Surface(modifier.widthIn(max = maxWidth).heightIn(max = 840.dp), shape = MaterialTheme.shapes.large) {
         Column(Modifier.verticalScroll(rememberScrollState())) {
             Surface(color = MaterialTheme.colorScheme.secondary, contentColor = MaterialTheme.colorScheme.onSecondary) {
                 Row(Modifier.fillMaxWidth().padding(CenterOneSpacing.Large), verticalAlignment = Alignment.CenterVertically) {

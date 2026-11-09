@@ -17,7 +17,6 @@ import center.app.resources.home
 import center.feature.billing.BillingScreen
 import center.feature.reception.ReceptionScreen
 import center.feature.reports.ReportsScreen
-import center.feature.students.StudentsScreen
 import center.ui.theme.CenterOneTheme
 import org.jetbrains.compose.resources.stringResource
 
@@ -35,6 +34,8 @@ fun App(root: RootComponent) {
                 DashboardRoute(root)
             } else if (stack.active.instance == Destination.Financials) {
                 FinancialsRoute(root)
+            } else if (stack.active.instance == Destination.Students) {
+                StudentsRoute(root)
             } else {
                 Column {
                     Row {
@@ -53,10 +54,9 @@ fun App(root: RootComponent) {
                         }
                     }
                     when (stack.active.instance) {
-                        Destination.Dashboard, Destination.Financials -> Unit
+                        Destination.Dashboard, Destination.Financials, Destination.Students -> Unit
                         Destination.Reception -> ReceptionScreen()
                         Destination.Billing -> BillingScreen()
-                        Destination.Students -> StudentsScreen()
                         Destination.Reports -> ReportsScreen()
                     }
                 }

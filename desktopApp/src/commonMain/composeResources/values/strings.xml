@@ -7,4 +7,6 @@
     <string name="home">الرئيسية</string>
     <string name="financial_demo_not_saved">عرض تجريبي فقط — لم تُحفظ أي حركة مالية.</string>
     <string name="financial_attachment_unavailable">اختيار الملف سيُربط لاحقاً بواسطة المنصة. لم يتم إرفاق ملف.</string>
+    <string name="student_demo_not_saved">عرض تجريبي فقط — لم يُحفظ أي طالب.</string>
+    <string name="student_row_action_unavailable">إجراء تجريبي — لم يتم تعديل الطالب أو حذفه.</string>
 </resources>
