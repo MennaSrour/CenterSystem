@@ -97,3 +97,5 @@ Each cloud task is isolated: use its existing checkout, without creating a workt
 No cloud configuration or environment publication is performed by this project.
 
 See [local database documentation](core/database/README.md) for the offline schema, DAOs, migration and storage rules.
+
+See [domain layer documentation](domain/README.md) for repository contracts, business use cases and transactional message queuing.
