@@ -1,0 +1,27 @@
+CREATE TABLE attendance (
+    id TEXT NOT NULL PRIMARY KEY,
+    studentId TEXT NOT NULL REFERENCES student(id) ON DELETE RESTRICT,
+    classId TEXT NOT NULL REFERENCES class_group(id) ON DELETE RESTRICT,
+    timestamp INTEGER NOT NULL,
+    status TEXT NOT NULL CHECK (status IN ('PRESENT', 'ABSENT'))
+);
+CREATE UNIQUE INDEX attendance_student_class_time ON attendance(studentId, classId, timestamp);
+CREATE INDEX attendance_class_time ON attendance(classId, timestamp);
+
+selectAll:
+SELECT * FROM attendance ORDER BY id;
+
+selectById:
+SELECT * FROM attendance WHERE id = ?;
+
+insertRow:
+INSERT INTO attendance (id, studentId, classId, timestamp, status) VALUES (?, ?, ?, ?, ?);
+
+updateRow:
+UPDATE attendance SET studentId = ?, classId = ?, timestamp = ?, status = ? WHERE id = ?;
+
+deleteById:
+DELETE FROM attendance WHERE id = ?;
+
+selectForClass:
+SELECT * FROM attendance WHERE classId = ? AND timestamp >= ? AND timestamp < ? ORDER BY timestamp, id;

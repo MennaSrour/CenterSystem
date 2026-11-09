@@ -1,0 +1,29 @@
+CREATE TABLE message_queue (
+    id TEXT NOT NULL PRIMARY KEY,
+    targetPhone TEXT NOT NULL,
+    messageBody TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'PENDING' CHECK (status IN ('PENDING', 'SENT')),
+    createdAt INTEGER NOT NULL
+);
+CREATE INDEX message_status_created ON message_queue(status, createdAt);
+
+selectAll:
+SELECT * FROM message_queue ORDER BY id;
+
+selectById:
+SELECT * FROM message_queue WHERE id = ?;
+
+insertRow:
+INSERT INTO message_queue (id, targetPhone, messageBody, status, createdAt) VALUES (?, ?, ?, ?, ?);
+
+updateRow:
+UPDATE message_queue SET targetPhone = ?, messageBody = ?, status = ?, createdAt = ? WHERE id = ?;
+
+deleteById:
+DELETE FROM message_queue WHERE id = ?;
+
+selectPending:
+SELECT * FROM message_queue WHERE status = 'PENDING' ORDER BY createdAt, id;
+
+markSent:
+UPDATE message_queue SET status = 'SENT' WHERE id = ?;

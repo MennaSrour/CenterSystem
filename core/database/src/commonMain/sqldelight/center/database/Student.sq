@@ -1,10 +1,32 @@
 CREATE TABLE student (
     id TEXT NOT NULL PRIMARY KEY,
-    name TEXT NOT NULL
+    name TEXT NOT NULL,
+    gradeLevel TEXT NOT NULL DEFAULT '',
+    studentPhone TEXT,
+    parentPhone TEXT NOT NULL DEFAULT '',
+    isActive INTEGER AS kotlin.Boolean NOT NULL DEFAULT 1 CHECK (isActive IN (0, 1))
 );
+CREATE INDEX student_active_name ON student(isActive, name);
 
 selectAll:
-SELECT * FROM student ORDER BY name, id;
+SELECT * FROM student ORDER BY id;
 
-upsert:
-INSERT OR REPLACE INTO student(id, name) VALUES (?, ?);
+selectById:
+SELECT * FROM student WHERE id = ?;
+
+insertRow:
+INSERT INTO student (id, name, gradeLevel, studentPhone, parentPhone, isActive) VALUES (?, ?, ?, ?, ?, ?);
+
+updateRow:
+UPDATE student SET name = ?, gradeLevel = ?, studentPhone = ?, parentPhone = ?, isActive = ? WHERE id = ?;
+
+deleteById:
+DELETE FROM student WHERE id = ?;
+
+selectWithPayments:
+SELECT student.id, student.name, student.gradeLevel, student.studentPhone,
+       student.parentPhone, student.isActive,
+       payment.id AS paymentId, payment.studentId, payment.classId, payment.amountPaid,
+       payment.teacherShare, payment.centerShare, payment.paymentDate
+FROM student LEFT JOIN payment ON student.id = payment.studentId
+WHERE student.id = ? ORDER BY payment.paymentDate, payment.id;

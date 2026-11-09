@@ -1,0 +1,40 @@
+CREATE TABLE payment (
+    id TEXT NOT NULL PRIMARY KEY,
+    studentId TEXT NOT NULL REFERENCES student(id) ON DELETE RESTRICT,
+    classId TEXT NOT NULL REFERENCES class_group(id) ON DELETE RESTRICT,
+    amountPaid REAL NOT NULL CHECK (amountPaid >= 0),
+    teacherShare REAL NOT NULL CHECK (teacherShare >= 0),
+    centerShare REAL NOT NULL CHECK (centerShare >= 0),
+    paymentDate INTEGER NOT NULL,
+    CHECK (abs(amountPaid - teacherShare - centerShare) <= 0.000001)
+);
+CREATE INDEX payment_student_date ON payment(studentId, paymentDate);
+CREATE INDEX payment_class_date ON payment(classId, paymentDate);
+
+selectAll:
+SELECT * FROM payment ORDER BY id;
+
+selectById:
+SELECT * FROM payment WHERE id = ?;
+
+insertRow:
+INSERT INTO payment (id, studentId, classId, amountPaid, teacherShare, centerShare, paymentDate) VALUES (?, ?, ?, ?, ?, ?, ?);
+
+updateRow:
+UPDATE payment SET studentId = ?, classId = ?, amountPaid = ?, teacherShare = ?, centerShare = ?, paymentDate = ? WHERE id = ?;
+
+deleteById:
+DELETE FROM payment WHERE id = ?;
+
+selectForStudent:
+SELECT * FROM payment WHERE studentId = ? ORDER BY paymentDate, id;
+
+teacherDues:
+SELECT coalesce(sum(payment.amountPaid), 0.0) AS totalPaid,
+       coalesce(sum(payment.teacherShare), 0.0) AS teacherShare,
+       coalesce(sum(payment.centerShare), 0.0) AS centerShare
+FROM payment JOIN class_group ON class_group.id = payment.classId
+WHERE class_group.teacherId = ? AND payment.paymentDate >= ? AND payment.paymentDate < ?;
+
+countForClass:
+SELECT count(*) FROM payment WHERE classId = ?;

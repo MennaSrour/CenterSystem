@@ -1,0 +1,22 @@
+CREATE TABLE teacher (
+    id TEXT NOT NULL PRIMARY KEY,
+    fullName TEXT NOT NULL,
+    subject TEXT NOT NULL,
+    commissionRate REAL NOT NULL DEFAULT 0.70 CHECK (commissionRate >= 0 AND commissionRate <= 1)
+);
+
+
+selectAll:
+SELECT * FROM teacher ORDER BY id;
+
+selectById:
+SELECT * FROM teacher WHERE id = ?;
+
+insertRow:
+INSERT INTO teacher (id, fullName, subject, commissionRate) VALUES (?, ?, ?, ?);
+
+updateRow:
+UPDATE teacher SET fullName = ?, subject = ?, commissionRate = ? WHERE id = ?;
+
+deleteById:
+DELETE FROM teacher WHERE id = ?;

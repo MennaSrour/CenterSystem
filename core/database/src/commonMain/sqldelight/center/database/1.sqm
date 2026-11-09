@@ -1,0 +1,48 @@
+ALTER TABLE student ADD COLUMN gradeLevel TEXT NOT NULL DEFAULT '';
+ALTER TABLE student ADD COLUMN studentPhone TEXT;
+ALTER TABLE student ADD COLUMN parentPhone TEXT NOT NULL DEFAULT '';
+ALTER TABLE student ADD COLUMN isActive INTEGER NOT NULL DEFAULT 1 CHECK (isActive IN (0, 1));
+CREATE INDEX student_active_name ON student(isActive, name);
+CREATE TABLE teacher (
+    id TEXT NOT NULL PRIMARY KEY,
+    fullName TEXT NOT NULL,
+    subject TEXT NOT NULL,
+    commissionRate REAL NOT NULL DEFAULT 0.70 CHECK (commissionRate >= 0 AND commissionRate <= 1)
+);
+
+CREATE TABLE class_group (
+    id TEXT NOT NULL PRIMARY KEY,
+    name TEXT NOT NULL,
+    teacherId TEXT NOT NULL REFERENCES teacher(id) ON DELETE RESTRICT,
+    sessionPrice REAL NOT NULL CHECK (sessionPrice >= 0)
+);
+CREATE INDEX class_teacher ON class_group(teacherId);
+CREATE TABLE attendance (
+    id TEXT NOT NULL PRIMARY KEY,
+    studentId TEXT NOT NULL REFERENCES student(id) ON DELETE RESTRICT,
+    classId TEXT NOT NULL REFERENCES class_group(id) ON DELETE RESTRICT,
+    timestamp INTEGER NOT NULL,
+    status TEXT NOT NULL CHECK (status IN ('PRESENT', 'ABSENT'))
+);
+CREATE UNIQUE INDEX attendance_student_class_time ON attendance(studentId, classId, timestamp);
+CREATE INDEX attendance_class_time ON attendance(classId, timestamp);
+CREATE TABLE payment (
+    id TEXT NOT NULL PRIMARY KEY,
+    studentId TEXT NOT NULL REFERENCES student(id) ON DELETE RESTRICT,
+    classId TEXT NOT NULL REFERENCES class_group(id) ON DELETE RESTRICT,
+    amountPaid REAL NOT NULL CHECK (amountPaid >= 0),
+    teacherShare REAL NOT NULL CHECK (teacherShare >= 0),
+    centerShare REAL NOT NULL CHECK (centerShare >= 0),
+    paymentDate INTEGER NOT NULL,
+    CHECK (abs(amountPaid - teacherShare - centerShare) <= 0.000001)
+);
+CREATE INDEX payment_student_date ON payment(studentId, paymentDate);
+CREATE INDEX payment_class_date ON payment(classId, paymentDate);
+CREATE TABLE message_queue (
+    id TEXT NOT NULL PRIMARY KEY,
+    targetPhone TEXT NOT NULL,
+    messageBody TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'PENDING' CHECK (status IN ('PENDING', 'SENT')),
+    createdAt INTEGER NOT NULL
+);
+CREATE INDEX message_status_created ON message_queue(status, createdAt);

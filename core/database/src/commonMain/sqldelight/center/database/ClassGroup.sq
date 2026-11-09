@@ -1,0 +1,22 @@
+CREATE TABLE class_group (
+    id TEXT NOT NULL PRIMARY KEY,
+    name TEXT NOT NULL,
+    teacherId TEXT NOT NULL REFERENCES teacher(id) ON DELETE RESTRICT,
+    sessionPrice REAL NOT NULL CHECK (sessionPrice >= 0)
+);
+CREATE INDEX class_teacher ON class_group(teacherId);
+
+selectAll:
+SELECT * FROM class_group ORDER BY id;
+
+selectById:
+SELECT * FROM class_group WHERE id = ?;
+
+insertRow:
+INSERT INTO class_group (id, name, teacherId, sessionPrice) VALUES (?, ?, ?, ?);
+
+updateRow:
+UPDATE class_group SET name = ?, teacherId = ?, sessionPrice = ? WHERE id = ?;
+
+deleteById:
+DELETE FROM class_group WHERE id = ?;

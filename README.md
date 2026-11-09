@@ -95,3 +95,5 @@ build output. The SQLite integration test uses and cleans a temporary directory.
 
 Each cloud task is isolated: use its existing checkout, without creating a worktree.
 No cloud configuration or environment publication is performed by this project.
+
+See [local database documentation](core/database/README.md) for the offline schema, DAOs, migration and storage rules.
