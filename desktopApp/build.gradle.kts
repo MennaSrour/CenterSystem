@@ -18,6 +18,7 @@ kotlin {
             implementation(compose.components.resources)
             implementation(project(":core:ui"))
             implementation(project(":feature:dashboard"))
+            implementation(project(":feature:financials"))
             implementation(project(":feature:reception"))
             implementation(project(":feature:billing"))
             implementation(project(":feature:students"))

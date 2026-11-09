@@ -33,6 +33,8 @@ fun App(root: RootComponent) {
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
             if (stack.active.instance == Destination.Dashboard) {
                 DashboardRoute(root)
+            } else if (stack.active.instance == Destination.Financials) {
+                FinancialsRoute(root)
             } else {
                 Column {
                     Row {
@@ -51,7 +53,7 @@ fun App(root: RootComponent) {
                         }
                     }
                     when (stack.active.instance) {
-                        Destination.Dashboard -> Unit
+                        Destination.Dashboard, Destination.Financials -> Unit
                         Destination.Reception -> ReceptionScreen()
                         Destination.Billing -> BillingScreen()
                         Destination.Students -> StudentsScreen()

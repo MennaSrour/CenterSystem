@@ -52,7 +52,7 @@ internal fun DashboardRoute(root: RootComponent) {
                     when (event.destination) {
                         DashboardDestination.Home -> Unit
                         DashboardDestination.Students -> root.navigate(Destination.Students)
-                        DashboardDestination.Payments -> root.navigate(Destination.Billing)
+                        DashboardDestination.Payments -> root.navigate(Destination.Financials)
                         DashboardDestination.Reports -> root.navigate(Destination.Reports)
                         DashboardDestination.Courses, DashboardDestination.Schedule, DashboardDestination.Settings ->
                             scope
