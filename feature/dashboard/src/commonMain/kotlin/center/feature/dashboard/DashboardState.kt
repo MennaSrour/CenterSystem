@@ -1,5 +1,7 @@
 package center.feature.dashboard
 
+import center.ui.localization.AppLanguage
+
 data class DashboardState(
     val userName: String,
     val dateLabel: String,
@@ -7,6 +9,7 @@ data class DashboardState(
     val studentCode: String = "",
     val checkIn: CheckInState = CheckInState.Idle,
     val isOnline: Boolean = true,
+    val language: AppLanguage = AppLanguage.Arabic,
 ) {
     val canCheckIn: Boolean get() = studentCode.isNotBlank() && checkIn !is CheckInState.Submitting
 }

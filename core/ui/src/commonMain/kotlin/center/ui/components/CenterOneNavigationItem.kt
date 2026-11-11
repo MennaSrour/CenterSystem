@@ -13,6 +13,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import center.ui.localization.AppLanguage
+import center.ui.localization.LocalAppLanguage
 
 @Composable
 fun CenterOneNavigationItem(
@@ -36,8 +38,15 @@ fun CenterOneNavigationItem(
     ) {
         icon()
         Spacer(Modifier.size(12.dp))
-        Text(title, style = MaterialTheme.typography.labelLarge)
-        Spacer(Modifier.weight(1f))
-        Text(subtitle, style = MaterialTheme.typography.labelSmall)
+        Text(
+            if (LocalAppLanguage.current ==
+                AppLanguage.Arabic
+            ) {
+                title
+            } else {
+                subtitle.ifBlank { title }
+            },
+            style = MaterialTheme.typography.labelLarge,
+        )
     }
 }

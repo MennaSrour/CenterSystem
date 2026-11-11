@@ -1,34 +1,54 @@
-# Dashboard
+# Dashboard presentation and localization
 
-`DashboardScreen(state, onEvent)` renders caller-owned presentation state. The feature
-has no domain/data, DI, navigation controller, or platform dependencies. State and typed
-events are in separate files; screen widgets reuse `:core:ui` components.
+`DashboardScreen(state, onEvent)` renders caller-owned state and emits typed events.
+`DashboardState.language` defaults to Arabic. The screen provides both
+`LocalAppLanguage` and the matching `LocalLayoutDirection`: Arabic uses RTL, English
+uses LTR. `DashboardEvent.LanguageSelected` delegates the choice to the owner.
 
-The root provides RTL. The last child in its RTL row is the sidebar, which puts it at
-the physical left as in the supplied design. Below a 1000 dp viewport, the desktop
-canvas scrolls horizontally. Statistics use two or four columns based on available
-content width. The main content scrolls vertically; the activity list is lazy with a
-bounded viewport and stable activity IDs (callers must supply unique IDs).
+The dashboard catalog is a portable Kotlin map in `DashboardStrings.kt`, backed by
+`core:ui`'s `StringResources` and `LocalizedText`. Every key has Arabic and English
+text. Labels, placeholders, status text, accessibility descriptions, table headers,
+and demo messages are single-language. Language names in the toggle intentionally
+remain “عربي” and “English” so either choice is recognizable.
 
-`DashboardContent` supports loading, failure/retry, and ready/empty content. Check-in
-supports idle, submitting, failure, and success. The caller owns code validation,
-submission concurrency, persistence, formatting, and all navigation/effects. Barcode
-scanners that type a code and Enter use the same submit event as the button.
+`desktopApp/App.kt` owns the selected language for the running app and passes it to
+`DashboardRoute`. The demo route localizes the user/date/messages without rebuilding
+its editable state, so toggling preserves the entered student code. It dismisses an
+old-language snackbar when switching. The activity table chooses either the Arabic
+name or English name, and retains LTR direction for IDs and times.
 
-`desktopApp/DashboardRoute.kt` is an explicitly labeled demo boundary with screenshot
-sample data. It does not write attendance. Replace its local state and handler with
-state collected from your lifecycle-owned domain-backed state holder when connecting
-attendance and dashboard queries. Guard duplicate submissions in that state holder
-as well as in the UI; map domain results into these presentation models there.
+The sidebar remains physically left in both modes; content order, alignment, and
+text direction follow the selected locale. The shared heading and navigation-item
+APIs now choose one localized label rather than rendering paired languages. Other
+feature-specific resource catalogs are outside this dashboard migration.
 
-No logo asset was supplied separately, so the sidebar uses a typographic brand mark.
-The English action reports unavailable until English resources and locale ownership
-are implemented. Other unfinished destinations report unavailable rather than
-pretending to navigate or log out.
+Future domain-backed callers must supply names, dates, formatted values, and error
+messages appropriate to the active language; the UI does not translate user data or
+unknown backend messages. The portable string catalog validates required arguments
+and fails visibly for missing keys instead of silently displaying another language.
 
-Checks:
+The dashboard otherwise retains its loading/error/empty states and stateless check-in
+contract. The app still supplies illustrative data and never saves attendance.
+
+## Brand artwork
+
+The shared `CenterOneBrand` no longer draws a numbered yellow circle. It accepts a
+`Painter` (directly or through `LocalCenterOneLogo`) and renders it as an `Image` in
+an 88 dp box using `ContentScale.Fit`, with one localized brand name.
+
+The logo shown inline in the chat was not exposed as a downloadable or mounted file
+in this environment. Its original pixels have therefore not been recreated or
+substituted. The exact artwork still needs to be supplied as a PNG/JPG file and saved
+as `core/ui/src/commonMain/composeResources/drawable/center_one_logo.png` (or `.jpg`).
+Once supplied, load the generated drawable with Compose `painterResource` inside the
+core branding integration. Until then the brand is text-only; no fake image is bundled.
+
+## Validation
 
 ```sh
-./gradlew :core:ui:ktlintCheck :feature:dashboard:ktlintCheck \
-  :feature:dashboard:desktopTest :desktopApp:desktopTest :desktopApp:desktopJar
+./gradlew ktlintCheck allTests :desktopApp:desktopJar
 ```
+
+Tests cover catalog completeness, locale selection, safe string interpolation,
+dynamic toggle/direction changes, input preservation, single-language activity names,
+and supplied-logo painter rendering. Headless snapshots cover Arabic and English.

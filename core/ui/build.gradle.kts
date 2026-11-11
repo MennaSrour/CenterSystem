@@ -6,6 +6,7 @@ plugins {
 kotlin {
     jvm("desktop")
     jvmToolchain(21)
+    sourceSets.commonTest.dependencies { implementation(kotlin("test")) }
     sourceSets.commonMain.dependencies {
         api(compose.material3)
         api(compose.foundation)

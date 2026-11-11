@@ -37,3 +37,19 @@ and bounded modal surfaces. Dropdown expansion and selected IDs belong to caller
 close a dropdown after handling its selection event. `CenterOneTextField` retains
 its single-line defaults and additionally supports labels, read-only fields, and
 multiline notes.
+
+## Localization and branding
+
+`CenterOneLocalization(language)` supplies `LocalAppLanguage` and the corresponding
+layout direction without changing the process/system locale. `StringResources<Key>`
+selects `LocalizedText` entries and interpolates indexed string arguments. Missing
+keys/arguments fail explicitly; inserted arguments are never interpreted again.
+The dashboard is the first migrated feature; other resource catalogs can adopt the
+same provider separately.
+
+`CenterOneLanguageToggle` is caller-controlled. `BilingualHeading` and navigation
+items retain their existing API but display one selected-language label.
+`CenterOneBrand` uses a supplied `Painter` via its `logo` parameter or
+`LocalCenterOneLogo`, with `ContentScale.Fit` and localized accessibility text.
+No number-circle placeholder is drawn. The original logo file is still required
+before a drawable can be packaged; see the dashboard README.
