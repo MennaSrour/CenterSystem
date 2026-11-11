@@ -23,19 +23,11 @@ import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
-import center.feature.dashboard.resources.Res
-import center.feature.dashboard.resources.check_in
-import center.feature.dashboard.resources.checking_in
-import center.feature.dashboard.resources.quick_check_in
-import center.feature.dashboard.resources.quick_check_in_en
-import center.feature.dashboard.resources.scan_description
-import center.feature.dashboard.resources.scan_placeholder
 import center.ui.components.BilingualHeading
 import center.ui.components.CenterOneCard
 import center.ui.components.CenterOnePrimaryButton
 import center.ui.components.CenterOneTextField
 import center.ui.theme.CenterOneSpacing
-import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun QuickCheckInSection(
@@ -48,9 +40,9 @@ fun QuickCheckInSection(
             val wideLayout = maxWidth >= 1000.dp
             val title: @Composable () -> Unit = {
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    BilingualHeading(stringResource(Res.string.quick_check_in), stringResource(Res.string.quick_check_in_en))
+                    BilingualHeading(dashboardString(DashboardText.QUICK_CHECK_IN), dashboardString(DashboardText.QUICK_CHECK_IN_EN))
                     Text(
-                        stringResource(Res.string.scan_description),
+                        dashboardString(DashboardText.SCAN_DESCRIPTION),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -71,7 +63,7 @@ fun QuickCheckInSection(
                         },
                     enabled = state.checkIn !is CheckInState.Submitting,
                     isError = state.checkIn is CheckInState.Failure,
-                    placeholder = { Text(stringResource(Res.string.scan_placeholder)) },
+                    placeholder = { Text(dashboardString(DashboardText.SCAN_PLACEHOLDER)) },
                     leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                     keyboardActions = KeyboardActions(onDone = { if (state.canCheckIn) onEvent(DashboardEvent.SubmitCheckIn) }),
@@ -79,7 +71,11 @@ fun QuickCheckInSection(
             }
             val button: @Composable () -> Unit = {
                 CenterOnePrimaryButton(onClick = { onEvent(DashboardEvent.SubmitCheckIn) }, enabled = state.canCheckIn) {
-                    Text(stringResource(if (state.checkIn is CheckInState.Submitting) Res.string.checking_in else Res.string.check_in))
+                    Text(
+                        dashboardString(
+                            if (state.checkIn is CheckInState.Submitting) DashboardText.CHECKING_IN else DashboardText.CHECK_IN,
+                        ),
+                    )
                 }
             }
             Column(verticalArrangement = Arrangement.spacedBy(CenterOneSpacing.Medium)) {

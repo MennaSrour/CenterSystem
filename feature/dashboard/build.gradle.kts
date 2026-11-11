@@ -13,6 +13,11 @@ kotlin {
             implementation(compose.materialIconsExtended)
         }
         commonTest.dependencies { implementation(kotlin("test")) }
+        getByName("desktopTest").dependencies {
+            implementation(compose.desktop.currentOs)
+            @OptIn(org.jetbrains.compose.ExperimentalComposeLibrary::class)
+            implementation(compose.uiTest)
+        }
     }
 }
 compose.resources {

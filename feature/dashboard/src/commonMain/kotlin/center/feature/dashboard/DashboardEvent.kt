@@ -1,5 +1,7 @@
 package center.feature.dashboard
 
+import center.ui.localization.AppLanguage
+
 sealed interface DashboardEvent {
     data class StudentCodeChanged(
         val value: String,
@@ -13,7 +15,9 @@ sealed interface DashboardEvent {
 
     data object OpenNotifications : DashboardEvent
 
-    data object RequestEnglish : DashboardEvent
+    data class LanguageSelected(
+        val language: AppLanguage,
+    ) : DashboardEvent
 
     data object LogOut : DashboardEvent
 

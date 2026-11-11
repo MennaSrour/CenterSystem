@@ -10,6 +10,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 import center.app.resources.Res
@@ -17,6 +18,7 @@ import center.app.resources.home
 import center.feature.billing.BillingScreen
 import center.feature.reception.ReceptionScreen
 import center.feature.reports.ReportsScreen
+import center.ui.localization.AppLanguage
 import center.ui.theme.CenterOneTheme
 import org.jetbrains.compose.resources.stringResource
 
@@ -28,10 +30,11 @@ fun App(root: RootComponent) {
         onDispose { subscription.cancel() }
     }
     val stack by state
+    var language by remember { mutableStateOf(AppLanguage.Arabic) }
     CenterOneTheme {
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
             if (stack.active.instance == Destination.Dashboard) {
-                DashboardRoute(root)
+                DashboardRoute(root, language, onLanguageSelected = { language = it })
             } else if (stack.active.instance == Destination.Financials) {
                 FinancialsRoute(root)
             } else if (stack.active.instance == Destination.Students) {
