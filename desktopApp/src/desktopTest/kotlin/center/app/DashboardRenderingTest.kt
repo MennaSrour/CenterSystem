@@ -7,6 +7,8 @@ import center.feature.dashboard.DashboardPreviewData
 import center.feature.dashboard.DashboardScreen
 import center.ui.localization.AppLanguage
 import center.ui.theme.CenterOneTheme
+import com.arkivanov.decompose.DefaultComponentContext
+import com.arkivanov.essenty.lifecycle.LifecycleRegistry
 import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.test.Test
@@ -14,6 +16,24 @@ import kotlin.test.assertEquals
 
 @OptIn(ExperimentalComposeUiApi::class)
 class DashboardRenderingTest {
+    @Test
+    fun rendersDesktopSidebarWithPackagedLogo() {
+        val root = RootComponent(DefaultComponentContext(LifecycleRegistry()))
+        val scene = ImageComposeScene(width = 800, height = 960, density = Density(1f)) { App(root) }
+        try {
+            repeat(3) { frame -> scene.render(frame * 16_000_000L).close() }
+            scene.render(48_000_000L).use { image ->
+                val directory = Path.of("build", "screenshots")
+                Files.createDirectories(directory)
+                requireNotNull(image.encodeToData()).use { data ->
+                    Files.write(directory.resolve("reception-sidebar-logo.png"), data.bytes)
+                }
+            }
+        } finally {
+            scene.close()
+        }
+    }
+
     @Test
     fun rendersReceptionAtDesktopAndMinimumWidths() {
         AppLanguage.entries.forEach { language ->

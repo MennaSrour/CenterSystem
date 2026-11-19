@@ -51,5 +51,6 @@ same provider separately.
 items retain their existing API but display one selected-language label.
 `CenterOneBrand` uses a supplied `Painter` via its `logo` parameter or
 `LocalCenterOneLogo`, with `ContentScale.Fit` and localized accessibility text.
-No number-circle placeholder is drawn. The original logo file is still required
-before a drawable can be packaged; see the dashboard README.
+The desktop app supplies its bundled WebP from
+`desktopApp/src/commonMain/composeResources/drawable/center_one_logo.webp`.
+The sidebar centers the emblem in a rounded frame.
