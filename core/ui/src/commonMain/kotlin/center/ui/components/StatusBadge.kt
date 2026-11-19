@@ -13,13 +13,17 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.unit.dp
 import center.ui.theme.Pending
 import center.ui.theme.PendingContainer
+import center.ui.theme.Rose
+import center.ui.theme.RoseContainer
 import center.ui.theme.Success
 import center.ui.theme.SuccessContainer
+import center.ui.theme.accentContentColor
 
-enum class StatusTone { Success, Pending }
+enum class StatusTone { Success, Pending, Overdue }
 
 @Composable
 fun StatusBadge(
@@ -27,23 +31,30 @@ fun StatusBadge(
     tone: StatusTone,
     modifier: Modifier = Modifier,
 ) {
-    val foreground =
+    val accent =
         when (tone) {
             StatusTone.Success -> Success
             StatusTone.Pending -> Pending
+            StatusTone.Overdue -> Rose
         }
     val background =
         when (tone) {
             StatusTone.Success -> SuccessContainer
             StatusTone.Pending -> PendingContainer
+            StatusTone.Overdue -> RoseContainer
         }
-    Surface(modifier = modifier, color = background, contentColor = foreground, shape = CircleShape) {
+    Surface(
+        modifier = modifier,
+        color = background.compositeOver(MaterialTheme.colorScheme.surface),
+        contentColor = accent.accentContentColor(),
+        shape = CircleShape,
+    ) {
         Row(
             Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
             horizontalArrangement = Arrangement.spacedBy(6.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Box(Modifier.size(7.dp).background(foreground, CircleShape))
+            Box(Modifier.size(7.dp).background(accent, CircleShape))
             Text(text, style = MaterialTheme.typography.labelMedium)
         }
     }

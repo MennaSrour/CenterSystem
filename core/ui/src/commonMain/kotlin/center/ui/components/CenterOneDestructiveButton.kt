@@ -6,6 +6,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 
 @Composable
 fun CenterOneDestructiveButton(
@@ -19,6 +20,7 @@ fun CenterOneDestructiveButton(
         modifier,
         enabled = enabled,
         shape = MaterialTheme.shapes.small,
+        elevation = ButtonDefaults.buttonElevation(hoveredElevation = 3.dp),
         colors =
             ButtonDefaults.buttonColors(
                 containerColor = MaterialTheme.colorScheme.error,

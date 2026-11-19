@@ -21,7 +21,7 @@ import center.ui.components.CenterOneMetricCard
 import center.ui.theme.CenterOneSpacing
 import center.ui.theme.Navy
 import center.ui.theme.Pending
-import center.ui.theme.Pink
+import center.ui.theme.Success
 
 @Composable
 fun StatsGrid(
@@ -73,9 +73,9 @@ private fun StatisticCard(
         }
     val accent =
         when (statistic.kind) {
-            StatisticKind.PendingMessages -> Pink
-            StatisticKind.Attendance -> Pending
-            StatisticKind.Revenue, StatisticKind.Groups -> Navy
+            StatisticKind.PendingMessages -> Pending
+            StatisticKind.Attendance, StatisticKind.Groups -> Success
+            StatisticKind.Revenue -> Navy
         }
     CenterOneMetricCard(
         title = dashboardString(label),
