@@ -9,6 +9,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import center.ui.theme.ACCENT_TINT_ALPHA
+import center.ui.theme.accentContentColor
 
 @Composable
 fun CenterOneTag(
@@ -16,7 +18,7 @@ fun CenterOneTag(
     modifier: Modifier = Modifier,
     color: Color = MaterialTheme.colorScheme.secondary,
 ) {
-    Surface(modifier, shape = CircleShape, color = color.copy(alpha = 0.1f), contentColor = color) {
+    Surface(modifier, shape = CircleShape, color = color.copy(alpha = ACCENT_TINT_ALPHA), contentColor = color.accentContentColor()) {
         Text(text, Modifier.padding(horizontal = 12.dp, vertical = 4.dp), style = MaterialTheme.typography.labelMedium)
     }
 }

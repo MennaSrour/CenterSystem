@@ -1,5 +1,6 @@
 package center.ui.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -11,8 +12,10 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import center.ui.theme.CenterOneSpacing
 import center.ui.theme.Navy
+import center.ui.theme.SidebarNavy
 import center.ui.theme.White
 
 @Composable
@@ -24,7 +27,11 @@ fun CenterOneSidebar(
 ) {
     Surface(modifier, color = Navy, contentColor = White) {
         Column(
-            Modifier.fillMaxHeight().verticalScroll(rememberScrollState()).padding(CenterOneSpacing.Large),
+            Modifier
+                .fillMaxHeight()
+                .background(Brush.verticalGradient(listOf(Navy, SidebarNavy)))
+                .verticalScroll(rememberScrollState())
+                .padding(CenterOneSpacing.Large),
             verticalArrangement = Arrangement.spacedBy(CenterOneSpacing.Medium),
         ) {
             header()

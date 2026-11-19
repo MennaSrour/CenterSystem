@@ -14,7 +14,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import center.ui.theme.ACCENT_TINT_ALPHA
 import center.ui.theme.CenterOneSpacing
+import center.ui.theme.accentContentColor
 
 @Composable
 fun CenterOneMetricCard(
@@ -28,10 +30,10 @@ fun CenterOneMetricCard(
 ) {
     CenterOneCard(modifier, borderColor = if (highlighted) accent.copy(alpha = 0.25f) else MaterialTheme.colorScheme.outline) {
         Column(Modifier.fillMaxWidth().padding(CenterOneSpacing.Large), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Box(Modifier.background(accent.copy(alpha = 0.1f), MaterialTheme.shapes.small).padding(12.dp)) { icon() }
+            Box(Modifier.background(accent.copy(alpha = ACCENT_TINT_ALPHA), MaterialTheme.shapes.small).padding(12.dp)) { icon() }
             Text(title, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(value, style = MaterialTheme.typography.headlineLarge, color = accent)
+                Text(value, style = MaterialTheme.typography.headlineLarge, color = accent.accentContentColor())
                 Text(caption, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
