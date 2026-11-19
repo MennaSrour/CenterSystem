@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
@@ -17,6 +18,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import center.app.resources.Res
+import center.app.resources.center_one_logo
 import center.feature.billing.BillingScreen
 import center.feature.dashboard.DashboardText
 import center.feature.reception.ReceptionScreen
@@ -24,10 +27,12 @@ import center.feature.reports.ReportsScreen
 import center.feature.teachers.TeachersPreviewData
 import center.ui.components.CenterOneCanvas
 import center.ui.components.CenterOneMainNavigation
+import center.ui.components.LocalCenterOneLogo
 import center.ui.components.MainNavigation
 import center.ui.localization.AppLanguage
 import center.ui.localization.CenterOneLocalization
 import center.ui.theme.CenterOneTheme
+import org.jetbrains.compose.resources.painterResource
 
 @Composable
 fun App(root: RootComponent) {
@@ -39,28 +44,30 @@ fun App(root: RootComponent) {
     val stack by state
     var language by remember { mutableStateOf(AppLanguage.Arabic) }
     var teachers by remember(root) { mutableStateOf(TeachersPreviewData.state()) }
-    CenterOneLocalization(language) {
-        CenterOneTheme {
-            val route = stack.active.configuration
-            key(route) {
-                when (route.destination) {
-                    Destination.Dashboard -> DashboardRoute(root, language, onLanguageSelected = { language = it })
-                    Destination.Financials -> FinancialsRoute(root, route.shortcut)
-                    Destination.Students ->
-                        StudentsRoute(
-                            root,
-                            openAddStudent = route.shortcut == ReceptionShortcut.AddStudent,
-                            onLanguageSelected = { language = it },
-                        )
-                    Destination.Courses -> CoursesRoute(root)
-                    Destination.Teachers ->
-                        TeachersRoute(
-                            root,
-                            teachers,
-                            onStateChange = { update -> teachers = update(teachers) },
-                            onLanguageSelected = { language = it },
-                        )
-                    else -> SecondaryRoute(root, route.destination, language)
+    CompositionLocalProvider(LocalCenterOneLogo provides painterResource(Res.drawable.center_one_logo)) {
+        CenterOneLocalization(language) {
+            CenterOneTheme {
+                val route = stack.active.configuration
+                key(route) {
+                    when (route.destination) {
+                        Destination.Dashboard -> DashboardRoute(root, language, onLanguageSelected = { language = it })
+                        Destination.Financials -> FinancialsRoute(root, route.shortcut)
+                        Destination.Students ->
+                            StudentsRoute(
+                                root,
+                                openAddStudent = route.shortcut == ReceptionShortcut.AddStudent,
+                                onLanguageSelected = { language = it },
+                            )
+                        Destination.Courses -> CoursesRoute(root)
+                        Destination.Teachers ->
+                            TeachersRoute(
+                                root,
+                                teachers,
+                                onStateChange = { update -> teachers = update(teachers) },
+                                onLanguageSelected = { language = it },
+                            )
+                        else -> SecondaryRoute(root, route.destination, language)
+                    }
                 }
             }
         }

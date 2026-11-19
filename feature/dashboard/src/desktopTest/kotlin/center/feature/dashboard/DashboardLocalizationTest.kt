@@ -111,7 +111,7 @@ class DashboardLocalizationTest {
         }
 
     @Test
-    fun brandRendersSuppliedPainterAndOneLocalizedNameWithoutANumberPlaceholder() =
+    fun brandRendersSuppliedPainterWithLocalizedDescription() =
         runComposeUiTest {
             setContent {
                 CenterOneTheme {
@@ -122,6 +122,7 @@ class DashboardLocalizationTest {
             }
             onNodeWithContentDescription("Center One").assertIsDisplayed()
             onNodeWithText("سنتر ون").assertDoesNotExist()
+            onNodeWithText("Center One").assertDoesNotExist()
             onNodeWithText("1").assertDoesNotExist()
         }
 }
