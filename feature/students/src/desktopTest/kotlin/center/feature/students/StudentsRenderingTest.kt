@@ -7,6 +7,8 @@ import androidx.compose.ui.ImageComposeScene
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
+import center.ui.localization.AppLanguage
+import center.ui.localization.CenterOneLocalization
 import center.ui.theme.CenterOneTheme
 import java.nio.file.Files
 import java.nio.file.Path
@@ -22,6 +24,16 @@ class StudentsRenderingTest {
         capture("secondary", 1440, 960) { StudentsScreen(state.copy(stageFilter = StudentStageFilter.Secondary), {}) }
         capture("empty", 1440, 960) { StudentsScreen(state.copy(searchQuery = "missing"), {}) }
         capture("narrow", 800, 960) { StudentsScreen(state, {}) }
+    }
+
+    @Test
+    fun rendersOverdueTableInBothLanguages() {
+        val state = StudentsPreviewData.state().copy(stageFilter = StudentStageFilter.Overdue)
+        AppLanguage.entries.forEach { language ->
+            capture("overdue-${language.name}", 1440, 960) {
+                CenterOneLocalization(language) { StudentsScreen(state, {}) }
+            }
+        }
     }
 
     @Test
