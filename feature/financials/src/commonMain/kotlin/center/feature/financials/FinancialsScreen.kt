@@ -168,7 +168,7 @@ internal fun FinancialsContent(
                         }
                     }
                 }
-                FinancialsSidebar(state, onEvent, Modifier.width(sidebarWidth))
+                FinancialsSidebar(onEvent, Modifier.width(sidebarWidth))
             }
         }
     }

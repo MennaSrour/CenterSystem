@@ -10,6 +10,7 @@ kotlin {
     sourceSets.commonMain.dependencies {
         api(compose.material3)
         api(compose.foundation)
+        implementation(compose.materialIconsExtended)
         implementation(compose.components.resources)
     }
 }

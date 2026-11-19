@@ -6,7 +6,7 @@ enum class CourseStageFilter { All, Primary, Prep, Secondary }
 
 enum class CourseSystem { Arabic, Languages, Mixed }
 
-enum class CoursesDestination { Home, Students, Courses, Schedule, Financials, Reports, Settings }
+enum class CoursesDestination { Home, Students, Teachers, Courses, Schedule, Financials, Reports, Settings }
 
 enum class ScheduleDay { Saturday, Sunday, Monday, Tuesday, Wednesday, Thursday, Friday }
 

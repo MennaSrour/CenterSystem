@@ -15,20 +15,7 @@ class DashboardLocaleRenderingTest {
     @Test
     fun rendersSingleLanguageDashboardInBothDirections() {
         AppLanguage.entries.forEach { language ->
-            val state =
-                DashboardState(
-                    userName = DashboardText.DEMO_USER.text(language),
-                    dateLabel = DashboardText.DEMO_DATE.text(language),
-                    language = language,
-                    content =
-                        DashboardContent.Ready(
-                            listOf(
-                                DashboardStatistic(StatisticKind.Attendance, "420"),
-                                DashboardStatistic(StatisticKind.Revenue, "12,500"),
-                            ),
-                            listOf(RecentActivity("1", "أحمد محمد", "Ahmed Mohamed", "10234", "09:42", ActivityStatus.Completed)),
-                        ),
-                )
+            val state = DashboardPreviewData.state(language)
             val scene = ImageComposeScene(1440, 1100, Density(1f)) { CenterOneTheme { DashboardScreen(state, {}) } }
             try {
                 repeat(3) { frame -> scene.render(frame * 16_000_000L).close() }

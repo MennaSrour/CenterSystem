@@ -29,8 +29,32 @@ import org.jetbrains.compose.resources.stringResource
 
 /** Interactive UI fixture only; no financial operation or platform file picker runs here. */
 @Composable
-internal fun FinancialsRoute(root: RootComponent) {
-    var state by remember { mutableStateOf(FinancialsPreviewData.state()) }
+internal fun FinancialsRoute(
+    root: RootComponent,
+    shortcut: ReceptionShortcut?,
+) {
+    var state by remember(shortcut) {
+        val modal =
+            when (shortcut) {
+                is ReceptionShortcut.CollectSubscription -> {
+                    val student = FinancialsPreviewData.students.firstOrNull { it.code == shortcut.studentCode }
+                    FinancialsModal.ReceivePayment(
+                        ReceivePaymentState(
+                            studentQuery = student?.name.orEmpty(),
+                            studentResults = student?.let { listOf(it) } ?: FinancialsPreviewData.students,
+                            selectedStudentId = student?.id,
+                            classes = if (student != null) FinancialsPreviewData.classes else emptyList(),
+                        ),
+                    )
+                }
+                ReceptionShortcut.RecordExpense ->
+                    FinancialsModal.RecordExpense(
+                        RecordExpenseState(type = ExpenseType.Operational, teachers = FinancialsPreviewData.teachers),
+                    )
+                else -> FinancialsModal.Closed
+            }
+        mutableStateOf(FinancialsPreviewData.state().copy(modal = modal))
+    }
     val snackbar = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val unavailable = stringResource(Res.string.feature_unavailable)
@@ -161,7 +185,9 @@ internal fun FinancialsRoute(root: RootComponent) {
                         FinancialsDestination.Students -> root.navigate(Destination.Students)
                         FinancialsDestination.Reports -> root.navigate(Destination.Reports)
                         FinancialsDestination.Financials -> Unit
-                        FinancialsDestination.Schedule, FinancialsDestination.Settings -> notify(unavailable)
+                        FinancialsDestination.Teachers -> root.navigate(Destination.Teachers)
+                        FinancialsDestination.Settings -> root.navigate(Destination.Settings)
+                        FinancialsDestination.Schedule -> notify(unavailable)
                     }
                 FinancialsEvent.OpenNotifications, FinancialsEvent.RequestEnglish, FinancialsEvent.LogOut -> notify(unavailable)
             }

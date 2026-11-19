@@ -1,0 +1,78 @@
+package center.ui.components
+
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.MenuBook
+import androidx.compose.material.icons.outlined.AccountBalanceWallet
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.PeopleOutline
+import androidx.compose.material.icons.outlined.School
+import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.unit.dp
+import center.ui.localization.AppLanguage
+import center.ui.localization.CenterOneLocalization
+import center.ui.localization.LocalAppLanguage
+import center.ui.localization.LocalizedText
+import center.ui.theme.White
+
+enum class MainNavigation(
+    private val label: LocalizedText,
+    internal val icon: ImageVector,
+) {
+    Reception(LocalizedText("الاستقبال", "Reception"), Icons.Outlined.Home),
+    Students(LocalizedText("الطلاب", "Students"), Icons.Outlined.PeopleOutline),
+    Teachers(LocalizedText("المدرسين", "Teachers"), Icons.Outlined.School),
+    Courses(LocalizedText("المجموعات", "Courses"), Icons.AutoMirrored.Outlined.MenuBook),
+    Treasury(LocalizedText("الخزنة", "Treasury"), Icons.Outlined.AccountBalanceWallet),
+    Settings(LocalizedText("الإعدادات", "Settings"), Icons.Outlined.Settings),
+    ;
+
+    fun label(language: AppLanguage): String = label.resolve(language)
+}
+
+@Composable
+fun CenterOneMainNavigation(
+    selected: MainNavigation?,
+    onNavigate: (MainNavigation) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val language = LocalAppLanguage.current
+    CenterOneLocalization(language) {
+        CenterOneSidebar(
+            modifier = modifier,
+            header = {
+                CenterOneBrand("سنتر ون", "Center One")
+                HorizontalDivider(color = White.copy(alpha = 0.12f))
+            },
+            footer = {
+                IconButton(onClick = { onNavigate(MainNavigation.Settings) }) {
+                    Icon(
+                        MainNavigation.Settings.icon,
+                        contentDescription = MainNavigation.Settings.label(language),
+                        modifier = Modifier.size(20.dp),
+                        tint = White,
+                    )
+                }
+            },
+        ) {
+            MainNavigation.entries.forEach { destination ->
+                if (destination != MainNavigation.Settings) {
+                    CenterOneNavigationItem(
+                        title = destination.label(AppLanguage.Arabic),
+                        subtitle = destination.label(AppLanguage.English),
+                        selected = destination == selected,
+                        onClick = { onNavigate(destination) },
+                        icon = { Icon(destination.icon, contentDescription = null, modifier = Modifier.size(22.dp)) },
+                        contentColor = White,
+                    )
+                }
+            }
+        }
+    }
+}

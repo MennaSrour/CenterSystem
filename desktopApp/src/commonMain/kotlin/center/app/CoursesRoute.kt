@@ -223,7 +223,9 @@ internal fun CoursesRoute(root: RootComponent) {
                         CoursesDestination.Financials -> root.navigate(Destination.Financials)
                         CoursesDestination.Reports -> root.navigate(Destination.Reports)
                         CoursesDestination.Courses -> Unit
-                        CoursesDestination.Schedule, CoursesDestination.Settings -> notify(unavailable)
+                        CoursesDestination.Teachers -> root.navigate(Destination.Teachers)
+                        CoursesDestination.Settings -> root.navigate(Destination.Settings)
+                        CoursesDestination.Schedule -> notify(unavailable)
                     }
                 CoursesEvent.OpenNotifications, CoursesEvent.RequestEnglish, CoursesEvent.LogOut -> notify(unavailable)
             }
