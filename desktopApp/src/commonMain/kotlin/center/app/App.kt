@@ -1,26 +1,32 @@
 package center.app
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.unit.LayoutDirection
-import center.app.resources.Res
-import center.app.resources.home
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import center.feature.billing.BillingScreen
+import center.feature.dashboard.DashboardText
 import center.feature.reception.ReceptionScreen
 import center.feature.reports.ReportsScreen
+import center.ui.components.CenterOneMainNavigation
+import center.ui.components.MainNavigation
 import center.ui.localization.AppLanguage
+import center.ui.localization.CenterOneLocalization
 import center.ui.theme.CenterOneTheme
-import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun App(root: RootComponent) {
@@ -31,41 +37,50 @@ fun App(root: RootComponent) {
     }
     val stack by state
     var language by remember { mutableStateOf(AppLanguage.Arabic) }
-    CenterOneTheme {
-        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
-            if (stack.active.instance == Destination.Dashboard) {
-                DashboardRoute(root, language, onLanguageSelected = { language = it })
-            } else if (stack.active.instance == Destination.Financials) {
-                FinancialsRoute(root)
-            } else if (stack.active.instance == Destination.Students) {
-                StudentsRoute(root)
-            } else if (stack.active.instance == Destination.Courses) {
-                CoursesRoute(root)
-            } else {
-                Column {
-                    Row {
-                        Destination.entries.forEach { destination ->
-                            TextButton(onClick = { root.navigate(destination) }) {
-                                Text(
-                                    if (destination ==
-                                        Destination.Dashboard
-                                    ) {
-                                        stringResource(Res.string.home)
-                                    } else {
-                                        destination.name
-                                    },
-                                )
-                            }
-                        }
-                    }
-                    when (stack.active.instance) {
-                        Destination.Dashboard, Destination.Financials, Destination.Students, Destination.Courses -> Unit
-                        Destination.Reception -> ReceptionScreen()
-                        Destination.Billing -> BillingScreen()
-                        Destination.Reports -> ReportsScreen()
-                    }
+    CenterOneLocalization(language) {
+        CenterOneTheme {
+            val route = stack.active.configuration
+            key(route) {
+                when (route.destination) {
+                    Destination.Dashboard -> DashboardRoute(root, language, onLanguageSelected = { language = it })
+                    Destination.Financials -> FinancialsRoute(root, route.shortcut)
+                    Destination.Students -> StudentsRoute(root, openAddStudent = route.shortcut == ReceptionShortcut.AddStudent)
+                    Destination.Courses -> CoursesRoute(root)
+                    else -> SecondaryRoute(root, route.destination, language)
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun SecondaryRoute(
+    root: RootComponent,
+    destination: Destination,
+    language: AppLanguage,
+) {
+    val selected =
+        when (destination) {
+            Destination.Reception -> MainNavigation.Reception
+            Destination.Teachers -> MainNavigation.Teachers
+            Destination.Settings -> MainNavigation.Settings
+            else -> null
+        }
+    val sidebar: @Composable () -> Unit = { CenterOneMainNavigation(selected, root::navigate, Modifier.width(232.dp)) }
+    Row(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+        if (language == AppLanguage.English) sidebar()
+        Column(Modifier.weight(1f).padding(24.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            when (destination) {
+                Destination.Reception -> ReceptionScreen()
+                Destination.Billing -> BillingScreen()
+                Destination.Reports -> ReportsScreen()
+                Destination.Teachers, Destination.Settings -> {
+                    Text(requireNotNull(selected).label(language), style = MaterialTheme.typography.headlineLarge)
+                    Text(DashboardText.FEATURE_UNAVAILABLE.text(language), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                else -> Unit
+            }
+        }
+        if (language == AppLanguage.Arabic) sidebar()
     }
 }

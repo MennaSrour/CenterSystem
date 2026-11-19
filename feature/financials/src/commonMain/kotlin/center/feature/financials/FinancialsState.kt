@@ -4,7 +4,7 @@ enum class FinancialLog { Income, Expense }
 
 enum class ExpenseType { TeacherPayout, Operational }
 
-enum class FinancialsDestination { Home, Students, Courses, Schedule, Financials, Reports, Settings }
+enum class FinancialsDestination { Home, Students, Teachers, Courses, Schedule, Financials, Reports, Settings }
 
 data class FinancialSummary(
     val todayInflow: String,

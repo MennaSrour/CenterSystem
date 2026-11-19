@@ -16,4 +16,19 @@ class RootComponentTest {
             assertEquals(0, root.stack.value.backStack.size)
         }
     }
+
+    @Test
+    fun receptionShortcutsCarryTheirInitialActionWithoutGrowingTheStack() {
+        val root = RootComponent(DefaultComponentContext(LifecycleRegistry()))
+        val payment = ReceptionShortcut.CollectSubscription("10234")
+        root.open(payment)
+        assertEquals(AppRoute(Destination.Financials, payment), root.stack.value.active.configuration)
+        root.open(ReceptionShortcut.RecordExpense)
+        assertEquals(AppRoute(Destination.Financials, ReceptionShortcut.RecordExpense), root.stack.value.active.configuration)
+        root.open(ReceptionShortcut.AddStudent)
+        assertEquals(AppRoute(Destination.Students, ReceptionShortcut.AddStudent), root.stack.value.active.configuration)
+        root.navigate(Destination.Students)
+        assertEquals(AppRoute(Destination.Students), root.stack.value.active.configuration)
+        assertEquals(0, root.stack.value.backStack.size)
+    }
 }

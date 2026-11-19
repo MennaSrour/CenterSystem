@@ -1,27 +1,34 @@
 package center.feature.dashboard
 
+import center.ui.components.MainNavigation
 import center.ui.localization.AppLanguage
 
 sealed interface DashboardEvent {
-    data class StudentCodeChanged(
+    data class QueryChanged(
         val value: String,
     ) : DashboardEvent
 
-    data object SubmitCheckIn : DashboardEvent
+    data object Search : DashboardEvent
 
-    data object Retry : DashboardEvent
+    data class RegisterAttendance(
+        val studentCode: String,
+    ) : DashboardEvent
 
-    data object ViewAllActivity : DashboardEvent
+    data class PaySubscription(
+        val studentCode: String,
+    ) : DashboardEvent
 
-    data object OpenNotifications : DashboardEvent
+    data object AddStudent : DashboardEvent
+
+    data object CollectSubscription : DashboardEvent
+
+    data object RecordExpense : DashboardEvent
 
     data class LanguageSelected(
         val language: AppLanguage,
     ) : DashboardEvent
 
-    data object LogOut : DashboardEvent
-
     data class Navigate(
-        val destination: DashboardDestination,
+        val destination: MainNavigation,
     ) : DashboardEvent
 }

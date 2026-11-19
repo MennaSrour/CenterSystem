@@ -1,62 +1,45 @@
 package center.feature.dashboard
 
 import center.ui.localization.AppLanguage
+import center.ui.localization.LocalizedText
 
 data class DashboardState(
-    val userName: String,
-    val dateLabel: String,
-    val content: DashboardContent = DashboardContent.Loading,
-    val studentCode: String = "",
-    val checkIn: CheckInState = CheckInState.Idle,
-    val isOnline: Boolean = true,
+    val attendance: String,
+    val treasury: String,
+    val query: String = "",
+    val student: QuickStudent? = null,
+    val searchSubmitted: Boolean = false,
     val language: AppLanguage = AppLanguage.Arabic,
-) {
-    val canCheckIn: Boolean get() = studentCode.isNotBlank() && checkIn !is CheckInState.Submitting
-}
-
-sealed interface DashboardContent {
-    data object Loading : DashboardContent
-
-    data class Failure(
-        val message: String,
-    ) : DashboardContent
-
-    data class Ready(
-        val statistics: List<DashboardStatistic>,
-        val activities: List<RecentActivity>,
-    ) : DashboardContent
-}
-
-sealed interface CheckInState {
-    data object Idle : CheckInState
-
-    data object Submitting : CheckInState
-
-    data class Failure(
-        val message: String,
-    ) : CheckInState
-
-    data class Success(
-        val message: String,
-    ) : CheckInState
-}
-
-enum class StatisticKind { Attendance, Revenue, PendingMessages, Groups }
-
-data class DashboardStatistic(
-    val kind: StatisticKind,
-    val formattedValue: String,
 )
 
-enum class ActivityStatus { Completed, Pending }
-
-data class RecentActivity(
-    val id: String,
-    val studentName: String,
-    val englishName: String,
-    val studentCode: String,
-    val formattedTime: String,
-    val status: ActivityStatus,
+data class QuickStudent(
+    val code: String,
+    val name: LocalizedText,
+    val grade: LocalizedText,
+    val paymentStatus: PaymentStatus,
 )
 
-enum class DashboardDestination { Home, Students, Courses, Schedule, Payments, Reports, Settings }
+enum class PaymentStatus { Paid, Overdue }
+
+object DashboardPreviewData {
+    val student =
+        QuickStudent(
+            code = "10234",
+            name = LocalizedText("يوسف أحمد", "Youssef Ahmed"),
+            grade = LocalizedText("الصف الثالث الثانوي", "Grade 12"),
+            paymentStatus = PaymentStatus.Overdue,
+        )
+
+    fun state(language: AppLanguage = AppLanguage.Arabic) =
+        DashboardState(attendance = "42", treasury = "8,300", student = student, language = language)
+
+    fun findStudent(query: String): QuickStudent? {
+        if (query.isBlank()) return null
+        val normalized = query.trim().map { char -> char.digitToIntOrNull()?.digitToChar() ?: char }.joinToString("")
+        return student.takeIf {
+            it.code == normalized ||
+                it.name.arabic.contains(normalized) ||
+                it.name.english.contains(normalized, ignoreCase = true)
+        }
+    }
+}

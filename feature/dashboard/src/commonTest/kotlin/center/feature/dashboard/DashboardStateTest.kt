@@ -1,38 +1,21 @@
 package center.feature.dashboard
 
 import kotlin.test.Test
-import kotlin.test.assertFalse
-import kotlin.test.assertTrue
+import kotlin.test.assertEquals
+import kotlin.test.assertNull
 
 class DashboardStateTest {
     @Test
-    fun blankCodesCannotBeSubmitted() {
-        listOf("", " ", "\t\n").forEach { code ->
-            assertFalse(DashboardState(userName = "", dateLabel = "", studentCode = code).canCheckIn)
+    fun fixtureSearchAcceptsBarcodeAndEitherStudentName() {
+        listOf("10234", " ١٠٢٣٤ ", "Youssef", "يوسف").forEach { query ->
+            assertEquals(DashboardPreviewData.student, DashboardPreviewData.findStudent(query))
         }
     }
 
     @Test
-    fun validCodeCanBeSubmittedAfterAnError() {
-        val state =
-            DashboardState(
-                userName = "",
-                dateLabel = "",
-                studentCode = "10234",
-                checkIn = CheckInState.Failure("Try again"),
-            )
-        assertTrue(state.canCheckIn)
-    }
-
-    @Test
-    fun inFlightSubmissionDisablesDuplicateRequests() {
-        val state =
-            DashboardState(
-                userName = "",
-                dateLabel = "",
-                studentCode = "10234",
-                checkIn = CheckInState.Submitting,
-            )
-        assertFalse(state.canCheckIn)
+    fun fixtureSearchRejectsBlankAndUnknownQueries() {
+        listOf("", " ", "1023", "missing").forEach { query ->
+            assertNull(DashboardPreviewData.findStudent(query))
+        }
     }
 }

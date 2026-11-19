@@ -26,8 +26,13 @@ import org.jetbrains.compose.resources.stringResource
 
 /** UI-only composition boundary. Replace with lifecycle-owned state when connecting domain operations. */
 @Composable
-internal fun StudentsRoute(root: RootComponent) {
-    var state by remember { mutableStateOf(StudentsPreviewData.state()) }
+internal fun StudentsRoute(
+    root: RootComponent,
+    openAddStudent: Boolean,
+) {
+    var state by remember(openAddStudent) {
+        mutableStateOf(StudentsPreviewData.state().copy(addStudent = if (openAddStudent) StudentsPreviewData.addStudent() else null))
+    }
     val snackbar = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val unavailable = stringResource(Res.string.feature_unavailable)
@@ -101,7 +106,9 @@ internal fun StudentsRoute(root: RootComponent) {
                         StudentsDestination.Financials -> root.navigate(Destination.Financials)
                         StudentsDestination.Reports -> root.navigate(Destination.Reports)
                         StudentsDestination.Students -> Unit
-                        StudentsDestination.Schedule, StudentsDestination.Settings -> notify(unavailable)
+                        StudentsDestination.Teachers -> root.navigate(Destination.Teachers)
+                        StudentsDestination.Settings -> root.navigate(Destination.Settings)
+                        StudentsDestination.Schedule -> notify(unavailable)
                     }
                 StudentsEvent.OpenNotifications, StudentsEvent.RequestEnglish, StudentsEvent.LogOut -> notify(unavailable)
             }
