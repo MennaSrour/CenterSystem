@@ -1,6 +1,7 @@
 package center.feature.students
 
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsNotEnabled
@@ -12,7 +13,10 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.runComposeUiTest
+import androidx.compose.ui.test.runDesktopComposeUiTest
 import androidx.compose.ui.unit.LayoutDirection
+import center.ui.localization.AppLanguage
+import center.ui.localization.CenterOneLocalization
 import center.ui.theme.CenterOneTheme
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -73,5 +77,41 @@ class StudentsInteractionTest {
             runOnIdle { assertEquals(StudentsEvent.EditStudent("student-1"), events.last()) }
             onNodeWithContentDescription("حذف أحمد محمد علي").performClick()
             runOnIdle { assertEquals(StudentsEvent.DeleteStudent("student-1"), events.last()) }
+        }
+
+    @Test
+    fun overdueTabAndActionsEmitStableIdsFromTheFilteredTable() =
+        runDesktopComposeUiTest(1440, 1000) {
+            val state = mutableStateOf(StudentsPreviewData.state().copy(searchQuery = "ST-10234"))
+            val events = mutableListOf<StudentsEvent>()
+            setContent {
+                CenterOneTheme {
+                    CenterOneLocalization(AppLanguage.English) {
+                        StudentsScreen(state.value, { event ->
+                            events += event
+                            if (event is StudentsEvent.StageSelected) state.value = state.value.copy(stageFilter = event.filter)
+                        })
+                    }
+                }
+            }
+            onNodeWithText("Overdue").performScrollTo().performClick()
+            onNodeWithText("Ahmed Mohamed").assertExists()
+            onNodeWithText("Sara Mahmoud").assertDoesNotExist()
+            onNodeWithText("Remind All").performScrollTo().performClick()
+            onNodeWithText("Send Reminder").performScrollTo().performClick()
+            onNodeWithText("Pay Now").performScrollTo().performClick()
+            runOnIdle {
+                assertEquals(
+                    listOf(
+                        StudentsEvent.StageSelected(StudentStageFilter.Overdue),
+                        StudentsEvent.RemindAll(listOf("student-1")),
+                        StudentsEvent.SendReminder("student-1"),
+                        StudentsEvent.PayNow("payment-1"),
+                    ),
+                    events,
+                )
+            }
+            runOnIdle { state.value = state.value.copy(searchQuery = "no matches") }
+            onNodeWithText("Remind All").assertIsNotEnabled()
         }
 }

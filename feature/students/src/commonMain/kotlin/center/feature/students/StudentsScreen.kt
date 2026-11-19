@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Notifications
@@ -23,9 +24,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -34,11 +33,9 @@ import androidx.compose.ui.unit.dp
 import center.feature.students.resources.Res
 import center.feature.students.resources.add_student
 import center.feature.students.resources.all_grades
-import center.feature.students.resources.arabic
 import center.feature.students.resources.directory
 import center.feature.students.resources.directory_subtitle
 import center.feature.students.resources.displayed_count
-import center.feature.students.resources.english
 import center.feature.students.resources.filter_all
 import center.feature.students.resources.filter_prep
 import center.feature.students.resources.filter_primary
@@ -53,12 +50,19 @@ import center.ui.components.CenterOneCard
 import center.ui.components.CenterOneDropdown
 import center.ui.components.CenterOneDropdownOption
 import center.ui.components.CenterOneIconButton
+import center.ui.components.CenterOneLanguageToggle
 import center.ui.components.CenterOnePageHeader
 import center.ui.components.CenterOnePillTabs
 import center.ui.components.CenterOnePrimaryButton
+import center.ui.components.CenterOneTag
 import center.ui.components.CenterOneTextField
+import center.ui.localization.AppLanguage
+import center.ui.localization.CenterOneLocalization
+import center.ui.localization.LocalAppLanguage
 import center.ui.theme.CenterOneSpacing
 import center.ui.theme.Navy
+import center.ui.theme.Rose
+import center.ui.theme.White
 import org.jetbrains.compose.resources.stringResource
 
 @Composable
@@ -67,7 +71,7 @@ fun StudentsScreen(
     onEvent: (StudentsEvent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+    CenterOneLocalization(LocalAppLanguage.current) {
         Box(modifier.fillMaxSize()) {
             StudentsContent(state, onEvent)
             state.addStudent?.let { form ->
@@ -88,7 +92,10 @@ internal fun StudentsContent(
         BoxWithConstraints(Modifier.fillMaxSize()) {
             val contentWidth = maxOf(maxWidth, 1180.dp)
             val sidebarWidth = if (contentWidth >= 1600.dp) 300.dp else 250.dp
+            val direction = LocalLayoutDirection.current
+            val sidebar: @Composable () -> Unit = { StudentsSidebar(onEvent, Modifier.width(sidebarWidth)) }
             Row(Modifier.horizontalScroll(rememberScrollState()).width(contentWidth)) {
+                if (direction == LayoutDirection.Ltr) sidebar()
                 Column(Modifier.weight(1f)) {
                     StudentsHeader(state, onEvent)
                     HorizontalDivider(color = MaterialTheme.colorScheme.outline)
@@ -114,41 +121,74 @@ internal fun StudentsContent(
                         }
                         item { StudentsStats(state.summary, Modifier.fillMaxWidth()) }
                         item {
+                            val overdue = state.stageFilter == StudentStageFilter.Overdue
+                            val overdueRows = if (overdue) state.visibleOverdueRows else emptyList()
                             CenterOneCard(Modifier.fillMaxWidth()) {
                                 Column(
                                     Modifier.fillMaxWidth().padding(CenterOneSpacing.Large),
                                     verticalArrangement = Arrangement.spacedBy(16.dp),
                                 ) {
-                                    CenterOnePillTabs(
-                                        labels =
-                                            listOf(
-                                                stringResource(Res.string.filter_all, state.summary.total),
-                                                stringResource(Res.string.filter_primary, state.summary.primary),
-                                                stringResource(Res.string.filter_prep, state.summary.prep),
-                                                stringResource(Res.string.filter_secondary, state.summary.secondary),
-                                            ),
-                                        selectedIndex = StudentStageFilter.entries.indexOf(state.stageFilter),
-                                        onSelected = { onEvent(StudentsEvent.StageSelected(StudentStageFilter.entries[it])) },
-                                        modifier = Modifier.fillMaxWidth(),
-                                    )
-                                    StudentsActionBar(state, onEvent)
+                                    StudentsFilters(state, onEvent)
+                                    if (overdue) {
+                                        OverdueActions(state.searchQuery, overdueRows, onEvent)
+                                    } else {
+                                        StudentsActionBar(state, onEvent)
+                                    }
                                 }
-                                StudentsDataGrid(state.visibleStudents, state.grades, onEvent, Modifier.fillMaxWidth())
-                                HorizontalDivider(color = MaterialTheme.colorScheme.outline)
-                                Text(
-                                    stringResource(Res.string.displayed_count, state.visibleStudents.size.toString()),
-                                    Modifier.padding(CenterOneSpacing.Medium),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
+                                if (overdue) {
+                                    OverdueStudentsTable(overdueRows, onEvent, Modifier.fillMaxWidth())
+                                } else {
+                                    val visible = state.visibleStudents
+                                    StudentsDataGrid(visible, state.grades, onEvent, Modifier.fillMaxWidth())
+                                    HorizontalDivider(color = MaterialTheme.colorScheme.outline)
+                                    Text(
+                                        stringResource(Res.string.displayed_count, visible.size.toString()),
+                                        Modifier.padding(CenterOneSpacing.Medium),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
                             }
                         }
                     }
                 }
-                StudentsSidebar(onEvent = onEvent, modifier = Modifier.width(sidebarWidth))
+                if (direction == LayoutDirection.Rtl) sidebar()
             }
         }
     }
+}
+
+@Composable
+private fun StudentsFilters(
+    state: StudentsState,
+    onEvent: (StudentsEvent) -> Unit,
+) {
+    val language = LocalAppLanguage.current
+    val summary = state.summary
+    val stageLabels =
+        if (language == AppLanguage.Arabic) {
+            listOf(
+                stringResource(Res.string.filter_all, summary.total),
+                stringResource(Res.string.filter_primary, summary.primary),
+                stringResource(Res.string.filter_prep, summary.prep),
+                stringResource(Res.string.filter_secondary, summary.secondary),
+            )
+        } else {
+            listOf("All (${summary.total})", "Primary (${summary.primary})", "Prep (${summary.prep})", "Secondary (${summary.secondary})")
+        }
+    val tabs = StudentStageFilter.entries
+    val overdueCount = state.overdueRows.distinctBy { it.student.id }.size
+    CenterOnePillTabs(
+        labels = stageLabels + OverdueText.Tab.label(language),
+        selectedIndex = tabs.indexOf(state.stageFilter),
+        onSelected = { onEvent(StudentsEvent.StageSelected(tabs[it])) },
+        modifier = Modifier.fillMaxWidth(),
+        badge = { index ->
+            if (tabs[index] == StudentStageFilter.Overdue) {
+                CenterOneTag(overdueCount.toString(), Modifier.background(White, CircleShape), color = Rose)
+            }
+        },
+    )
 }
 
 @Composable
@@ -209,14 +249,7 @@ private fun StudentsHeader(
     onEvent: (StudentsEvent) -> Unit,
 ) {
     CenterOnePageHeader(stringResource(Res.string.students_title), stringResource(Res.string.students_title_en), state.dateLabel) {
-        Surface(
-            shape = MaterialTheme.shapes.small,
-            color = MaterialTheme.colorScheme.secondary,
-            contentColor = MaterialTheme.colorScheme.primary,
-        ) {
-            Text(stringResource(Res.string.arabic), Modifier.padding(12.dp), style = MaterialTheme.typography.labelLarge)
-        }
-        TextButton(onClick = { onEvent(StudentsEvent.RequestEnglish) }) { Text(stringResource(Res.string.english)) }
+        CenterOneLanguageToggle(LocalAppLanguage.current, { onEvent(StudentsEvent.LanguageSelected(it)) })
         CenterOneIconButton(
             Icons.Outlined.Notifications,
             stringResource(Res.string.notifications),

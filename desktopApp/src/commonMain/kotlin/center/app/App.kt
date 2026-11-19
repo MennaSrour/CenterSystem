@@ -46,7 +46,12 @@ fun App(root: RootComponent) {
                 when (route.destination) {
                     Destination.Dashboard -> DashboardRoute(root, language, onLanguageSelected = { language = it })
                     Destination.Financials -> FinancialsRoute(root, route.shortcut)
-                    Destination.Students -> StudentsRoute(root, openAddStudent = route.shortcut == ReceptionShortcut.AddStudent)
+                    Destination.Students ->
+                        StudentsRoute(
+                            root,
+                            openAddStudent = route.shortcut == ReceptionShortcut.AddStudent,
+                            onLanguageSelected = { language = it },
+                        )
                     Destination.Courses -> CoursesRoute(root)
                     Destination.Teachers ->
                         TeachersRoute(

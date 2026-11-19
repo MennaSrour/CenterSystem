@@ -1,5 +1,7 @@
 package center.feature.students
 
+import center.ui.localization.AppLanguage
+
 sealed interface StudentsEvent {
     data class StageSelected(
         val filter: StudentStageFilter,
@@ -61,7 +63,21 @@ sealed interface StudentsEvent {
 
     data object OpenNotifications : StudentsEvent
 
-    data object RequestEnglish : StudentsEvent
+    data class LanguageSelected(
+        val language: AppLanguage,
+    ) : StudentsEvent
+
+    data class SendReminder(
+        val studentId: String,
+    ) : StudentsEvent
+
+    data class RemindAll(
+        val studentIds: List<String>,
+    ) : StudentsEvent
+
+    data class PayNow(
+        val paymentId: String,
+    ) : StudentsEvent
 
     data object LogOut : StudentsEvent
 }

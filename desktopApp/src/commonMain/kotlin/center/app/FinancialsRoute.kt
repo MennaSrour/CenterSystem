@@ -47,6 +47,18 @@ internal fun FinancialsRoute(
                         ),
                     )
                 }
+                is ReceptionShortcut.PayOverdue ->
+                    FinancialsModal.ReceivePayment(
+                        ReceivePaymentState(
+                            studentQuery = shortcut.student.name,
+                            studentResults = listOf(shortcut.student),
+                            selectedStudentId = shortcut.student.id,
+                            classes = listOf(shortcut.group),
+                            selectedClassId = shortcut.group.id,
+                            amount = shortcut.remainingEgp.toString(),
+                            canConfirm = true,
+                        ),
+                    )
                 ReceptionShortcut.RecordExpense ->
                     FinancialsModal.RecordExpense(
                         RecordExpenseState(type = ExpenseType.Operational, teachers = FinancialsPreviewData.teachers),
@@ -60,6 +72,10 @@ internal fun FinancialsRoute(
     val unavailable = stringResource(Res.string.feature_unavailable)
     val notSaved = stringResource(Res.string.financial_demo_not_saved)
     val attachmentUnavailable = stringResource(Res.string.financial_attachment_unavailable)
+
+    val overdue = shortcut as? ReceptionShortcut.PayOverdue
+    val studentOptions = overdue?.let { listOf(it.student) } ?: FinancialsPreviewData.students
+    val classOptions = overdue?.let { listOf(it.group) } ?: FinancialsPreviewData.classes
 
     fun payment(edit: (ReceivePaymentState) -> ReceivePaymentState) {
         val modal = state.modal as? FinancialsModal.ReceivePayment ?: return
@@ -86,13 +102,14 @@ internal fun FinancialsRoute(
                 FinancialsEvent.OpenRecordExpense ->
                     state =
                         state.copy(modal = FinancialsModal.RecordExpense(FinancialsPreviewData.recordExpense()))
-                FinancialsEvent.DismissModal -> state = state.copy(modal = FinancialsModal.Closed)
+                FinancialsEvent.DismissModal ->
+                    if (overdue != null) root.navigate(Destination.Financials) else state = state.copy(modal = FinancialsModal.Closed)
                 is FinancialsEvent.StudentQueryChanged ->
                     payment { form ->
                         form.copy(
                             studentQuery = event.value,
                             studentResults =
-                                FinancialsPreviewData.students.filter {
+                                studentOptions.filter {
                                     it.name.contains(event.value) ||
                                         it.code.contains(event.value)
                                 },
@@ -111,7 +128,7 @@ internal fun FinancialsRoute(
                         } else {
                             form.copy(
                                 selectedStudentId = event.id,
-                                classes = FinancialsPreviewData.classes,
+                                classes = classOptions,
                                 selectedClassId = null,
                                 classMenuExpanded = false,
                                 split = null,

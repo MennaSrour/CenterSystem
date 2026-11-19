@@ -16,12 +16,20 @@ import center.app.resources.Res
 import center.app.resources.feature_unavailable
 import center.app.resources.student_demo_not_saved
 import center.app.resources.student_row_action_unavailable
+import center.feature.financials.ClassOption
+import center.feature.financials.StudentOption
 import center.feature.students.AddStudentState
 import center.feature.students.StudentsDestination
 import center.feature.students.StudentsEvent
 import center.feature.students.StudentsPreviewData
 import center.feature.students.StudentsScreen
+import center.ui.localization.AppLanguage
+import center.ui.localization.LocalAppLanguage
+import center.ui.localization.LocalizedText
 import kotlinx.coroutines.launch
+import kotlinx.datetime.Clock
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.todayIn
 import org.jetbrains.compose.resources.stringResource
 
 /** UI-only composition boundary. Replace with lifecycle-owned state when connecting domain operations. */
@@ -29,15 +37,19 @@ import org.jetbrains.compose.resources.stringResource
 internal fun StudentsRoute(
     root: RootComponent,
     openAddStudent: Boolean,
+    onLanguageSelected: (AppLanguage) -> Unit,
 ) {
     var state by remember(openAddStudent) {
-        mutableStateOf(StudentsPreviewData.state().copy(addStudent = if (openAddStudent) StudentsPreviewData.addStudent() else null))
+        val today = Clock.System.todayIn(TimeZone.of("Africa/Cairo"))
+        mutableStateOf(StudentsPreviewData.state(today).copy(addStudent = if (openAddStudent) StudentsPreviewData.addStudent() else null))
     }
     val snackbar = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val unavailable = stringResource(Res.string.feature_unavailable)
     val notSaved = stringResource(Res.string.student_demo_not_saved)
     val rowActionUnavailable = stringResource(Res.string.student_row_action_unavailable)
+    val language = LocalAppLanguage.current
+    val reminderDemo = LocalizedText("تذكير تجريبي. لم تُرسل رسائل.", "Demo reminder. No messages were sent.").resolve(language)
 
     fun editForm(edit: (AddStudentState) -> AddStudentState) {
         val form = state.addStudent ?: return
@@ -110,7 +122,19 @@ internal fun StudentsRoute(
                         StudentsDestination.Settings -> root.navigate(Destination.Settings)
                         StudentsDestination.Schedule -> notify(unavailable)
                     }
-                StudentsEvent.OpenNotifications, StudentsEvent.RequestEnglish, StudentsEvent.LogOut -> notify(unavailable)
+                is StudentsEvent.SendReminder, is StudentsEvent.RemindAll -> notify(reminderDemo)
+                is StudentsEvent.PayNow ->
+                    state.visibleOverdueRows.firstOrNull { it.payment.id == event.paymentId }?.let { (student, payment) ->
+                        root.open(
+                            ReceptionShortcut.PayOverdue(
+                                student = StudentOption(student.id, student.name, student.code),
+                                group = ClassOption(payment.groupId, payment.group.resolve(language)),
+                                remainingEgp = payment.remainingEgp,
+                            ),
+                        )
+                    }
+                is StudentsEvent.LanguageSelected -> onLanguageSelected(event.language)
+                StudentsEvent.OpenNotifications, StudentsEvent.LogOut -> notify(unavailable)
             }
         })
         SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter))

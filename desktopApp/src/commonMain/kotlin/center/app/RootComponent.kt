@@ -1,5 +1,7 @@
 package center.app
 
+import center.feature.financials.ClassOption
+import center.feature.financials.StudentOption
 import center.ui.components.MainNavigation
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.decompose.router.stack.StackNavigation
@@ -13,6 +15,12 @@ sealed interface ReceptionShortcut {
 
     data class CollectSubscription(
         val studentCode: String? = null,
+    ) : ReceptionShortcut
+
+    data class PayOverdue(
+        val student: StudentOption,
+        val group: ClassOption,
+        val remainingEgp: Long,
     ) : ReceptionShortcut
 
     data object RecordExpense : ReceptionShortcut
@@ -56,7 +64,8 @@ class RootComponent(
         val destination =
             when (shortcut) {
                 ReceptionShortcut.AddStudent -> Destination.Students
-                is ReceptionShortcut.CollectSubscription, ReceptionShortcut.RecordExpense -> Destination.Financials
+                is ReceptionShortcut.CollectSubscription, is ReceptionShortcut.PayOverdue, ReceptionShortcut.RecordExpense ->
+                    Destination.Financials
             }
         navigation.replaceCurrent(AppRoute(destination, shortcut))
     }

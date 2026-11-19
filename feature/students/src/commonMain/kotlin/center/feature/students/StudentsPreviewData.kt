@@ -1,5 +1,8 @@
 package center.feature.students
 
+import center.ui.localization.LocalizedText
+import kotlinx.datetime.LocalDate
+
 /** Screenshot fixtures only. No row or ID represents a newly registered student. */
 object StudentsPreviewData {
     val grades =
@@ -14,12 +17,43 @@ object StudentsPreviewData {
             StudentGrade("secondary-3", "الثالث الثانوي", EducationStage.Secondary),
         )
 
-    fun state() =
+    fun state(asOf: LocalDate = LocalDate(2026, 10, 12)) =
         StudentsState(
             summary = StudentsSummary("248", "95", "81", "72"),
             userName = "نور أحمد",
             dateLabel = "عرض تجريبي — بيانات توضيحية",
             grades = grades,
+            asOf = asOf,
+            monthlyPayments =
+                listOf(
+                    StudentMonthlyPayment(
+                        "payment-1",
+                        "student-1",
+                        "physics-12-a",
+                        LocalizedText("فيزياء · ثالثة ثانوي أ", "Physics · Grade 12 A"),
+                        LocalizedText("كريم عادل", "Karim Adel"),
+                        asOf,
+                        200,
+                    ),
+                    StudentMonthlyPayment(
+                        "payment-2",
+                        "student-2",
+                        "math-8-b",
+                        LocalizedText("رياضيات · ثانية إعدادي ب", "Mathematics · Grade 8 B"),
+                        LocalizedText("نهى حسن", "Noha Hassan"),
+                        asOf,
+                        180,
+                    ),
+                    StudentMonthlyPayment(
+                        "payment-3",
+                        "student-3",
+                        "english-10-a",
+                        LocalizedText("إنجليزي · أولى ثانوي أ", "English · Grade 10 A"),
+                        LocalizedText("هبة سامي", "Heba Sami"),
+                        asOf,
+                        0,
+                    ),
+                ),
             students =
                 listOf(
                     StudentRow(

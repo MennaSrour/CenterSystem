@@ -1,5 +1,6 @@
 package center.feature.students
 
+import kotlinx.datetime.LocalDate
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -33,5 +34,26 @@ class StudentsStateTest {
         val unknown = state.students.first().copy(id = "unknown", gradeId = "missing")
         assertTrue(primary.copy(students = listOf(unknown)).visibleStudents.isEmpty())
         assertEquals(listOf(unknown), state.copy(students = listOf(unknown)).visibleStudents)
+    }
+
+    @Test
+    fun overdueStartsOnTheSixthAndExcludesPaidAndFutureBalances() {
+        val state = StudentsPreviewData.state(LocalDate(2026, 11, 5))
+        assertTrue(state.overdueRows.isEmpty())
+        val first = state.monthlyPayments.first()
+        val extra =
+            listOf(
+                first.copy(id = "future", billingMonth = LocalDate(2026, 12, 1)),
+                first.copy(id = "previous", billingMonth = LocalDate(2026, 10, 1)),
+                first.copy(id = "unknown", studentId = "missing"),
+            )
+        val withExtra = state.copy(monthlyPayments = state.monthlyPayments + extra)
+        assertEquals(listOf("previous"), withExtra.overdueRows.map { it.payment.id })
+        val afterDue = withExtra.copy(asOf = LocalDate(2026, 11, 6))
+        assertEquals(listOf("payment-1", "payment-2", "previous"), afterDue.overdueRows.map { it.payment.id })
+        assertEquals(
+            listOf("payment-2"),
+            afterDue.copy(stageFilter = StudentStageFilter.Overdue, searchQuery = "  NOHA  ").visibleOverdueRows.map { it.payment.id },
+        )
     }
 }
