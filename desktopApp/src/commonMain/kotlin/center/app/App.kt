@@ -22,6 +22,7 @@ import center.feature.billing.BillingScreen
 import center.feature.dashboard.DashboardText
 import center.feature.reception.ReceptionScreen
 import center.feature.reports.ReportsScreen
+import center.feature.teachers.TeachersPreviewData
 import center.ui.components.CenterOneMainNavigation
 import center.ui.components.MainNavigation
 import center.ui.localization.AppLanguage
@@ -37,6 +38,7 @@ fun App(root: RootComponent) {
     }
     val stack by state
     var language by remember { mutableStateOf(AppLanguage.Arabic) }
+    var teachers by remember(root) { mutableStateOf(TeachersPreviewData.state()) }
     CenterOneLocalization(language) {
         CenterOneTheme {
             val route = stack.active.configuration
@@ -46,6 +48,13 @@ fun App(root: RootComponent) {
                     Destination.Financials -> FinancialsRoute(root, route.shortcut)
                     Destination.Students -> StudentsRoute(root, openAddStudent = route.shortcut == ReceptionShortcut.AddStudent)
                     Destination.Courses -> CoursesRoute(root)
+                    Destination.Teachers ->
+                        TeachersRoute(
+                            root,
+                            teachers,
+                            onStateChange = { update -> teachers = update(teachers) },
+                            onLanguageSelected = { language = it },
+                        )
                     else -> SecondaryRoute(root, route.destination, language)
                 }
             }
@@ -62,7 +71,6 @@ private fun SecondaryRoute(
     val selected =
         when (destination) {
             Destination.Reception -> MainNavigation.Reception
-            Destination.Teachers -> MainNavigation.Teachers
             Destination.Settings -> MainNavigation.Settings
             else -> null
         }
@@ -74,7 +82,7 @@ private fun SecondaryRoute(
                 Destination.Reception -> ReceptionScreen()
                 Destination.Billing -> BillingScreen()
                 Destination.Reports -> ReportsScreen()
-                Destination.Teachers, Destination.Settings -> {
+                Destination.Settings -> {
                     Text(requireNotNull(selected).label(language), style = MaterialTheme.typography.headlineLarge)
                     Text(DashboardText.FEATURE_UNAVAILABLE.text(language), color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
