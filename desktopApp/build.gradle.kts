@@ -23,6 +23,7 @@ kotlin {
             implementation(project(":feature:billing"))
             implementation(project(":feature:students"))
             implementation(project(":feature:courses"))
+            implementation(project(":feature:teachers"))
             implementation(project(":feature:reports"))
         }
         getByName("desktopMain").dependencies {

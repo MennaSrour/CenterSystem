@@ -20,3 +20,4 @@ include(":core:ui", ":feature:dashboard")
 include(":feature:financials")
 
 include(":feature:courses")
+include(":feature:teachers")
