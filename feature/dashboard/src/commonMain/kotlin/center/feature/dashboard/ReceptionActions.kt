@@ -1,9 +1,6 @@
 package center.feature.dashboard
 
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
@@ -20,11 +17,8 @@ import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.QrCodeScanner
 import androidx.compose.material.icons.outlined.Remove
 import androidx.compose.material.icons.outlined.Search
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -38,7 +32,9 @@ import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
+import center.ui.components.CenterOneAccentIcon
 import center.ui.components.CenterOneAvatar
+import center.ui.components.CenterOneButtonTone
 import center.ui.components.CenterOneCard
 import center.ui.components.CenterOnePrimaryButton
 import center.ui.components.CenterOneTextField
@@ -46,10 +42,8 @@ import center.ui.components.StatusBadge
 import center.ui.components.StatusTone
 import center.ui.localization.AppLanguage
 import center.ui.theme.Gold
-import center.ui.theme.Navy
+import center.ui.theme.Indigo
 import center.ui.theme.Rose
-import center.ui.theme.Success
-import center.ui.theme.White
 
 @Composable
 internal fun StudentSearch(
@@ -82,7 +76,6 @@ internal fun StudentSearch(
                 )
                 CenterOnePrimaryButton(
                     onClick = { onEvent(DashboardEvent.Search) },
-                    modifier = Modifier.heightIn(min = 56.dp),
                     enabled = state.query.isNotBlank(),
                 ) {
                     Text(dashboardString(DashboardText.SEARCH))
@@ -121,10 +114,9 @@ internal fun StudentActionCard(
                 )
             }
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(
+                CenterOnePrimaryButton(
                     onClick = { onEvent(DashboardEvent.RegisterAttendance(student.code)) },
-                    shape = MaterialTheme.shapes.small,
-                    colors = ButtonDefaults.buttonColors(containerColor = Success, contentColor = Navy),
+                    tone = CenterOneButtonTone.Success,
                 ) {
                     Text(dashboardString(DashboardText.CHECK_IN))
                 }
@@ -143,7 +135,7 @@ internal fun ReceptionShortcuts(onEvent: (DashboardEvent) -> Unit) {
         val tileWidth = (maxWidth - 12.dp * (columns - 1)) / columns
         FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             val tile = Modifier.widthIn(max = tileWidth).fillMaxWidth()
-            Shortcut(DashboardText.ADD_STUDENT, Icons.Outlined.Add, Success, tile) { onEvent(DashboardEvent.AddStudent) }
+            Shortcut(DashboardText.ADD_STUDENT, Icons.Outlined.Add, Indigo, tile) { onEvent(DashboardEvent.AddStudent) }
             Shortcut(DashboardText.COLLECT_SUBSCRIPTION, Icons.Outlined.Add, Gold, tile) { onEvent(DashboardEvent.CollectSubscription) }
             Shortcut(DashboardText.RECORD_EXPENSE, Icons.Outlined.Remove, Rose, tile) { onEvent(DashboardEvent.RecordExpense) }
         }
@@ -158,14 +150,7 @@ private fun Shortcut(
     modifier: Modifier,
     onClick: () -> Unit,
 ) {
-    Surface(
-        onClick = onClick,
-        modifier = modifier.heightIn(min = 72.dp),
-        shape = MaterialTheme.shapes.medium,
-        color = White,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-        shadowElevation = 2.dp,
-    ) {
+    CenterOneCard(modifier.heightIn(min = 72.dp), onClick = onClick) {
         Row(
             Modifier.padding(12.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -178,14 +163,11 @@ private fun Shortcut(
 }
 
 @Composable
-internal fun ReceptionIcon(
+private fun ReceptionIcon(
     icon: ImageVector,
     accent: Color,
 ) {
-    Box(
-        Modifier.size(40.dp).background(accent.copy(alpha = 0.12f), MaterialTheme.shapes.small),
-        contentAlignment = Alignment.Center,
-    ) {
-        Icon(icon, contentDescription = null, tint = accent, modifier = Modifier.size(22.dp))
+    CenterOneAccentIcon(accent) {
+        Icon(icon, contentDescription = null, modifier = Modifier.size(22.dp))
     }
 }

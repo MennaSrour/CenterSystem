@@ -19,11 +19,8 @@ import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
@@ -32,9 +29,7 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import center.feature.financials.resources.Res
-import center.feature.financials.resources.arabic
 import center.feature.financials.resources.closed_treasury
-import center.feature.financials.resources.english
 import center.feature.financials.resources.expense_log
 import center.feature.financials.resources.expense_transactions
 import center.feature.financials.resources.expense_transactions_en
@@ -52,7 +47,10 @@ import center.feature.financials.resources.summary
 import center.feature.financials.resources.summary_subtitle
 import center.feature.financials.resources.treasury_management
 import center.ui.components.BilingualHeading
+import center.ui.components.CenterOneCanvas
 import center.ui.components.CenterOneCard
+import center.ui.components.CenterOneIconButton
+import center.ui.components.CenterOneLanguageToggle
 import center.ui.components.CenterOneOutlinedButton
 import center.ui.components.CenterOnePageHeader
 import center.ui.components.CenterOnePrimaryButton
@@ -60,8 +58,9 @@ import center.ui.components.CenterOneTabs
 import center.ui.components.CenterOneTextField
 import center.ui.components.StatusBadge
 import center.ui.components.StatusTone
+import center.ui.localization.AppLanguage
 import center.ui.theme.CenterOneSpacing
-import center.ui.theme.Navy
+import center.ui.theme.ModalScrim
 import org.jetbrains.compose.resources.stringResource
 
 /** Pure presentation: the owner supplies snapshots and handles every interaction. */
@@ -75,7 +74,7 @@ fun FinancialsScreen(
         Box(modifier.fillMaxSize()) {
             FinancialsContent(state, onEvent)
             if (state.modal != FinancialsModal.Closed) {
-                Box(Modifier.matchParentSize().background(Navy.copy(alpha = 0.55f)))
+                Box(Modifier.matchParentSize().background(ModalScrim))
             }
             when (val modal = state.modal) {
                 FinancialsModal.Closed -> Unit
@@ -92,7 +91,7 @@ internal fun FinancialsContent(
     onEvent: (FinancialsEvent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Surface(modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+    CenterOneCanvas(modifier) {
         BoxWithConstraints(Modifier.fillMaxSize()) {
             val contentWidth = maxOf(maxWidth, 1080.dp)
             val sidebarWidth = if (contentWidth >= 1600.dp) 300.dp else 250.dp
@@ -223,17 +222,14 @@ private fun FinancialsHeader(
         stringResource(Res.string.financials_en),
         state.dateLabel,
     ) {
-        Surface(
-            shape = MaterialTheme.shapes.small,
-            color = MaterialTheme.colorScheme.secondary,
-            contentColor = MaterialTheme.colorScheme.primary,
-        ) {
-            Text(stringResource(Res.string.arabic), Modifier.padding(12.dp), style = MaterialTheme.typography.labelLarge)
-        }
-        TextButton(onClick = { onEvent(FinancialsEvent.RequestEnglish) }) { Text(stringResource(Res.string.english)) }
-        IconButton(onClick = {
-            onEvent(FinancialsEvent.OpenNotifications)
-        }) { Icon(Icons.Outlined.Notifications, contentDescription = stringResource(Res.string.notifications)) }
+        CenterOneLanguageToggle(AppLanguage.Arabic, { language ->
+            if (language == AppLanguage.English) onEvent(FinancialsEvent.RequestEnglish)
+        })
+        CenterOneIconButton(
+            Icons.Outlined.Notifications,
+            stringResource(Res.string.notifications),
+            { onEvent(FinancialsEvent.OpenNotifications) },
+        )
         Text(state.userName, style = MaterialTheme.typography.titleSmall)
     }
 }

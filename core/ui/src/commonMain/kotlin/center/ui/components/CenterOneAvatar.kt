@@ -9,6 +9,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import center.ui.theme.Indigo
+import center.ui.theme.accentContentColor
 
 @Composable
 fun CenterOneAvatar(
@@ -18,8 +20,8 @@ fun CenterOneAvatar(
     Surface(
         modifier.size(40.dp),
         shape = MaterialTheme.shapes.small,
-        color = MaterialTheme.colorScheme.secondary,
-        contentColor = MaterialTheme.colorScheme.onSecondary,
+        color = MaterialTheme.colorScheme.secondaryContainer,
+        contentColor = Indigo.accentContentColor(),
     ) {
         Box(contentAlignment = Alignment.Center) { Text(initial, style = MaterialTheme.typography.titleSmall) }
     }

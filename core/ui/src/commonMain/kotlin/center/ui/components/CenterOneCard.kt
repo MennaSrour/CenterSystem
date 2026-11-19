@@ -13,14 +13,18 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.unit.dp
+import center.ui.theme.CardShadow
+import center.ui.theme.CenterOneSize
 
 @Composable
 fun CenterOneCard(
     modifier: Modifier = Modifier,
     borderColor: Color = MaterialTheme.colorScheme.outline,
+    onClick: (() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val interactions = remember { MutableInteractionSource() }
@@ -28,12 +32,36 @@ fun CenterOneCard(
     val hoverBorder by animateColorAsState(
         if (hovered) lerp(borderColor, MaterialTheme.colorScheme.secondary, 0.22f) else borderColor,
     )
-    Card(
-        modifier = modifier.hoverable(interactions),
-        shape = MaterialTheme.shapes.large,
-        border = BorderStroke(1.dp, hoverBorder),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        content = content,
-    )
+    val shape = MaterialTheme.shapes.large
+    val border = BorderStroke(1.dp, hoverBorder)
+    val colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+    if (onClick == null) {
+        Card(
+            modifier = modifier.cardShadow().hoverable(interactions),
+            shape = shape,
+            border = border,
+            colors = colors,
+            content = content,
+        )
+    } else {
+        Card(
+            onClick = onClick,
+            modifier = modifier.cardShadow(),
+            shape = shape,
+            border = border,
+            colors = colors,
+            interactionSource = interactions,
+            content = content,
+        )
+    }
 }
+
+@Composable
+internal fun Modifier.cardShadow(): Modifier =
+    shadow(
+        elevation = CenterOneSize.CardElevation,
+        shape = MaterialTheme.shapes.large,
+        clip = false,
+        ambientColor = CardShadow,
+        spotColor = CardShadow,
+    )

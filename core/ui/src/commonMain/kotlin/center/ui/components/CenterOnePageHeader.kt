@@ -1,6 +1,8 @@
 package center.ui.components
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -10,6 +12,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import center.ui.localization.AppLanguage
+import center.ui.localization.LocalAppLanguage
 import center.ui.theme.CenterOneSpacing
 
 @Composable
@@ -18,12 +22,22 @@ fun CenterOnePageHeader(
     englishTitle: String,
     subtitle: String,
     modifier: Modifier = Modifier,
+    contentPadding: PaddingValues = PaddingValues(CenterOneSpacing.Large),
     actions: @Composable RowScope.() -> Unit,
 ) {
-    Row(modifier.fillMaxWidth().padding(CenterOneSpacing.Large), verticalAlignment = Alignment.CenterVertically) {
+    Row(
+        modifier.fillMaxWidth().padding(contentPadding),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(CenterOneSpacing.Small),
+    ) {
         Column(Modifier.weight(1f)) {
-            Text(subtitle, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            BilingualHeading(title, englishTitle)
+            Text(
+                if (LocalAppLanguage.current == AppLanguage.Arabic) title else englishTitle,
+                style = MaterialTheme.typography.headlineSmall,
+            )
+            if (subtitle.isNotBlank()) {
+                Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
         }
         actions()
     }

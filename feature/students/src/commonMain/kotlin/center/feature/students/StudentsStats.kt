@@ -20,10 +20,10 @@ import center.feature.students.resources.stat_secondary
 import center.feature.students.resources.stat_total
 import center.feature.students.resources.student_unit
 import center.ui.components.CenterOneMetricCard
+import center.ui.theme.CenterOneBrushes
 import center.ui.theme.CenterOneSpacing
-import center.ui.theme.Navy
+import center.ui.theme.Indigo
 import center.ui.theme.Pending
-import center.ui.theme.Pink
 import center.ui.theme.Success
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
@@ -42,9 +42,9 @@ internal fun StudentsStats(
 ) {
     val metrics =
         listOf(
-            StudentMetric(Res.string.stat_total, summary.total, Navy, Icons.Outlined.PeopleOutline),
+            StudentMetric(Res.string.stat_total, summary.total, Indigo, Icons.Outlined.PeopleOutline),
             StudentMetric(Res.string.stat_secondary, summary.secondary, Pending, Icons.AutoMirrored.Outlined.MenuBook),
-            StudentMetric(Res.string.stat_prep, summary.prep, Pink, Icons.AutoMirrored.Outlined.MenuBook),
+            StudentMetric(Res.string.stat_prep, summary.prep, Indigo, Icons.AutoMirrored.Outlined.MenuBook),
             StudentMetric(Res.string.stat_primary, summary.primary, Success, Icons.AutoMirrored.Outlined.MenuBook),
         )
     BoxWithConstraints(modifier) {
@@ -57,8 +57,9 @@ internal fun StudentsStats(
                             title = stringResource(metric.title),
                             value = metric.value,
                             caption = stringResource(Res.string.student_unit),
-                            icon = { Icon(metric.icon, contentDescription = null, tint = metric.accent) },
+                            icon = { Icon(metric.icon, contentDescription = null) },
                             accent = metric.accent,
+                            gradient = CenterOneBrushes.Treasury.takeIf { metric.title == Res.string.stat_total },
                             modifier = Modifier.weight(1f),
                         )
                     }

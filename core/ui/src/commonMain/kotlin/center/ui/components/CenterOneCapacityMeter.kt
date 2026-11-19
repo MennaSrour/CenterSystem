@@ -12,6 +12,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import center.ui.theme.ACCENT_TINT_ALPHA
 
 @Composable
 fun CenterOneCapacityMeter(
@@ -31,7 +32,7 @@ fun CenterOneCapacityMeter(
             color = color,
             trackColor =
                 color.copy(
-                    alpha = 0.1f,
+                    alpha = ACCENT_TINT_ALPHA,
                 ),
         )
     }

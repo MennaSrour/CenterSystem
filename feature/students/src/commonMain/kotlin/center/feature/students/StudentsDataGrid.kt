@@ -31,8 +31,8 @@ import center.ui.components.CenterOneIconButton
 import center.ui.components.CenterOneTable
 import center.ui.components.CenterOneTableColumn
 import center.ui.components.CenterOneTag
+import center.ui.theme.Indigo
 import center.ui.theme.Pending
-import center.ui.theme.Pink
 import org.jetbrains.compose.resources.stringResource
 
 @Composable
@@ -91,7 +91,7 @@ fun StudentsDataGrid(
                         ) {
                             Pending
                         } else {
-                            Pink
+                            Indigo
                         },
                 )
             4 -> Text(student.parentPhone, style = MaterialTheme.typography.bodySmall.copy(textDirection = TextDirection.Ltr))

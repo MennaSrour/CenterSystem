@@ -18,17 +18,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.dp
+import center.ui.components.CenterOneGradientCard
 import center.ui.components.CenterOneModalContent
 import center.ui.components.CenterOnePrimaryButton
 import center.ui.components.CenterOneTextField
 import center.ui.components.StatusBadge
 import center.ui.components.StatusTone
 import center.ui.localization.LocalAppLanguage
-import center.ui.theme.Gold
+import center.ui.theme.CenterOneBrushes
+import center.ui.theme.GoldLight
 import center.ui.theme.Navy
-import center.ui.theme.Pending
 import center.ui.theme.PendingContainer
-import center.ui.theme.White
+import center.ui.theme.PendingOutline
 
 @Composable
 internal fun TeacherDetails(
@@ -71,7 +72,7 @@ private fun SalaryBox(
     teacher: Teacher,
     onPay: () -> Unit,
 ) {
-    Surface(shape = MaterialTheme.shapes.medium, color = Navy, contentColor = White) {
+    CenterOneGradientCard(CenterOneBrushes.Treasury) {
         Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(
                 teacherString(if (teacher.salaryPaidInDemo) TeacherText.MonthlySalary else TeacherText.SalaryDue),
@@ -79,7 +80,7 @@ private fun SalaryBox(
             )
             Text(
                 teacher.monthlySalaryEgp?.let { formatEgp(it) } ?: teacherString(TeacherText.NoSalary),
-                color = Gold,
+                color = GoldLight,
                 style = MaterialTheme.typography.headlineLarge,
             )
             Text(teacherString(TeacherText.SalaryPolicy), style = MaterialTheme.typography.bodySmall)
@@ -98,10 +99,10 @@ private fun SalaryBox(
 private fun CollectionDeficit(students: List<UnpaidStudent>) {
     val language = LocalAppLanguage.current
     Surface(
-        shape = MaterialTheme.shapes.medium,
+        shape = MaterialTheme.shapes.large,
         color = PendingContainer,
         contentColor = Navy,
-        border = BorderStroke(1.dp, Pending.copy(alpha = 0.35f)),
+        border = BorderStroke(1.dp, PendingOutline),
     ) {
         Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text(teacherString(TeacherText.DeficitTitle), style = MaterialTheme.typography.titleMedium)

@@ -1,6 +1,5 @@
 package center.feature.teachers
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -21,18 +20,18 @@ import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import center.ui.components.CenterOneAvatar
+import center.ui.components.CenterOneCanvas
 import center.ui.components.CenterOneCard
 import center.ui.components.CenterOneLanguageToggle
 import center.ui.components.CenterOneMainNavigation
 import center.ui.components.CenterOneModal
+import center.ui.components.CenterOnePageHeader
 import center.ui.components.CenterOnePrimaryButton
 import center.ui.components.CenterOneTextField
 import center.ui.components.MainNavigation
@@ -50,7 +49,7 @@ fun TeachersScreen(
 ) {
     val language = LocalAppLanguage.current
     val close = { onEvent(TeachersEvent.CloseModal) }
-    Surface(modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+    CenterOneCanvas(modifier) {
         BoxWithConstraints {
             val sidebarWidth = if (maxWidth < 1000.dp) 192.dp else 232.dp
             val sidebar: @Composable () -> Unit = {
@@ -90,20 +89,12 @@ private fun TeacherDirectory(
 ) {
     val language = LocalAppLanguage.current
     val teachers = state.visibleTeachers
-    Column(modifier.fillMaxHeight().padding(top = 24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        Row(
-            Modifier.fillMaxWidth().padding(horizontal = 24.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+    Column(modifier.fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        CenterOnePageHeader(
+            title = MainNavigation.Teachers.label(AppLanguage.Arabic),
+            englishTitle = MainNavigation.Teachers.label(AppLanguage.English),
+            subtitle = teacherString(TeacherText.Demo),
         ) {
-            Column(Modifier.weight(1f)) {
-                Text(MainNavigation.Teachers.label(language), style = MaterialTheme.typography.headlineLarge)
-                Text(
-                    teacherString(TeacherText.Demo),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
             CenterOneLanguageToggle(language, { onEvent(TeachersEvent.LanguageSelected(it)) })
         }
         Row(
@@ -148,7 +139,7 @@ private fun TeacherCard(
 ) {
     val language = LocalAppLanguage.current
     val name = teacher.name.resolve(language)
-    CenterOneCard(Modifier.fillMaxWidth().clickable(role = Role.Button, onClick = onClick)) {
+    CenterOneCard(Modifier.fillMaxWidth(), onClick = onClick) {
         Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,

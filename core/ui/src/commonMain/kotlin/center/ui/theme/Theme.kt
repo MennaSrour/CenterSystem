@@ -14,6 +14,12 @@ object CenterOneSpacing {
     val Section = 32.dp
 }
 
+object CenterOneSize {
+    val ButtonHeight = 44.dp
+    val CardRadius = 16.dp
+    val CardElevation = 16.dp
+}
+
 @Composable
 fun CenterOneTheme(content: @Composable () -> Unit) {
     MaterialTheme(
@@ -21,18 +27,23 @@ fun CenterOneTheme(content: @Composable () -> Unit) {
             lightColorScheme(
                 primary = Gold,
                 onPrimary = Navy,
-                primaryContainer = Gold.copy(alpha = 0.15f),
+                primaryContainer = PendingContainer,
                 onPrimaryContainer = Navy,
                 secondary = Navy,
                 onSecondary = White,
-                secondaryContainer = Gold.copy(alpha = 0.15f),
+                secondaryContainer = Indigo.copy(alpha = ACCENT_TINT_ALPHA),
                 onSecondaryContainer = Navy,
                 tertiary = Pink,
                 tertiaryContainer = RoseContainer,
                 onTertiaryContainer = Navy,
                 background = OffWhite,
                 onBackground = Navy,
-                surface = White,
+                surface = WarmSurface,
+                surfaceVariant = Sand,
+                surfaceContainer = OffWhite,
+                surfaceContainerHigh = Sand,
+                surfaceContainerHighest = Sand,
+                surfaceTint = Navy,
                 onSurface = Navy,
                 onSurfaceVariant = Muted,
                 outline = Outline,
@@ -45,8 +56,8 @@ fun CenterOneTheme(content: @Composable () -> Unit) {
         shapes =
             Shapes(
                 small = RoundedCornerShape(10.dp),
-                medium = RoundedCornerShape(16.dp),
-                large = RoundedCornerShape(20.dp),
+                medium = RoundedCornerShape(CenterOneSize.CardRadius),
+                large = RoundedCornerShape(CenterOneSize.CardRadius),
             ),
         content = content,
     )

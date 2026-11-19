@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Notifications
@@ -22,7 +21,6 @@ import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -46,6 +44,7 @@ import center.feature.students.resources.search
 import center.feature.students.resources.student_affairs
 import center.feature.students.resources.students_title
 import center.feature.students.resources.students_title_en
+import center.ui.components.CenterOneCanvas
 import center.ui.components.CenterOneCard
 import center.ui.components.CenterOneDropdown
 import center.ui.components.CenterOneDropdownOption
@@ -60,9 +59,8 @@ import center.ui.localization.AppLanguage
 import center.ui.localization.CenterOneLocalization
 import center.ui.localization.LocalAppLanguage
 import center.ui.theme.CenterOneSpacing
-import center.ui.theme.Navy
+import center.ui.theme.ModalScrim
 import center.ui.theme.Rose
-import center.ui.theme.White
 import org.jetbrains.compose.resources.stringResource
 
 @Composable
@@ -75,7 +73,7 @@ fun StudentsScreen(
         Box(modifier.fillMaxSize()) {
             StudentsContent(state, onEvent)
             state.addStudent?.let { form ->
-                Box(Modifier.matchParentSize().background(Navy.copy(alpha = 0.55f)))
+                Box(Modifier.matchParentSize().background(ModalScrim))
                 AddStudentModal(form, onEvent)
             }
         }
@@ -88,7 +86,7 @@ internal fun StudentsContent(
     onEvent: (StudentsEvent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Surface(modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+    CenterOneCanvas(modifier) {
         BoxWithConstraints(Modifier.fillMaxSize()) {
             val contentWidth = maxOf(maxWidth, 1180.dp)
             val sidebarWidth = if (contentWidth >= 1600.dp) 300.dp else 250.dp
@@ -185,7 +183,7 @@ private fun StudentsFilters(
         modifier = Modifier.fillMaxWidth(),
         badge = { index ->
             if (tabs[index] == StudentStageFilter.Overdue) {
-                CenterOneTag(overdueCount.toString(), Modifier.background(White, CircleShape), color = Rose)
+                CenterOneTag(overdueCount.toString(), color = Rose)
             }
         },
     )

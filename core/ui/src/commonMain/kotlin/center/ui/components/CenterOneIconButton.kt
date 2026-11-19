@@ -2,6 +2,7 @@ package center.ui.components
 
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
@@ -13,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import center.ui.theme.ACCENT_TINT_ALPHA
+import center.ui.theme.CenterOneSize
 
 @Composable
 fun CenterOneIconButton(
@@ -27,7 +29,7 @@ fun CenterOneIconButton(
     val hovered by interactions.collectIsHoveredAsState()
     OutlinedIconButton(
         onClick = onClick,
-        modifier = modifier,
+        modifier = modifier.size(CenterOneSize.ButtonHeight),
         enabled = enabled,
         interactionSource = interactions,
         shape = MaterialTheme.shapes.small,

@@ -33,6 +33,8 @@ import center.ui.components.CenterOneCard
 import center.ui.components.CenterOneIconButton
 import center.ui.components.CenterOneTag
 import center.ui.text.isolateLtr
+import center.ui.theme.Indigo
+import center.ui.theme.Rose
 import org.jetbrains.compose.resources.stringResource
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -45,7 +47,7 @@ fun CourseCard(
     onEvent: (CoursesEvent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val accent = if (group.isActive) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.tertiary
+    val accent = if (group.isActive) Indigo else Rose
     CenterOneCard(modifier) {
         Column(Modifier.fillMaxWidth().padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {

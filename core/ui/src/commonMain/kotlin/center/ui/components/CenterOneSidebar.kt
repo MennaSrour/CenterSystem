@@ -12,10 +12,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
+import center.ui.theme.CenterOneBrushes
 import center.ui.theme.CenterOneSpacing
 import center.ui.theme.Navy
-import center.ui.theme.SidebarNavy
 import center.ui.theme.White
 
 @Composable
@@ -29,7 +28,7 @@ fun CenterOneSidebar(
         Column(
             Modifier
                 .fillMaxHeight()
-                .background(Brush.verticalGradient(listOf(Navy, SidebarNavy)))
+                .background(CenterOneBrushes.Sidebar)
                 .verticalScroll(rememberScrollState())
                 .padding(CenterOneSpacing.Large),
             verticalArrangement = Arrangement.spacedBy(CenterOneSpacing.Medium),

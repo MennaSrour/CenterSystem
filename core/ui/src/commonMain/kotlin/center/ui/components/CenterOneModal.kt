@@ -1,5 +1,6 @@
 package center.ui.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -13,7 +14,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
@@ -24,7 +24,9 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import center.ui.theme.CenterOneBrushes
 import center.ui.theme.CenterOneSpacing
+import center.ui.theme.White
 
 /** The screen supplies its scrim; the native modal owns focus, Escape and outside dismissal. */
 @Composable
@@ -44,22 +46,27 @@ fun CenterOneModal(
 fun CenterOneModalContent(
     title: String,
     subtitle: String,
-    closeLabel: String,
+    closeLabel: String?,
     onClose: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     maxWidth: Dp = 600.dp,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    Surface(modifier.widthIn(max = maxWidth).heightIn(max = 840.dp), shape = MaterialTheme.shapes.large) {
+    Surface(modifier.widthIn(max = maxWidth).heightIn(max = 840.dp).cardShadow(), shape = MaterialTheme.shapes.large) {
         Column(Modifier.verticalScroll(rememberScrollState())) {
             Surface(color = MaterialTheme.colorScheme.secondary, contentColor = MaterialTheme.colorScheme.onSecondary) {
-                Row(Modifier.fillMaxWidth().padding(CenterOneSpacing.Large), verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    Modifier.fillMaxWidth().background(CenterOneBrushes.Sidebar).padding(CenterOneSpacing.Large),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
                     Column(Modifier.weight(1f)) {
                         Text(title, style = MaterialTheme.typography.titleLarge)
-                        Text(subtitle, style = MaterialTheme.typography.bodySmall)
+                        if (subtitle.isNotBlank()) Text(subtitle, style = MaterialTheme.typography.bodySmall)
                     }
-                    TextButton(onClick = onClose, enabled = enabled) { Text(closeLabel, color = MaterialTheme.colorScheme.onSecondary) }
+                    if (closeLabel != null) {
+                        CenterOneTextButton(onClick = onClose, enabled = enabled, color = White) { Text(closeLabel) }
+                    }
                 }
             }
             Column(

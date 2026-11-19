@@ -9,7 +9,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
@@ -39,6 +38,7 @@ import center.ui.components.CenterOneDropdownOption
 import center.ui.components.CenterOneModal
 import center.ui.components.CenterOneModalContent
 import center.ui.components.CenterOnePrimaryButton
+import center.ui.components.CenterOneTextButton
 import center.ui.components.CenterOneTextField
 import org.jetbrains.compose.resources.stringResource
 
@@ -178,7 +178,7 @@ internal fun GroupFormModalContent(
             CenterOnePrimaryButton(onClick = {
                 onEvent(CoursesEvent.SubmitGroup)
             }, enabled = state.canSubmit && !state.isSubmitting) { Text(stringResource(Res.string.save)) }
-            TextButton(
+            CenterOneTextButton(
                 onClick = { onEvent(CoursesEvent.DismissModal) },
                 enabled = !state.isSubmitting,
             ) { Text(stringResource(Res.string.cancel)) }
