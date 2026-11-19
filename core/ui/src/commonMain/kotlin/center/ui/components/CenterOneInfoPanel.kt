@@ -11,6 +11,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import center.ui.theme.ACCENT_TINT_ALPHA
 import center.ui.theme.CenterOneSpacing
 
 @Composable
@@ -21,9 +22,9 @@ fun CenterOneInfoPanel(
 ) {
     Surface(
         modifier = modifier,
-        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+        color = MaterialTheme.colorScheme.primary.copy(alpha = ACCENT_TINT_ALPHA),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)),
-        shape = MaterialTheme.shapes.small,
+        shape = MaterialTheme.shapes.large,
     ) {
         Column(Modifier.padding(CenterOneSpacing.Medium), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(title, style = MaterialTheme.typography.labelMedium)

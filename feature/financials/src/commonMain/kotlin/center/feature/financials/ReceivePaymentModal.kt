@@ -14,7 +14,6 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
@@ -41,6 +40,7 @@ import center.ui.components.CenterOneModal
 import center.ui.components.CenterOneModalContent
 import center.ui.components.CenterOnePrimaryButton
 import center.ui.components.CenterOneSelectionRow
+import center.ui.components.CenterOneTextButton
 import center.ui.components.CenterOneTextField
 import org.jetbrains.compose.resources.stringResource
 
@@ -131,7 +131,7 @@ internal fun ReceivePaymentModalContent(
             ) {
                 Text(stringResource(Res.string.confirm_payment))
             }
-            TextButton(
+            CenterOneTextButton(
                 onClick = { onEvent(FinancialsEvent.DismissModal) },
                 enabled = !state.isSubmitting,
             ) { Text(stringResource(Res.string.cancel)) }
@@ -146,7 +146,7 @@ private fun FinancialSplitInfo(
 ) {
     CenterOneInfoPanel(stringResource(Res.string.split_title), modifier) {
         Text(split.ratio, style = MaterialTheme.typography.labelSmall)
-        HorizontalDivider(color = MaterialTheme.colorScheme.primary.copy(alpha = 0.35f))
+        HorizontalDivider(color = MaterialTheme.colorScheme.outline)
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             listOf(
                 stringResource(Res.string.total) to split.total,

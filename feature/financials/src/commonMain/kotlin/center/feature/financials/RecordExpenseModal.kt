@@ -10,7 +10,6 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
@@ -39,6 +38,7 @@ import center.ui.components.CenterOneModal
 import center.ui.components.CenterOneModalContent
 import center.ui.components.CenterOneOutlinedButton
 import center.ui.components.CenterOnePrimaryButton
+import center.ui.components.CenterOneTextButton
 import center.ui.components.CenterOneTextField
 import org.jetbrains.compose.resources.stringResource
 
@@ -127,7 +127,7 @@ internal fun RecordExpenseModalContent(
             Text(state.attachmentName ?: stringResource(Res.string.attach_receipt))
         }
         if (state.attachmentName != null) {
-            TextButton(onClick = {
+            CenterOneTextButton(onClick = {
                 onEvent(FinancialsEvent.RemoveAttachment)
             }, enabled = !state.isSubmitting) { Text(stringResource(Res.string.remove_attachment)) }
         } else {
@@ -142,7 +142,7 @@ internal fun RecordExpenseModalContent(
             ) {
                 Text(stringResource(Res.string.confirm_expense))
             }
-            TextButton(
+            CenterOneTextButton(
                 onClick = { onEvent(FinancialsEvent.DismissModal) },
                 enabled = !state.isSubmitting,
             ) { Text(stringResource(Res.string.cancel)) }

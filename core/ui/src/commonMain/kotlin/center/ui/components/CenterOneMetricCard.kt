@@ -1,8 +1,6 @@
 package center.ui.components
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -12,10 +10,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import center.ui.theme.ACCENT_TINT_ALPHA
 import center.ui.theme.CenterOneSpacing
+import center.ui.theme.White
 import center.ui.theme.accentContentColor
 
 @Composable
@@ -26,16 +25,19 @@ fun CenterOneMetricCard(
     icon: @Composable () -> Unit,
     modifier: Modifier = Modifier,
     accent: Color = MaterialTheme.colorScheme.secondary,
-    highlighted: Boolean = false,
+    gradient: Brush? = null,
 ) {
-    CenterOneCard(modifier, borderColor = if (highlighted) accent.copy(alpha = 0.25f) else MaterialTheme.colorScheme.outline) {
+    val labelColor = if (gradient == null) MaterialTheme.colorScheme.onSurfaceVariant else White
+    val valueColor = if (gradient == null) accent.accentContentColor() else White
+    val body: @Composable () -> Unit = {
         Column(Modifier.fillMaxWidth().padding(CenterOneSpacing.Large), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Box(Modifier.background(accent.copy(alpha = ACCENT_TINT_ALPHA), MaterialTheme.shapes.small).padding(12.dp)) { icon() }
-            Text(title, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            CenterOneAccentIcon(if (gradient == null) accent else White, content = icon)
+            Text(title, style = MaterialTheme.typography.bodySmall, color = labelColor)
             Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(value, style = MaterialTheme.typography.headlineLarge, color = accent.accentContentColor())
-                Text(caption, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(value, style = MaterialTheme.typography.headlineLarge, color = valueColor)
+                Text(caption, style = MaterialTheme.typography.labelSmall, color = labelColor)
             }
         }
     }
+    if (gradient == null) CenterOneCard(modifier) { body() } else CenterOneGradientCard(gradient, modifier, body)
 }

@@ -19,6 +19,9 @@ import center.ui.localization.AppLanguage
 import center.ui.localization.CenterOneLocalization
 import center.ui.localization.LocalAppLanguage
 import center.ui.localization.LocalizedText
+import center.ui.theme.ACCENT_TINT_ALPHA
+import center.ui.theme.CenterOneSize
+import center.ui.theme.SidebarInk
 import center.ui.theme.White
 
 enum class MainNavigation(
@@ -48,10 +51,10 @@ fun CenterOneMainNavigation(
             modifier = modifier,
             header = {
                 CenterOneBrand("سنتر ون", "Center One")
-                HorizontalDivider(color = White.copy(alpha = 0.12f))
+                HorizontalDivider(color = SidebarInk.copy(alpha = ACCENT_TINT_ALPHA))
             },
             footer = {
-                IconButton(onClick = { onNavigate(MainNavigation.Settings) }) {
+                IconButton(onClick = { onNavigate(MainNavigation.Settings) }, modifier = Modifier.size(CenterOneSize.ButtonHeight)) {
                     Icon(
                         MainNavigation.Settings.icon,
                         contentDescription = MainNavigation.Settings.label(language),
@@ -69,7 +72,7 @@ fun CenterOneMainNavigation(
                         selected = destination == selected,
                         onClick = { onNavigate(destination) },
                         icon = { Icon(destination.icon, contentDescription = null, modifier = Modifier.size(22.dp)) },
-                        contentColor = White,
+                        contentColor = SidebarInk,
                     )
                 }
             }

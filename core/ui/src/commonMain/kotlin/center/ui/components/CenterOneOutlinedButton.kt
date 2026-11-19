@@ -4,6 +4,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -14,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import center.ui.theme.ACCENT_TINT_ALPHA
+import center.ui.theme.CenterOneSize
 import center.ui.theme.accentContentColor
 
 @Composable
@@ -28,7 +30,7 @@ fun CenterOneOutlinedButton(
     val hovered by interactions.collectIsHoveredAsState()
     OutlinedButton(
         onClick = onClick,
-        modifier = modifier,
+        modifier = modifier.heightIn(min = CenterOneSize.ButtonHeight),
         enabled = enabled,
         interactionSource = interactions,
         shape = MaterialTheme.shapes.small,

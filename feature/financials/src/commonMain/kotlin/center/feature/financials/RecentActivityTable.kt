@@ -19,8 +19,9 @@ import center.feature.financials.resources.time
 import center.ui.components.CenterOneAvatar
 import center.ui.components.CenterOneTable
 import center.ui.components.CenterOneTableColumn
-import center.ui.theme.Pink
+import center.ui.theme.Rose
 import center.ui.theme.Success
+import center.ui.theme.accentContentColor
 import org.jetbrains.compose.resources.stringResource
 
 @Composable
@@ -58,14 +59,7 @@ fun RecentActivityTable(
                 Text(
                     record.formattedAmount,
                     style = MaterialTheme.typography.titleSmall,
-                    color =
-                        if (log ==
-                            FinancialLog.Income
-                        ) {
-                            Success
-                        } else {
-                            Pink
-                        },
+                    color = (if (log == FinancialLog.Income) Success else Rose).accentContentColor(),
                 )
             3 -> Text(record.formattedDate, style = MaterialTheme.typography.bodySmall)
             4 -> Text(record.formattedTime, style = MaterialTheme.typography.bodySmall)

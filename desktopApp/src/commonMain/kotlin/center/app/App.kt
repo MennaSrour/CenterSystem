@@ -1,6 +1,5 @@
 package center.app
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -23,6 +22,7 @@ import center.feature.dashboard.DashboardText
 import center.feature.reception.ReceptionScreen
 import center.feature.reports.ReportsScreen
 import center.feature.teachers.TeachersPreviewData
+import center.ui.components.CenterOneCanvas
 import center.ui.components.CenterOneMainNavigation
 import center.ui.components.MainNavigation
 import center.ui.localization.AppLanguage
@@ -80,20 +80,22 @@ private fun SecondaryRoute(
             else -> null
         }
     val sidebar: @Composable () -> Unit = { CenterOneMainNavigation(selected, root::navigate, Modifier.width(232.dp)) }
-    Row(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
-        if (language == AppLanguage.English) sidebar()
-        Column(Modifier.weight(1f).padding(24.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            when (destination) {
-                Destination.Reception -> ReceptionScreen()
-                Destination.Billing -> BillingScreen()
-                Destination.Reports -> ReportsScreen()
-                Destination.Settings -> {
-                    Text(requireNotNull(selected).label(language), style = MaterialTheme.typography.headlineLarge)
-                    Text(DashboardText.FEATURE_UNAVAILABLE.text(language), color = MaterialTheme.colorScheme.onSurfaceVariant)
+    CenterOneCanvas {
+        Row(Modifier.fillMaxSize()) {
+            if (language == AppLanguage.English) sidebar()
+            Column(Modifier.weight(1f).padding(24.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                when (destination) {
+                    Destination.Reception -> ReceptionScreen()
+                    Destination.Billing -> BillingScreen()
+                    Destination.Reports -> ReportsScreen()
+                    Destination.Settings -> {
+                        Text(requireNotNull(selected).label(language), style = MaterialTheme.typography.headlineLarge)
+                        Text(DashboardText.FEATURE_UNAVAILABLE.text(language), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    else -> Unit
                 }
-                else -> Unit
             }
+            if (language == AppLanguage.Arabic) sidebar()
         }
-        if (language == AppLanguage.Arabic) sidebar()
     }
 }

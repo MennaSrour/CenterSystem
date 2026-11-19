@@ -26,9 +26,7 @@ import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
@@ -40,11 +38,9 @@ import center.feature.courses.resources.Res
 import center.feature.courses.resources.active_groups
 import center.feature.courses.resources.add_group
 import center.feature.courses.resources.all
-import center.feature.courses.resources.arabic
 import center.feature.courses.resources.courses_title
 import center.feature.courses.resources.courses_title_en
 import center.feature.courses.resources.empty
-import center.feature.courses.resources.english
 import center.feature.courses.resources.grade_missing
 import center.feature.courses.resources.groups_title
 import center.feature.courses.resources.notifications
@@ -58,15 +54,20 @@ import center.feature.courses.resources.teacher_missing
 import center.feature.courses.resources.term
 import center.feature.courses.resources.total_groups
 import center.feature.courses.resources.total_teachers
+import center.ui.components.CenterOneCanvas
 import center.ui.components.CenterOneCard
 import center.ui.components.CenterOneIconButton
+import center.ui.components.CenterOneLanguageToggle
 import center.ui.components.CenterOneMetricCard
 import center.ui.components.CenterOnePageHeader
 import center.ui.components.CenterOnePillTabs
 import center.ui.components.CenterOnePrimaryButton
 import center.ui.components.CenterOneTextField
+import center.ui.localization.AppLanguage
+import center.ui.theme.CenterOneBrushes
 import center.ui.theme.CenterOneSpacing
-import center.ui.theme.Navy
+import center.ui.theme.Indigo
+import center.ui.theme.ModalScrim
 import org.jetbrains.compose.resources.stringResource
 
 @Composable
@@ -78,7 +79,7 @@ fun CoursesScreen(
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
         Box(modifier.fillMaxSize()) {
             CoursesContent(state, onEvent)
-            if (state.modal != CoursesModal.Closed) Box(Modifier.matchParentSize().background(Navy.copy(alpha = 0.55f)))
+            if (state.modal != CoursesModal.Closed) Box(Modifier.matchParentSize().background(ModalScrim))
             when (val modal = state.modal) {
                 CoursesModal.Closed -> Unit
                 is CoursesModal.Form -> GroupFormModal(modal.state, onEvent)
@@ -97,7 +98,7 @@ internal fun CoursesContent(
     val teacherById = state.teachers.associateBy { it.id }
     val gradeById = state.grades.associateBy { it.id }
     val groups = state.visibleGroups
-    Surface(modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+    CenterOneCanvas(modifier) {
         BoxWithConstraints(Modifier.fillMaxSize()) {
             val canvasWidth = maxOf(maxWidth, 1000.dp)
             val sidebarWidth = if (canvasWidth >= 1600.dp) 300.dp else 250.dp
@@ -191,9 +192,15 @@ private fun CoursesStats(summary: CoursesSummary) {
             Triple(Res.string.active_groups, summary.activeGroups, Icons.Outlined.CheckCircleOutline),
             Triple(Res.string.total_teachers, summary.totalTeachers, Icons.Outlined.PeopleOutline),
         ).forEach { (title, value, icon) ->
-            CenterOneMetricCard(stringResource(title), value, stringResource(Res.string.term), icon = {
-                Icon(icon, contentDescription = null)
-            }, modifier = Modifier.weight(1f))
+            CenterOneMetricCard(
+                title = stringResource(title),
+                value = value,
+                caption = stringResource(Res.string.term),
+                icon = { Icon(icon, contentDescription = null) },
+                modifier = Modifier.weight(1f),
+                accent = Indigo,
+                gradient = CenterOneBrushes.Treasury.takeIf { title == Res.string.total_groups },
+            )
         }
     }
 }
@@ -204,14 +211,9 @@ private fun CoursesHeader(
     onEvent: (CoursesEvent) -> Unit,
 ) {
     CenterOnePageHeader(stringResource(Res.string.courses_title), stringResource(Res.string.courses_title_en), state.dateLabel) {
-        Surface(
-            shape = MaterialTheme.shapes.small,
-            color = MaterialTheme.colorScheme.secondary,
-            contentColor = MaterialTheme.colorScheme.primary,
-        ) {
-            Text(stringResource(Res.string.arabic), Modifier.padding(12.dp))
-        }
-        TextButton(onClick = { onEvent(CoursesEvent.RequestEnglish) }) { Text(stringResource(Res.string.english)) }
+        CenterOneLanguageToggle(AppLanguage.Arabic, { language ->
+            if (language == AppLanguage.English) onEvent(CoursesEvent.RequestEnglish)
+        })
         CenterOneIconButton(
             Icons.Outlined.Notifications,
             stringResource(Res.string.notifications),

@@ -14,8 +14,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
+import center.ui.theme.ACCENT_TINT_ALPHA
 
 @Composable
 fun CenterOnePillTabs(
@@ -31,7 +33,7 @@ fun CenterOnePillTabs(
         modifier
             .clip(
                 CircleShape,
-            ).background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.08f))
+            ).background(MaterialTheme.colorScheme.secondaryContainer)
             .padding(4.dp)
             .selectableGroup(),
         horizontalArrangement = Arrangement.spacedBy(4.dp),
@@ -42,7 +44,7 @@ fun CenterOnePillTabs(
                 Modifier
                     .weight(1f)
                     .clip(CircleShape)
-                    .background(if (selected) MaterialTheme.colorScheme.primary else androidx.compose.ui.graphics.Color.Transparent)
+                    .background(if (selected) MaterialTheme.colorScheme.primary.copy(alpha = ACCENT_TINT_ALPHA) else Color.Transparent)
                     .selectable(selected = selected, role = Role.Tab, onClick = { onSelected(index) })
                     .padding(horizontal = 12.dp, vertical = 12.dp),
                 contentAlignment = Alignment.Center,
