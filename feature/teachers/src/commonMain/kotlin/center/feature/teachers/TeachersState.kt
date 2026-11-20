@@ -35,6 +35,17 @@ data class TeacherDraft(
 }
 
 sealed interface TeachersModal {
+    data class StaffDetails(
+        val id: String,
+    ) : TeachersModal
+
+    data class StaffForm(
+        val draft: StaffDraft = StaffDraft(),
+        val id: String? = null,
+        val saving: Boolean = false,
+        val message: String? = null,
+    ) : TeachersModal
+
     data object Closed : TeachersModal
 
     data class Details(
@@ -54,6 +65,9 @@ data class TeachersState(
     val query: String = "",
     val modal: TeachersModal = TeachersModal.Closed,
     val payingTeacherId: String? = null,
+    val showStaff: Boolean = false,
+    val staff: List<StaffCardModel> = emptyList(),
+    val history: List<LocalizedText> = emptyList(),
 ) {
     val visibleTeachers: List<Teacher>
         get() {

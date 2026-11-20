@@ -213,6 +213,8 @@ internal class CoursesStateHolder(
 
     fun onEvent(event: CoursesEvent) {
         when (event) {
+            is CoursesEvent.TeacherFilterSelected -> state = state.copy(selectedTeacherId = event.id)
+            is CoursesEvent.GradeFilterSelected -> state = state.copy(selectedGradeId = event.id)
             is CoursesEvent.StageSelected -> state = state.copy(stageFilter = event.filter, expandedGroupMenuId = null)
             is CoursesEvent.SearchChanged -> state = state.copy(searchQuery = event.value, expandedGroupMenuId = null)
             is CoursesEvent.GroupMenuChanged ->

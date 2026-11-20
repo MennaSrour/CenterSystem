@@ -66,6 +66,8 @@ data class CoursesState(
     val rooms: List<CourseRoom>,
     val userName: String,
     val dateLabel: String,
+    val selectedTeacherId: String? = null,
+    val selectedGradeId: String? = null,
     val stageFilter: CourseStageFilter = CourseStageFilter.All,
     val searchQuery: String = "",
     val expandedGroupMenuId: String? = null,
@@ -77,6 +79,8 @@ data class CoursesState(
             val teachersById = teachers.associateBy { it.id }
             val gradesById = grades.associateBy { it.id }
             return groups.filter { group ->
+                if (selectedTeacherId != null && group.teacherId != selectedTeacherId) return@filter false
+                if (selectedGradeId != null && group.gradeId != selectedGradeId) return@filter false
                 val stage = gradesById[group.gradeId]?.stage
                 val matchesStage =
                     when (stageFilter) {

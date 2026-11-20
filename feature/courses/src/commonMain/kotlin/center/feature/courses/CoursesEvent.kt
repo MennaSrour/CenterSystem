@@ -1,6 +1,14 @@
 package center.feature.courses
 
 sealed interface CoursesEvent {
+    data class TeacherFilterSelected(
+        val id: String?,
+    ) : CoursesEvent
+
+    data class GradeFilterSelected(
+        val id: String?,
+    ) : CoursesEvent
+
     data class StageSelected(
         val filter: CourseStageFilter,
     ) : CoursesEvent

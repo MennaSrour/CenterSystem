@@ -5,18 +5,22 @@ import center.database.CenterDaos
 import center.database.CenterDatabase
 import center.database.SqlStudentRepository
 import center.database.repository.SqlAttendanceRepository
+import center.database.repository.SqlAttendanceSessionRepository
 import center.database.repository.SqlClassGroupRepository
 import center.database.repository.SqlMessageQueueRepository
 import center.database.repository.SqlMonthlyBillingRepository
 import center.database.repository.SqlPaymentRepository
+import center.database.repository.SqlStaffRepository
 import center.database.repository.SqlTeacherRepository
 import center.database.repository.SqlTreasuryRepository
 import center.domain.RegisterStudent
 import center.domain.repository.AttendanceRepository
+import center.domain.repository.AttendanceSessionRepository
 import center.domain.repository.ClassGroupRepository
 import center.domain.repository.MessageQueueRepository
 import center.domain.repository.MonthlyBillingRepository
 import center.domain.repository.PaymentRepository
+import center.domain.repository.StaffRepository
 import center.domain.repository.StudentRepository
 import center.domain.repository.TeacherRepository
 import center.domain.repository.TreasuryRepository
@@ -30,6 +34,7 @@ import center.domain.usecase.PayTeacherSalaryUseCase
 import center.domain.usecase.ProcessPaymentUseCase
 import center.domain.usecase.QueueReminderUseCase
 import center.domain.usecase.RecordAttendanceUseCase
+import center.domain.usecase.RegisterPresenceUseCase
 import center.domain.usecase.SyncPendingMessagesUseCase
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -57,6 +62,9 @@ internal fun persistenceModule(
     single<MessageQueueRepository> { SqlMessageQueueRepository(get(), dispatcher) }
     single<MonthlyBillingRepository> { SqlMonthlyBillingRepository(get(), dispatcher) }
     single<TreasuryRepository> { SqlTreasuryRepository(get(), dispatcher) }
+    single<StaffRepository> { SqlStaffRepository(get(), dispatcher) }
+    single<AttendanceSessionRepository> { SqlAttendanceSessionRepository(get(), dispatcher) }
+    factory { RegisterPresenceUseCase(get(), get(), get(), get()) }
     single { clock }
     single { IdGenerator { UUID.randomUUID().toString() } }
     factory { RegisterStudent(get()) }
@@ -82,7 +90,9 @@ internal fun persistenceModule(
             clock = get(),
             ids = get(),
             attendance = get(),
-            recordAttendance = get(),
+            sessions = get(),
+            staff = get(),
+            presence = get(),
             processPayment = get(),
         )
     }

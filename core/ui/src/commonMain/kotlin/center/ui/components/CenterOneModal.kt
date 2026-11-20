@@ -20,10 +20,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import center.ui.localization.LocalAppLanguage
 import center.ui.theme.CenterOneBrushes
 import center.ui.theme.CenterOneSpacing
 import center.ui.theme.White
@@ -34,8 +34,9 @@ fun CenterOneModal(
     onDismissRequest: () -> Unit,
     content: @Composable () -> Unit,
 ) {
+    val direction = LocalAppLanguage.current.layoutDirection
     Dialog(onDismissRequest = onDismissRequest, properties = DialogProperties(usePlatformDefaultWidth = false)) {
-        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+        CompositionLocalProvider(LocalLayoutDirection provides direction) {
             content()
         }
     }

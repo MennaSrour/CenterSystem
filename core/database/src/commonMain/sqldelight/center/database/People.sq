@@ -1,0 +1,67 @@
+CREATE TABLE staff_member (
+    id TEXT NOT NULL PRIMARY KEY,
+    name TEXT NOT NULL,
+    role TEXT NOT NULL,
+    phone TEXT NOT NULL,
+    isActive INTEGER AS kotlin.Boolean NOT NULL CHECK (isActive IN (0, 1))
+);
+
+CREATE TABLE staff_shift (
+    staffId TEXT NOT NULL REFERENCES staff_member(id) ON DELETE CASCADE,
+    day INTEGER NOT NULL CHECK (day BETWEEN 1 AND 7),
+    fromMinute INTEGER NOT NULL CHECK (fromMinute BETWEEN 0 AND 1439),
+    toMinute INTEGER NOT NULL CHECK (toMinute BETWEEN 1 AND 1439 AND toMinute > fromMinute),
+    PRIMARY KEY (staffId, day, fromMinute)
+);
+
+CREATE TABLE attendance_session (
+    personType TEXT NOT NULL CHECK (personType IN ('STUDENT', 'TEACHER', 'STAFF')),
+    personId TEXT NOT NULL,
+    groupId TEXT NOT NULL DEFAULT '',
+    date TEXT NOT NULL,
+    checkInTime INTEGER NOT NULL,
+    checkOutTime INTEGER CHECK (checkOutTime >= checkInTime),
+    PRIMARY KEY (personType, personId, date, groupId)
+);
+CREATE INDEX attendance_session_date ON attendance_session(date);
+
+selectStaff:
+SELECT staff_member.*, staff_shift.day, staff_shift.fromMinute, staff_shift.toMinute
+FROM staff_member LEFT JOIN staff_shift ON staff_member.id = staff_shift.staffId
+ORDER BY staff_member.name, staff_member.id, staff_shift.day, staff_shift.fromMinute;
+
+selectStaffById:
+SELECT * FROM staff_member WHERE id = ?;
+
+saveStaff:
+INSERT INTO staff_member(id, name, role, phone, isActive) VALUES (?, ?, ?, ?, ?);
+
+updateStaff:
+UPDATE staff_member SET name = ?, role = ?, phone = ?, isActive = ? WHERE id = ?;
+
+clearShifts:
+DELETE FROM staff_shift WHERE staffId = ?;
+
+insertShift:
+INSERT INTO staff_shift(staffId, day, fromMinute, toMinute) VALUES (?, ?, ?, ?);
+
+insertCheckIn:
+INSERT INTO attendance_session(personType, personId, groupId, date, checkInTime) VALUES (?, ?, ?, ?, ?);
+
+selectSession:
+SELECT * FROM attendance_session WHERE personType = ? AND personId = ? AND groupId = ? AND date = ?;
+
+setCheckOut:
+UPDATE attendance_session SET checkOutTime = :at
+WHERE personType = :personType AND personId = :personId AND groupId = :groupId AND date = :date AND checkOutTime IS NULL;
+
+sessionHistory:
+SELECT personType, personId, groupId, date, checkInTime, checkOutTime
+FROM attendance_session WHERE personType = :personType AND personId = :personId
+UNION ALL
+SELECT 'STUDENT', studentId, classId, '', timestamp, NULL
+FROM attendance WHERE :personType = 'STUDENT' AND studentId = :personId AND status = 'PRESENT'
+ORDER BY checkInTime DESC LIMIT 10;
+
+sessionsOnDate:
+SELECT * FROM attendance_session WHERE date = ? ORDER BY checkInTime;

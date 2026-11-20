@@ -29,10 +29,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import center.feature.courses.resources.Res
 import center.feature.courses.resources.active_groups
@@ -56,6 +57,8 @@ import center.feature.courses.resources.total_groups
 import center.feature.courses.resources.total_teachers
 import center.ui.components.CenterOneCanvas
 import center.ui.components.CenterOneCard
+import center.ui.components.CenterOneDropdown
+import center.ui.components.CenterOneDropdownOption
 import center.ui.components.CenterOneIconButton
 import center.ui.components.CenterOneLanguageToggle
 import center.ui.components.CenterOneMetricCard
@@ -64,6 +67,8 @@ import center.ui.components.CenterOnePillTabs
 import center.ui.components.CenterOnePrimaryButton
 import center.ui.components.CenterOneTextField
 import center.ui.localization.AppLanguage
+import center.ui.localization.LocalAppLanguage
+import center.ui.localization.LocalizedText
 import center.ui.theme.CenterOneBrushes
 import center.ui.theme.CenterOneSpacing
 import center.ui.theme.Indigo
@@ -76,7 +81,8 @@ fun CoursesScreen(
     onEvent: (CoursesEvent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+    val direction = LocalAppLanguage.current.layoutDirection
+    CompositionLocalProvider(LocalLayoutDirection provides direction) {
         Box(modifier.fillMaxSize()) {
             CoursesContent(state, onEvent)
             if (state.modal != CoursesModal.Closed) Box(Modifier.matchParentSize().background(ModalScrim))
@@ -103,6 +109,7 @@ internal fun CoursesContent(
             val canvasWidth = maxOf(maxWidth, 1000.dp)
             val sidebarWidth = if (canvasWidth >= 1600.dp) 300.dp else 250.dp
             Row(Modifier.horizontalScroll(rememberScrollState()).width(canvasWidth)) {
+                if (LocalAppLanguage.current == AppLanguage.English) CoursesSidebar(onEvent, Modifier.width(sidebarWidth))
                 Column(Modifier.weight(1f)) {
                     CoursesHeader(state, onEvent)
                     HorizontalDivider(color = MaterialTheme.colorScheme.outline)
@@ -145,6 +152,7 @@ internal fun CoursesContent(
                                         },
                                         Modifier.fillMaxWidth(),
                                     )
+                                    CourseFilters(state, onEvent)
                                     Row(
                                         horizontalArrangement = Arrangement.spacedBy(16.dp),
                                         verticalAlignment = Alignment.CenterVertically,
@@ -178,7 +186,7 @@ internal fun CoursesContent(
                         }
                     }
                 }
-                CoursesSidebar(onEvent, Modifier.width(sidebarWidth))
+                if (LocalAppLanguage.current == AppLanguage.Arabic) CoursesSidebar(onEvent, Modifier.width(sidebarWidth))
             }
         }
     }
@@ -220,5 +228,44 @@ private fun CoursesHeader(
             { onEvent(CoursesEvent.OpenNotifications) },
         )
         Text(state.userName, Modifier.padding(start = 12.dp), style = MaterialTheme.typography.titleSmall)
+    }
+}
+
+@Composable
+private fun CourseFilters(
+    state: CoursesState,
+    onEvent: (CoursesEvent) -> Unit,
+) {
+    val language = LocalAppLanguage.current
+    val all = LocalizedText("الكل", "All").resolve(language)
+    val teacherMenu = remember { mutableStateOf(false) }
+    val gradeMenu = remember { mutableStateOf(false) }
+    val teachers = listOf(CenterOneDropdownOption("", all)) + state.teachers.map { CenterOneDropdownOption(it.id, it.name) }
+    val grades = listOf(CenterOneDropdownOption("", all)) + state.grades.map { CenterOneDropdownOption(it.id, it.label) }
+    Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+        CenterOneDropdown(
+            value = teachers.firstOrNull { it.id == state.selectedTeacherId }?.label ?: all,
+            label = LocalizedText("المدرس", "Teacher").resolve(language),
+            options = teachers,
+            expanded = teacherMenu.value,
+            onExpandedChange = { teacherMenu.value = it },
+            onOptionSelected = {
+                teacherMenu.value = false
+                onEvent(CoursesEvent.TeacherFilterSelected(it.ifEmpty { null }))
+            },
+            modifier = Modifier.weight(1f),
+        )
+        CenterOneDropdown(
+            value = grades.firstOrNull { it.id == state.selectedGradeId }?.label ?: all,
+            label = LocalizedText("الصف", "Grade").resolve(language),
+            options = grades,
+            expanded = gradeMenu.value,
+            onExpandedChange = { gradeMenu.value = it },
+            onOptionSelected = {
+                gradeMenu.value = false
+                onEvent(CoursesEvent.GradeFilterSelected(it.ifEmpty { null }))
+            },
+            modifier = Modifier.weight(1f),
+        )
     }
 }

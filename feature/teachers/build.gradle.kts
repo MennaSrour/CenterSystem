@@ -9,6 +9,7 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             implementation(project(":core:ui"))
+            implementation(libs.datetime)
             implementation(compose.materialIconsExtended)
         }
         getByName("desktopTest").dependencies {

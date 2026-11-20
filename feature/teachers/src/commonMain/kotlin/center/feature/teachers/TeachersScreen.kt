@@ -32,6 +32,7 @@ import center.ui.components.CenterOneLanguageToggle
 import center.ui.components.CenterOneMainNavigation
 import center.ui.components.CenterOneModal
 import center.ui.components.CenterOnePageHeader
+import center.ui.components.CenterOnePillTabs
 import center.ui.components.CenterOnePrimaryButton
 import center.ui.components.CenterOneTextField
 import center.ui.components.MainNavigation
@@ -68,10 +69,15 @@ fun TeachersScreen(
     }
     when (val modal = state.modal) {
         TeachersModal.Closed -> Unit
+        is TeachersModal.StaffDetails ->
+            state.staff.firstOrNull { it.id == modal.id }?.let { member ->
+                CenterOneModal(onDismissRequest = close) { StaffDetails(member, state.history, onEvent) }
+            }
+        is TeachersModal.StaffForm -> CenterOneModal(onDismissRequest = close) { StaffForm(modal, onEvent) }
         is TeachersModal.Details ->
             state.teachers.firstOrNull { it.id == modal.teacherId }?.let { teacher ->
                 CenterOneModal(onDismissRequest = close) {
-                    CenterOneLocalization(language) { TeacherDetails(teacher, onEvent, state.payingTeacherId == teacher.id) }
+                    CenterOneLocalization(language) { TeacherDetails(teacher, onEvent, state.payingTeacherId == teacher.id, state.history) }
                 }
             }
         is TeachersModal.Add ->
@@ -99,6 +105,12 @@ private fun TeacherDirectory(
         ) {
             CenterOneLanguageToggle(language, { onEvent(TeachersEvent.LanguageSelected(it)) })
         }
+        CenterOnePillTabs(
+            listOf(staffLabel("المدرسين", "Teachers"), staffLabel("السكرتارية والموظفين", "Staff & Secretaries")),
+            if (state.showStaff) 1 else 0,
+            { onEvent(TeachersEvent.StaffTabSelected(it == 1)) },
+            Modifier.fillMaxWidth().padding(horizontal = 24.dp),
+        )
         Row(
             Modifier.fillMaxWidth().padding(horizontal = 24.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -108,15 +120,29 @@ private fun TeacherDirectory(
                 value = state.query,
                 onValueChange = { onEvent(TeachersEvent.SearchChanged(it)) },
                 modifier = Modifier.weight(1f),
-                placeholder = { Text(teacherString(TeacherText.Search)) },
+                placeholder = {
+                    Text(
+                        if (state.showStaff) staffLabel("ابحث عن موظف", "Find staff") else teacherString(TeacherText.Search),
+                    )
+                },
                 leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null) },
             )
-            CenterOnePrimaryButton(onClick = { onEvent(TeachersEvent.OpenAddTeacher) }) {
+            CenterOnePrimaryButton(onClick = { onEvent(if (state.showStaff) TeachersEvent.AddStaff else TeachersEvent.OpenAddTeacher) }) {
                 Icon(Icons.Outlined.Add, contentDescription = null, modifier = Modifier.size(18.dp))
-                Text(teacherString(TeacherText.Add), Modifier.padding(start = 6.dp))
+                Text(
+                    if (state.showStaff) staffLabel("إضافة موظف", "Add staff member") else teacherString(TeacherText.Add),
+                    Modifier.padding(start = 6.dp),
+                )
             }
         }
-        if (teachers.isEmpty()) {
+        if (state.showStaff) {
+            val term = state.query.trim()
+            StaffList(
+                state.staff.filter { listOf(it.name, it.role, it.phone).any { value -> value.contains(term, ignoreCase = true) } },
+                onEvent,
+                Modifier.weight(1f),
+            )
+        } else if (teachers.isEmpty()) {
             Text(teacherString(TeacherText.NoResults), Modifier.padding(horizontal = 24.dp))
         } else {
             LazyVerticalGrid(

@@ -48,6 +48,11 @@ class SqlStudentRepository(
         withContext(dispatcher) {
             require(student.id.isNotBlank() && student.fullName.isNotBlank() && student.code.isNotBlank())
             require(student.system != EducationSystem.BOTH) { "Students must use one education system" }
+            require(
+                student.groupDiscounts.filterKeys { it in student.enrolledGroupIds }.values.all {
+                    it.isFinite() && it in 0.0..1_000_000_000.0 && kotlin.math.abs(it * 100 - kotlin.math.round(it * 100)) < 0.000001
+                },
+            ) { "Invalid enrollment discount" }
             database.transaction {
                 val students = database.studentQueries
                 val existing = students.selectById(student.id).executeAsOneOrNull()
@@ -74,20 +79,21 @@ class SqlStudentRepository(
                     )
                     directory.updateStudentDetails(student.code.trim(), student.stage?.name, student.system?.name, student.id)
                 }
-                val existingGroups =
+                val existingDiscounts =
                     directory
                         .selectStudentByCode(student.code.trim())
                         .executeAsList()
-                        .mapNotNull { it.enrolledGroupId }
-                        .toSet()
-                if (existingGroups != student.enrolledGroupIds) {
-                    (student.enrolledGroupIds - existingGroups).forEach { groupId ->
+                        .mapNotNull { row -> row.enrolledGroupId?.let { it to checkNotNull(row.discountAmount) } }
+                        .toMap()
+                val discounts = student.enrolledGroupIds.associateWith { student.groupDiscounts[it] ?: 0.0 }
+                if (existingDiscounts != discounts) {
+                    (student.enrolledGroupIds - existingDiscounts.keys).forEach { groupId ->
                         val group =
                             requireNotNull(database.classGroupQueries.selectById(groupId).executeAsOneOrNull()) { "Group not found" }
                         require(group.status == "ACTIVE") { "Cannot enroll in an archived group" }
                     }
                     directory.clearEnrollments(student.id)
-                    student.enrolledGroupIds.forEach { directory.insertEnrollment(student.id, it) }
+                    discounts.forEach { (groupId, discount) -> directory.insertEnrollment(student.id, groupId, discount) }
                 }
             }
         }
@@ -114,7 +120,8 @@ private fun studentWithGroup(
     stage: String?,
     system: String?,
     groupId: String?,
-): Pair<Student, String?> =
+    discountAmount: Double?,
+): Pair<Student, Pair<String, Double>?> =
     Student(
         id,
         name,
@@ -125,7 +132,10 @@ private fun studentWithGroup(
         code ?: id,
         stage?.let(EducationStage::valueOf),
         system?.let(EducationSystem::valueOf),
-    ) to groupId
+    ) to groupId?.let { it to checkNotNull(discountAmount) }
 
-private fun List<Pair<Student, String?>>.studentsWithEnrollments(): List<Student> =
-    groupBy({ it.first }, { it.second }).map { (student, groups) -> student.copy(enrolledGroupIds = groups.filterNotNull().toSet()) }
+private fun List<Pair<Student, Pair<String, Double>?>>.studentsWithEnrollments(): List<Student> =
+    groupBy({ it.first }, { it.second }).map { (student, groups) ->
+        val discounts = groups.filterNotNull().toMap()
+        student.copy(enrolledGroupIds = discounts.keys, groupDiscounts = discounts.filterValues { it != 0.0 })
+    }

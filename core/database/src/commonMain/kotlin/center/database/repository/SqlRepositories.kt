@@ -171,9 +171,11 @@ class SqlPaymentRepository(
         require(month.dayOfMonth == 1)
         val (start, end) = month.bounds(TimeZone.of("Africa/Cairo"))
         val paid = database.operationsQueries.paidForMonth(payment.studentId, payment.classId, month.toString(), start, end).executeAsOne()
+        val discount = database.operationsQueries.enrollmentDiscount(payment.studentId, payment.classId).executeAsOne()
+        val net = (price - (discount * 100).roundToLong()).coerceAtLeast(0)
         val amount = (payment.amountPaid * 100).roundToLong()
         val commission = checkNotNull(group.commissionBasisPoints)
-        require(amount in 1..100_000_000_000L && amount <= price - paid) { "Payment exceeds the remaining subscription balance" }
+        require(amount in 1..100_000_000_000L && amount <= net - paid) { "Payment exceeds the remaining subscription balance" }
         val teacherMinor = (amount * commission + 5_000) / 10_000
         require((payment.teacherShare * 100).roundToLong() == teacherMinor) { "Group commission changed before payment" }
     }
@@ -271,7 +273,7 @@ class SqlMessageQueueRepository(
     override suspend fun markSent(id: String) = dao.markSent(id)
 }
 
-private fun QueuedMessage.toEntity() =
+internal fun QueuedMessage.toEntity() =
     MessageQueueEntity(
         id,
         targetPhone,
@@ -283,7 +285,7 @@ private fun QueuedMessage.toEntity() =
             .valueOf(channel.name),
     )
 
-private fun CenterDatabase.insertMessage(message: MessageQueueEntity) {
+internal fun CenterDatabase.insertMessage(message: MessageQueueEntity) {
     messageQueueQueries.insertRow(message.id, message.targetPhone, message.messageBody, message.status.name, message.createdAt)
     operationsQueries.setMessageChannel(message.channel.name, message.id)
 }

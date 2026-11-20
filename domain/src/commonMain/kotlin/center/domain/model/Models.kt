@@ -13,6 +13,7 @@ data class Student(
     val stage: EducationStage? = null,
     val system: EducationSystem? = null,
     val enrolledGroupIds: Set<String> = emptySet(),
+    val groupDiscounts: Map<String, Double> = emptyMap(),
 ) {
     val name: String get() = fullName
 }

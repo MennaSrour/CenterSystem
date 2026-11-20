@@ -27,6 +27,11 @@ sealed interface DashboardEvent {
         val groupId: String? = null,
     ) : DashboardEvent
 
+    data class CheckOut(
+        val code: String,
+        val groupId: String? = null,
+    ) : DashboardEvent
+
     data class PaySubscription(
         val studentCode: String,
     ) : DashboardEvent

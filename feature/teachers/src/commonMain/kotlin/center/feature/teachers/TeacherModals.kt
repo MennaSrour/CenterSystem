@@ -18,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.dp
+import center.ui.components.AttendanceHistory
 import center.ui.components.CenterOneGradientCard
 import center.ui.components.CenterOneModalContent
 import center.ui.components.CenterOnePrimaryButton
@@ -25,6 +26,7 @@ import center.ui.components.CenterOneTextField
 import center.ui.components.StatusBadge
 import center.ui.components.StatusTone
 import center.ui.localization.LocalAppLanguage
+import center.ui.localization.LocalizedText
 import center.ui.theme.CenterOneBrushes
 import center.ui.theme.GoldLight
 import center.ui.theme.Navy
@@ -36,6 +38,7 @@ internal fun TeacherDetails(
     teacher: Teacher,
     onEvent: (TeachersEvent) -> Unit,
     paying: Boolean = false,
+    history: List<LocalizedText> = emptyList(),
 ) {
     val language = LocalAppLanguage.current
     CenterOneModalContent(
@@ -57,7 +60,10 @@ internal fun TeacherDetails(
         }, enabled = !paying) { Text(teacherString(TeacherText.Edit)) }
         SalaryBox(teacher, paying, onPay = { onEvent(TeachersEvent.PaySalary(teacher.id)) })
         if (teacher.unpaidStudents.isNotEmpty()) CollectionDeficit(teacher.unpaidStudents)
-        Text(teacherString(TeacherText.Groups), style = MaterialTheme.typography.titleMedium)
+        Text(
+            LocalizedText("جدول المجموعات النشطة", "Active group schedule").resolve(language),
+            style = MaterialTheme.typography.titleMedium,
+        )
         if (teacher.groups.isEmpty()) {
             Text(teacherString(TeacherText.NoGroups), color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
@@ -65,9 +71,13 @@ internal fun TeacherDetails(
             Column {
                 HorizontalDivider(color = MaterialTheme.colorScheme.outline)
                 Text(group.name.resolve(language), Modifier.padding(top = 8.dp), style = MaterialTheme.typography.labelLarge)
-                Text(group.schedule.resolve(language), style = MaterialTheme.typography.bodySmall)
+                Text(
+                    group.schedule.resolve(language).ifBlank { LocalizedText("لم يحدد موعد", "No times set").resolve(language) },
+                    style = MaterialTheme.typography.bodySmall,
+                )
             }
         }
+        AttendanceHistory(history)
     }
 }
 
