@@ -233,6 +233,13 @@ class UseCasesTest {
             messages.add(receipt)
         }
 
+        override fun observePresentCount(
+            startInclusive: Long,
+            endExclusive: Long,
+        ) = flowOf(
+            attendance.count { it.status == AttendanceStatus.PRESENT && it.timestamp in startInclusive until endExclusive }.toLong(),
+        )
+
         override fun getAttendanceForClass(
             classId: String,
             startInclusive: Long,

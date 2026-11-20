@@ -3,15 +3,15 @@ package center.feature.teachers
 import center.ui.localization.LocalizedText
 
 data class Teacher(
-    val id: Int,
+    val id: String,
     val name: LocalizedText,
     val phone: String,
     val subject: LocalizedText,
-    val monthlySalaryEgp: Long?,
+    val monthlySalaryMinor: Long?,
     val groups: List<TeacherGroup> = emptyList(),
     val unpaidStudents: List<UnpaidStudent> = emptyList(),
     val notes: String = "",
-    val salaryPaidInDemo: Boolean = false,
+    val salaryPaid: Boolean = false,
 )
 
 data class TeacherGroup(
@@ -21,7 +21,8 @@ data class TeacherGroup(
 
 data class UnpaidStudent(
     val name: LocalizedText,
-    val subscriptionEgp: Long,
+    val subscriptionMinor: Long,
+    val studentId: String = name.english,
 )
 
 data class TeacherDraft(
@@ -37,11 +38,14 @@ sealed interface TeachersModal {
     data object Closed : TeachersModal
 
     data class Details(
-        val teacherId: Int,
+        val teacherId: String,
     ) : TeachersModal
 
     data class Add(
         val draft: TeacherDraft = TeacherDraft(),
+        val teacherId: String? = null,
+        val saving: Boolean = false,
+        val message: String? = null,
     ) : TeachersModal
 }
 
@@ -49,6 +53,7 @@ data class TeachersState(
     val teachers: List<Teacher>,
     val query: String = "",
     val modal: TeachersModal = TeachersModal.Closed,
+    val payingTeacherId: String? = null,
 ) {
     val visibleTeachers: List<Teacher>
         get() {

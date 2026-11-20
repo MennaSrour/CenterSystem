@@ -5,10 +5,12 @@ events. It displays today's attendance and treasury, a student search, the selec
 student's actions, and shortcuts for adding a student, collecting a subscription,
 and recording an expense.
 
-`DashboardRoute` owns the demo snapshot and resolves searches against one sample
-student. Try barcode `10234` or either form of Youssef Ahmed's name. Press Enter
-after scanning with a keyboard-emulating barcode reader. Attendance shows demo
-feedback, and the other actions open existing demo forms. No data is persisted.
+`DashboardRoute` observes SQLDelight-backed attendance, treasury, enrollments and
+monthly balances. Today's treasury shows inflow minus outflow. The scanner submits
+with Enter and uses the live student code; name searches allow selection when
+several results match. Attendance uses the selected active group and rejects
+duplicates. The three shortcuts open the live registration, payment and expense
+forms.
 
 The dashboard follows `CenterOneLocalization` in Arabic and English. The desktop
 app owns the selected language, and changing it preserves the current search.

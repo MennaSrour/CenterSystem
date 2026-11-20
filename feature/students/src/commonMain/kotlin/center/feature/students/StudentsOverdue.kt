@@ -53,6 +53,7 @@ internal fun OverdueActions(
     query: String,
     rows: List<OverdueStudentRow>,
     onEvent: (StudentsEvent) -> Unit,
+    enabled: Boolean = true,
 ) {
     val language = LocalAppLanguage.current
     Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -65,7 +66,7 @@ internal fun OverdueActions(
         )
         CenterOneOutlinedButton(
             onClick = { onEvent(StudentsEvent.RemindAll(rows.map { it.student.id }.distinct())) },
-            enabled = rows.isNotEmpty(),
+            enabled = enabled && rows.isNotEmpty(),
             color = Navy,
         ) {
             ReminderLabel(OverdueText.RemindAll.label(language))
@@ -78,6 +79,7 @@ internal fun OverdueStudentsTable(
     rows: List<OverdueStudentRow>,
     onEvent: (StudentsEvent) -> Unit,
     modifier: Modifier = Modifier,
+    remindersEnabled: Boolean = true,
 ) {
     val language = LocalAppLanguage.current
     val columns =
@@ -115,19 +117,22 @@ internal fun OverdueStudentsTable(
                 }
             2 -> LtrTableValue(student.parentPhone)
             3 -> {
-                val amount =
-                    payment.remainingEgp
+                val whole =
+                    (payment.remainingMinor / 100)
                         .toString()
                         .reversed()
                         .chunked(3)
                         .joinToString(",")
                         .reversed()
+                val fraction = payment.remainingMinor % 100
+                val amount = if (fraction == 0L) whole else "$whole.${fraction.toString().padStart(2, '0')}"
                 Text("$amount ${OverdueText.Currency.label(language)}", style = MaterialTheme.typography.titleSmall)
             }
             4 ->
                 FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     CenterOneOutlinedButton(
                         onClick = { onEvent(StudentsEvent.SendReminder(student.id)) },
+                        enabled = remindersEnabled,
                         color = Navy,
                     ) {
                         ReminderLabel(OverdueText.Remind.label(language))

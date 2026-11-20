@@ -8,5 +8,7 @@ interface TeacherRepository {
 
     suspend fun getTeacherForClass(classId: String): Teacher?
 
+    suspend fun getCommissionForClass(classId: String): Double? = getTeacherForClass(classId)?.commissionRate
+
     suspend fun save(teacher: Teacher)
 }

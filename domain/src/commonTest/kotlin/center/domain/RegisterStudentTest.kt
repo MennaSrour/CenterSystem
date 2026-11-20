@@ -17,7 +17,7 @@ class RegisterStudentTest {
 
             override fun observeStudents() = kotlinx.coroutines.flow.flowOf(saved.toList())
 
-            override suspend fun getStudentByCode(code: String) = saved.firstOrNull { it.id == code }
+            override suspend fun getStudentByCode(code: String) = saved.firstOrNull { it.code == code }
         }
 
     @Test
@@ -25,6 +25,15 @@ class RegisterStudentTest {
         runTest {
             RegisterStudent(repository)(" 42 ", " Menna ")
             assertEquals(listOf(Student("42", "Menna")), saved)
+        }
+
+    @Test
+    fun updatesLegacyCallByInternalIdWithoutReplacingThePublicCodeOrEnrollment() =
+        runTest {
+            val student = Student("internal", "Menna", code = "ST-42", enrolledGroupIds = setOf("group"))
+            saved.add(student)
+            RegisterStudent(repository)("internal", "Updated")
+            assertEquals(student.copy(fullName = "Updated"), saved.last())
         }
 
     @Test

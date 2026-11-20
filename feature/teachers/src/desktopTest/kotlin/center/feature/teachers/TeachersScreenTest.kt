@@ -39,7 +39,7 @@ class TeachersScreenTest {
             onNodeWithText("Add teacher").performClick()
             runOnIdle {
                 assertEquals(
-                    listOf(TeachersEvent.SearchChanged("الرياضيات"), TeachersEvent.OpenTeacher(2), TeachersEvent.OpenAddTeacher),
+                    listOf(TeachersEvent.SearchChanged("الرياضيات"), TeachersEvent.OpenTeacher("2"), TeachersEvent.OpenAddTeacher),
                     events,
                 )
             }
@@ -65,6 +65,6 @@ class TeachersScreenTest {
             val salary = onNodeWithText("4,000 ج.م")
             assertEquals(LayoutDirection.Rtl, salary.fetchSemanticsNode().layoutInfo.layoutDirection)
             onNodeWithText("يوسف أحمد").assertExists()
-            runOnIdle { assertEquals<TeachersEvent>(TeachersEvent.PaySalary(1), events.single()) }
+            runOnIdle { assertEquals<TeachersEvent>(TeachersEvent.PaySalary("1"), events.single()) }
         }
 }

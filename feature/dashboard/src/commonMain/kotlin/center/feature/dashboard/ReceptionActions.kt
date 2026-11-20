@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -36,7 +38,10 @@ import center.ui.components.CenterOneAccentIcon
 import center.ui.components.CenterOneAvatar
 import center.ui.components.CenterOneButtonTone
 import center.ui.components.CenterOneCard
+import center.ui.components.CenterOneDropdown
+import center.ui.components.CenterOneDropdownOption
 import center.ui.components.CenterOnePrimaryButton
+import center.ui.components.CenterOneTextButton
 import center.ui.components.CenterOneTextField
 import center.ui.components.StatusBadge
 import center.ui.components.StatusTone
@@ -81,7 +86,15 @@ internal fun StudentSearch(
                     Text(dashboardString(DashboardText.SEARCH))
                 }
             }
-            if (state.searchSubmitted && state.student == null) {
+            if (state.candidates.isNotEmpty()) {
+                LazyColumn(Modifier.fillMaxWidth().heightIn(max = 200.dp)) {
+                    items(state.candidates, key = { it.code }) { candidate ->
+                        CenterOneTextButton(onClick = { onEvent(DashboardEvent.SelectStudent(candidate.code)) }) {
+                            Text("${candidate.name} · ${candidate.code}")
+                        }
+                    }
+                }
+            } else if (state.searchSubmitted && state.student == null) {
                 Text(dashboardString(DashboardText.NO_STUDENT), color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
@@ -93,9 +106,20 @@ internal fun StudentActionCard(
     student: QuickStudent,
     language: AppLanguage,
     onEvent: (DashboardEvent) -> Unit,
+    attendanceGroupId: String? = null,
+    groupMenuExpanded: Boolean = false,
+    checkingIn: Boolean = false,
 ) {
     val name = student.name.resolve(language)
-    val paid = student.paymentStatus == PaymentStatus.Paid
+    val groups = student.attendanceGroups
+    val groupId = attendanceGroupId?.takeIf { id -> groups?.any { it.id == id } == true } ?: groups?.singleOrNull()?.id
+    val (label, tone) =
+        when (student.paymentStatus) {
+            PaymentStatus.Paid -> DashboardText.PAID to StatusTone.Success
+            PaymentStatus.Overdue -> DashboardText.OVERDUE to StatusTone.Overdue
+            PaymentStatus.Due -> DashboardText.DUE to StatusTone.Pending
+            PaymentStatus.NoSubscription -> DashboardText.NO_SUBSCRIPTION to StatusTone.Pending
+        }
     CenterOneCard(Modifier.fillMaxWidth()) {
         Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(
@@ -108,14 +132,25 @@ internal fun StudentActionCard(
                     Text(name, style = MaterialTheme.typography.titleLarge)
                     Text(student.grade.resolve(language), color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
-                StatusBadge(
-                    dashboardString(if (paid) DashboardText.PAID else DashboardText.OVERDUE),
-                    if (paid) StatusTone.Success else StatusTone.Overdue,
+                StatusBadge(dashboardString(label), tone)
+            }
+            if (groups != null && groups.isEmpty()) {
+                Text(dashboardString(DashboardText.NO_GROUPS), style = MaterialTheme.typography.bodySmall)
+            } else if (groups != null && groups.size > 1) {
+                CenterOneDropdown(
+                    value = groups.firstOrNull { it.id == groupId }?.name.orEmpty(),
+                    label = dashboardString(DashboardText.ATTENDANCE_GROUP),
+                    options = groups.map { CenterOneDropdownOption(it.id, it.name) },
+                    expanded = groupMenuExpanded,
+                    onExpandedChange = { onEvent(DashboardEvent.AttendanceGroupMenuChanged(it)) },
+                    onOptionSelected = { onEvent(DashboardEvent.SelectAttendanceGroup(it)) },
+                    enabled = !checkingIn,
                 )
             }
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 CenterOnePrimaryButton(
-                    onClick = { onEvent(DashboardEvent.RegisterAttendance(student.code)) },
+                    onClick = { onEvent(DashboardEvent.RegisterAttendance(student.code, groupId)) },
+                    enabled = !checkingIn && (groups == null || groupId != null),
                     tone = CenterOneButtonTone.Success,
                 ) {
                     Text(dashboardString(DashboardText.CHECK_IN))

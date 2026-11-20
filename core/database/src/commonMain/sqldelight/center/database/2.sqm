@@ -1,0 +1,40 @@
+ALTER TABLE class_group ADD COLUMN monthlyPriceMinor INTEGER CHECK (monthlyPriceMinor BETWEEN 0 AND 100000000000);
+ALTER TABLE class_group ADD COLUMN commissionBasisPoints INTEGER CHECK (commissionBasisPoints BETWEEN 0 AND 10000);
+ALTER TABLE class_group ADD COLUMN roomNumber INTEGER CHECK (roomNumber BETWEEN 1 AND 8);
+ALTER TABLE class_group ADD COLUMN system TEXT NOT NULL DEFAULT 'BOTH' CHECK (system IN ('ARABIC', 'LANGUAGES', 'BOTH'));
+ALTER TABLE class_group ADD COLUMN status TEXT NOT NULL DEFAULT 'ACTIVE' CHECK (status IN ('ACTIVE', 'ARCHIVED'));
+ALTER TABLE student ADD COLUMN code TEXT;
+ALTER TABLE student ADD COLUMN stage TEXT CHECK (stage IN ('PRIMARY', 'PREP', 'SECONDARY'));
+ALTER TABLE student ADD COLUMN system TEXT CHECK (system IN ('ARABIC', 'LANGUAGES'));
+ALTER TABLE teacher ADD COLUMN phone TEXT NOT NULL DEFAULT '';
+ALTER TABLE teacher ADD COLUMN notes TEXT NOT NULL DEFAULT '';
+ALTER TABLE payment ADD COLUMN billingMonth TEXT;
+ALTER TABLE message_queue ADD COLUMN channel TEXT NOT NULL DEFAULT 'WHATSAPP' CHECK (channel IN ('WHATSAPP', 'NOTIFICATION'));
+CREATE UNIQUE INDEX student_effective_code ON student(coalesce(code, id));
+CREATE INDEX payment_subscription_month ON payment(studentId, classId, billingMonth);
+
+CREATE TABLE enrollment (
+    studentId TEXT NOT NULL REFERENCES student(id) ON DELETE RESTRICT,
+    classId TEXT NOT NULL REFERENCES class_group(id) ON DELETE RESTRICT,
+    PRIMARY KEY (studentId, classId)
+);
+CREATE INDEX enrollment_class ON enrollment(classId);
+
+CREATE TABLE schedule_slot (
+    classId TEXT NOT NULL REFERENCES class_group(id) ON DELETE CASCADE,
+    day INTEGER NOT NULL CHECK (day BETWEEN 1 AND 7),
+    fromMinute INTEGER NOT NULL CHECK (fromMinute BETWEEN 0 AND 1439),
+    toMinute INTEGER NOT NULL CHECK (toMinute BETWEEN 1 AND 1439 AND toMinute > fromMinute),
+    PRIMARY KEY (classId, day, fromMinute)
+);
+
+CREATE TABLE treasury_expense (
+    id TEXT PRIMARY KEY NOT NULL,
+    kind TEXT NOT NULL CHECK (kind IN ('OPERATIONAL', 'TEACHER_PAYOUT')),
+    amountMinor INTEGER NOT NULL CHECK (amountMinor > 0),
+    recordedAt INTEGER NOT NULL,
+    description TEXT NOT NULL,
+    teacherId TEXT REFERENCES teacher(id) ON DELETE RESTRICT,
+    CHECK ((kind = 'TEACHER_PAYOUT' AND teacherId IS NOT NULL) OR (kind = 'OPERATIONAL' AND teacherId IS NULL))
+);
+CREATE INDEX treasury_expense_time ON treasury_expense(recordedAt);

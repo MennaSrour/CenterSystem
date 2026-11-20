@@ -3,7 +3,8 @@ CREATE TABLE message_queue (
     targetPhone TEXT NOT NULL,
     messageBody TEXT NOT NULL,
     status TEXT NOT NULL DEFAULT 'PENDING' CHECK (status IN ('PENDING', 'SENT')),
-    createdAt INTEGER NOT NULL
+    createdAt INTEGER NOT NULL,
+    channel TEXT NOT NULL DEFAULT 'WHATSAPP' CHECK (channel IN ('WHATSAPP', 'NOTIFICATION'))
 );
 CREATE INDEX message_status_created ON message_queue(status, createdAt);
 

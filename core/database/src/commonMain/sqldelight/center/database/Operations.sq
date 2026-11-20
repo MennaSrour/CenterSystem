@@ -1,0 +1,161 @@
+CREATE TABLE enrollment (
+    studentId TEXT NOT NULL REFERENCES student(id) ON DELETE RESTRICT,
+    classId TEXT NOT NULL REFERENCES class_group(id) ON DELETE RESTRICT,
+    PRIMARY KEY (studentId, classId)
+);
+CREATE INDEX enrollment_class ON enrollment(classId);
+
+CREATE TABLE schedule_slot (
+    classId TEXT NOT NULL REFERENCES class_group(id) ON DELETE CASCADE,
+    day INTEGER NOT NULL CHECK (day BETWEEN 1 AND 7),
+    fromMinute INTEGER NOT NULL CHECK (fromMinute BETWEEN 0 AND 1439),
+    toMinute INTEGER NOT NULL CHECK (toMinute BETWEEN 1 AND 1439 AND toMinute > fromMinute),
+    PRIMARY KEY (classId, day, fromMinute)
+);
+
+CREATE TABLE treasury_expense (
+    id TEXT PRIMARY KEY NOT NULL,
+    kind TEXT NOT NULL CHECK (kind IN ('OPERATIONAL', 'TEACHER_PAYOUT')),
+    amountMinor INTEGER NOT NULL CHECK (amountMinor > 0),
+    recordedAt INTEGER NOT NULL,
+    description TEXT NOT NULL,
+    teacherId TEXT REFERENCES teacher(id) ON DELETE RESTRICT,
+    CHECK ((kind = 'TEACHER_PAYOUT' AND teacherId IS NOT NULL) OR (kind = 'OPERATIONAL' AND teacherId IS NULL))
+);
+CREATE INDEX treasury_expense_time ON treasury_expense(recordedAt);
+
+selectDirectory:
+SELECT student.*, enrollment.classId AS enrolledGroupId
+FROM student LEFT JOIN enrollment ON student.id = enrollment.studentId
+ORDER BY student.id, enrollment.classId;
+
+selectStudentByCode:
+SELECT student.*, enrollment.classId AS enrolledGroupId
+FROM student LEFT JOIN enrollment ON student.id = enrollment.studentId
+WHERE coalesce(student.code, student.id) = :code ORDER BY enrollment.classId;
+
+updateStudentDetails:
+UPDATE student SET code = ?, stage = ?, system = ? WHERE id = ?;
+
+clearEnrollments:
+DELETE FROM enrollment WHERE studentId = ?;
+
+insertEnrollment:
+INSERT INTO enrollment(studentId, classId) VALUES (?, ?);
+
+hasEnrollment:
+SELECT EXISTS(SELECT 1 FROM enrollment WHERE studentId = ? AND classId = ?);
+
+selectGroupsWithSchedule:
+SELECT class_group.*, schedule_slot.day, schedule_slot.fromMinute, schedule_slot.toMinute
+FROM class_group LEFT JOIN schedule_slot ON class_group.id = schedule_slot.classId
+ORDER BY class_group.id, schedule_slot.day, schedule_slot.fromMinute;
+
+updateGroupDetails:
+UPDATE class_group SET monthlyPriceMinor = ?, commissionBasisPoints = ?, roomNumber = ?, system = ?, status = ?, gradeId = ?, maxCapacity = ? WHERE id = ?;
+
+archiveGroup:
+UPDATE class_group SET status = 'ARCHIVED' WHERE id = ?;
+
+clearSchedule:
+DELETE FROM schedule_slot WHERE classId = ?;
+
+insertSlot:
+INSERT INTO schedule_slot(classId, day, fromMinute, toMinute) VALUES (?, ?, ?, ?);
+
+selectTeachersWithGroups:
+SELECT teacher.*, class_group.id AS assignedGroupId
+FROM teacher LEFT JOIN class_group ON class_group.teacherId = teacher.id
+ORDER BY teacher.id, class_group.id;
+
+monthlySalary:
+SELECT CAST(coalesce(sum((class_group.monthlyPriceMinor * class_group.commissionBasisPoints + 5000) / 10000), 0) AS INTEGER)
+FROM class_group
+JOIN enrollment ON enrollment.classId = class_group.id
+JOIN student ON student.id = enrollment.studentId
+WHERE class_group.teacherId = ? AND class_group.status = 'ACTIVE' AND student.isActive = 1
+AND class_group.monthlyPriceMinor IS NOT NULL AND class_group.commissionBasisPoints IS NOT NULL;
+
+remainingBalances:
+SELECT student.id AS studentId, coalesce(student.code, student.id) AS code,
+       student.name AS studentName, student.parentPhone,
+       class_group.id AS classId, class_group.name AS groupName,
+       teacher.id AS teacherId, teacher.fullName AS teacherName,
+       CAST(class_group.monthlyPriceMinor - coalesce(sum(CAST(round(payment.amountPaid * 100) AS INTEGER)), 0) AS INTEGER) AS remainingMinor
+FROM enrollment
+JOIN student ON student.id = enrollment.studentId
+JOIN class_group ON class_group.id = enrollment.classId
+JOIN teacher ON teacher.id = class_group.teacherId
+LEFT JOIN payment ON payment.studentId = student.id AND payment.classId = class_group.id
+    AND (payment.billingMonth = :billingMonth OR
+         (payment.billingMonth IS NULL AND payment.paymentDate >= :startTime AND payment.paymentDate < :endTime))
+WHERE student.isActive = 1 AND class_group.status = 'ACTIVE' AND class_group.monthlyPriceMinor IS NOT NULL
+  AND (:teacherId IS NULL OR teacher.id = :teacherId)
+GROUP BY student.id, class_group.id
+HAVING remainingMinor > 0
+ORDER BY student.id, class_group.id;
+
+paidForMonth:
+SELECT CAST(coalesce(sum(CAST(round(amountPaid * 100) AS INTEGER)), 0) AS INTEGER)
+FROM payment WHERE studentId = :studentId AND classId = :classId
+AND (billingMonth = :billingMonth OR (billingMonth IS NULL AND paymentDate >= :startTime AND paymentDate < :endTime));
+
+setPaymentMonth:
+UPDATE payment SET billingMonth = ? WHERE id = ?;
+
+setTeacherContact:
+UPDATE teacher SET phone = ?, notes = ? WHERE id = ?;
+
+setMessageChannel:
+UPDATE message_queue SET channel = ? WHERE id = ?;
+
+countDailyAttendance:
+SELECT count(*) FROM attendance
+WHERE studentId = :studentId AND classId = :classId AND timestamp >= :startTime AND timestamp < :endTime;
+
+insertExpense:
+INSERT INTO treasury_expense(id, kind, amountMinor, recordedAt, description, teacherId) VALUES (?, ?, ?, ?, ?, ?);
+
+selectLedger:
+SELECT id, 'INCOME' AS direction, 'STUDENT_PAYMENT' AS kind,
+       CAST(round(amountPaid * 100) AS INTEGER) AS amountMinor, paymentDate AS recordedAt,
+       '' AS description, studentId, classId, NULL AS teacherId
+FROM payment WHERE paymentDate >= :startTime AND paymentDate < :endTime
+UNION ALL
+SELECT id, 'EXPENSE', kind, amountMinor, recordedAt, description, NULL, NULL, teacherId
+FROM treasury_expense WHERE recordedAt >= :startTime AND recordedAt < :endTime
+ORDER BY recordedAt, direction, id;
+
+insertDirectoryStudent:
+INSERT INTO student(id, name, gradeLevel, studentPhone, parentPhone, isActive, code, stage, system)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+selectAssignedGroups:
+SELECT id FROM class_group WHERE teacherId = ? ORDER BY id;
+
+selectDirectoryStudentById:
+SELECT student.*, enrollment.classId AS enrolledGroupId
+FROM student LEFT JOIN enrollment ON student.id = enrollment.studentId
+WHERE student.id = :id ORDER BY enrollment.classId;
+
+
+billingChanges:
+SELECT (SELECT count(*) FROM student), (SELECT count(*) FROM enrollment),
+       (SELECT count(*) FROM class_group), (SELECT count(*) FROM payment),
+       (SELECT count(*) FROM teacher);
+
+treasuryTotals:
+WITH entries AS (
+    SELECT paymentDate AS recordedAt, CAST(round(amountPaid * 100) AS INTEGER) AS income, 0 AS expense
+    FROM payment WHERE paymentDate < :dayEnd
+    UNION ALL
+    SELECT recordedAt, 0, amountMinor FROM treasury_expense WHERE recordedAt < :dayEnd
+)
+SELECT CAST(coalesce(sum(CASE WHEN recordedAt >= :dayStart THEN income ELSE 0 END), 0) AS INTEGER) AS todayIncome,
+       CAST(coalesce(sum(CASE WHEN recordedAt >= :dayStart THEN expense ELSE 0 END), 0) AS INTEGER) AS todayExpense,
+       CAST(coalesce(sum(income - expense), 0) AS INTEGER) AS drawerBalance,
+       CAST(coalesce(sum(CASE WHEN recordedAt >= :monthStart THEN income - expense ELSE 0 END), 0) AS INTEGER) AS monthNet
+FROM entries;
+
+presentToday:
+SELECT count(*) FROM attendance WHERE status = 'PRESENT' AND timestamp >= :dayStart AND timestamp < :dayEnd;

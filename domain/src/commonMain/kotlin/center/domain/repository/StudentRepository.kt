@@ -8,7 +8,11 @@ interface StudentRepository {
 
     suspend fun getStudentByCode(code: String): Student?
 
+    suspend fun getStudentById(id: String): Student? = students().firstOrNull { it.id == id }
+
     suspend fun save(student: Student)
+
+    suspend fun delete(id: String): Unit = throw UnsupportedOperationException("Student deletion is unavailable")
 
     suspend fun students(): List<Student>
 }

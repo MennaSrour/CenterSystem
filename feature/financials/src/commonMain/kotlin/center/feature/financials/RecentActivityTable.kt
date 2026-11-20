@@ -47,11 +47,13 @@ fun RecentActivityTable(
                     CenterOneAvatar(record.partyName.take(1))
                     Column {
                         Text(record.partyName, style = MaterialTheme.typography.titleSmall)
-                        Text(
-                            record.englishName,
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
+                        if (record.englishName.isNotBlank() && record.englishName != record.partyName) {
+                            Text(
+                                record.englishName,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
                     }
                 }
             1 -> Text(record.category, style = MaterialTheme.typography.bodySmall)

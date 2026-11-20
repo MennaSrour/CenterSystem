@@ -5,6 +5,11 @@ import center.domain.model.QueuedMessage
 import kotlinx.coroutines.flow.Flow
 
 interface AttendanceRepository {
+    fun observePresentCount(
+        startInclusive: Long,
+        endExclusive: Long,
+    ): Flow<Long>
+
     fun getAttendanceForClass(
         classId: String,
         startInclusive: Long,

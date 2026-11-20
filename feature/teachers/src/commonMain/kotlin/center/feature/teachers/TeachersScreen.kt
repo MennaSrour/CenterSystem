@@ -71,12 +71,14 @@ fun TeachersScreen(
         is TeachersModal.Details ->
             state.teachers.firstOrNull { it.id == modal.teacherId }?.let { teacher ->
                 CenterOneModal(onDismissRequest = close) {
-                    CenterOneLocalization(language) { TeacherDetails(teacher, onEvent) }
+                    CenterOneLocalization(language) { TeacherDetails(teacher, onEvent, state.payingTeacherId == teacher.id) }
                 }
             }
         is TeachersModal.Add ->
             CenterOneModal(onDismissRequest = close) {
-                CenterOneLocalization(language) { AddTeacherForm(modal.draft, onEvent) }
+                CenterOneLocalization(
+                    language,
+                ) { AddTeacherForm(modal.draft, onEvent, modal.teacherId != null, modal.saving, modal.message) }
             }
     }
 }
@@ -93,7 +95,7 @@ private fun TeacherDirectory(
         CenterOnePageHeader(
             title = MainNavigation.Teachers.label(AppLanguage.Arabic),
             englishTitle = MainNavigation.Teachers.label(AppLanguage.English),
-            subtitle = teacherString(TeacherText.Demo),
+            subtitle = teacherString(TeacherText.Directory),
         ) {
             CenterOneLanguageToggle(language, { onEvent(TeachersEvent.LanguageSelected(it)) })
         }
@@ -154,16 +156,26 @@ private fun TeacherCard(
             Text(teacherString(TeacherText.GroupsCount, teacher.groups.size.toString()), style = MaterialTheme.typography.labelLarge)
             HorizontalDivider(color = MaterialTheme.colorScheme.outline)
             Text(
-                teacherString(if (teacher.salaryPaidInDemo) TeacherText.MonthlySalary else TeacherText.SalaryDue),
+                teacherString(if (teacher.salaryPaid) TeacherText.MonthlySalary else TeacherText.SalaryDue),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Text(
-                teacher.monthlySalaryEgp?.let { formatEgp(it) } ?: teacherString(TeacherText.NoSalary),
+                teacher.monthlySalaryMinor?.let { formatEgp(it) } ?: teacherString(TeacherText.NoSalary),
                 style = MaterialTheme.typography.titleLarge,
             )
-            if (teacher.salaryPaidInDemo) StatusBadge(teacherString(TeacherText.DemoPaid), StatusTone.Success)
-            if (teacher.unpaidStudents.isNotEmpty()) StatusBadge(deficitBadge(teacher.unpaidStudents.size), StatusTone.Pending)
+            if (teacher.salaryPaid) StatusBadge(teacherString(TeacherText.Paid), StatusTone.Success)
+            if (teacher.unpaidStudents.isNotEmpty()) {
+                StatusBadge(
+                    deficitBadge(
+                        teacher.unpaidStudents
+                            .distinctBy {
+                                it.studentId
+                            }.size,
+                    ),
+                    StatusTone.Pending,
+                )
+            }
         }
     }
 }

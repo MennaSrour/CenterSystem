@@ -46,10 +46,12 @@ import center.feature.students.resources.students_title
 import center.feature.students.resources.students_title_en
 import center.ui.components.CenterOneCanvas
 import center.ui.components.CenterOneCard
+import center.ui.components.CenterOneConfirmationContent
 import center.ui.components.CenterOneDropdown
 import center.ui.components.CenterOneDropdownOption
 import center.ui.components.CenterOneIconButton
 import center.ui.components.CenterOneLanguageToggle
+import center.ui.components.CenterOneModal
 import center.ui.components.CenterOnePageHeader
 import center.ui.components.CenterOnePillTabs
 import center.ui.components.CenterOnePrimaryButton
@@ -58,6 +60,7 @@ import center.ui.components.CenterOneTextField
 import center.ui.localization.AppLanguage
 import center.ui.localization.CenterOneLocalization
 import center.ui.localization.LocalAppLanguage
+import center.ui.localization.LocalizedText
 import center.ui.theme.CenterOneSpacing
 import center.ui.theme.ModalScrim
 import center.ui.theme.Rose
@@ -75,6 +78,25 @@ fun StudentsScreen(
             state.addStudent?.let { form ->
                 Box(Modifier.matchParentSize().background(ModalScrim))
                 AddStudentModal(form, onEvent)
+            }
+            state.deleteStudent?.let { deletion ->
+                Box(Modifier.matchParentSize().background(ModalScrim))
+                val language = LocalAppLanguage.current
+                CenterOneModal(onDismissRequest = { if (!deletion.busy) onEvent(StudentsEvent.DismissDelete) }) {
+                    CenterOneLocalization(language) {
+                        CenterOneConfirmationContent(
+                            title = LocalizedText("حذف الطالب", "Delete student").resolve(language),
+                            message = deletion.name,
+                            confirmLabel = LocalizedText("حذف", "Delete").resolve(language),
+                            cancelLabel = LocalizedText("إلغاء", "Cancel").resolve(language),
+                            onConfirm = { onEvent(StudentsEvent.ConfirmDelete) },
+                            onCancel = { onEvent(StudentsEvent.DismissDelete) },
+                            icon = {},
+                            enabled = !deletion.busy,
+                            error = deletion.message,
+                        )
+                    }
+                }
             }
         }
     }
@@ -128,13 +150,18 @@ internal fun StudentsContent(
                                 ) {
                                     StudentsFilters(state, onEvent)
                                     if (overdue) {
-                                        OverdueActions(state.searchQuery, overdueRows, onEvent)
+                                        OverdueActions(state.searchQuery, overdueRows, onEvent, enabled = !state.isReminding)
                                     } else {
                                         StudentsActionBar(state, onEvent)
                                     }
                                 }
                                 if (overdue) {
-                                    OverdueStudentsTable(overdueRows, onEvent, Modifier.fillMaxWidth())
+                                    OverdueStudentsTable(
+                                        overdueRows,
+                                        onEvent,
+                                        Modifier.fillMaxWidth(),
+                                        remindersEnabled = !state.isReminding,
+                                    )
                                 } else {
                                     val visible = state.visibleStudents
                                     StudentsDataGrid(visible, state.grades, onEvent, Modifier.fillMaxWidth())

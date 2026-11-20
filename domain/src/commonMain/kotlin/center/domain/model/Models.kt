@@ -1,5 +1,7 @@
 package center.domain.model
 
+import kotlinx.datetime.LocalDate
+
 data class Student(
     val id: String,
     val fullName: String,
@@ -7,9 +9,12 @@ data class Student(
     val studentPhone: String? = null,
     val parentPhone: String = "",
     val isActive: Boolean = true,
+    val code: String = id,
+    val stage: EducationStage? = null,
+    val system: EducationSystem? = null,
+    val enrolledGroupIds: Set<String> = emptySet(),
 ) {
     val name: String get() = fullName
-    val code: String get() = id
 }
 
 data class Teacher(
@@ -17,6 +22,9 @@ data class Teacher(
     val fullName: String,
     val subject: String,
     val commissionRate: Double = 0.70,
+    val phone: String = "",
+    val notes: String = "",
+    val assignedGroupIds: Set<String> = emptySet(),
 )
 
 enum class AttendanceStatus { PRESENT, ABSENT }
@@ -37,14 +45,19 @@ data class Payment(
     val teacherShare: Double,
     val centerShare: Double,
     val paymentDate: Long,
+    val billingMonth: LocalDate? = null,
 )
 
 enum class MessageStatus { PENDING, SENT }
 
+enum class ReminderChannel { WHATSAPP, NOTIFICATION }
+
 data class QueuedMessage(
     val id: String,
+    /** Parent phone for WhatsApp or the student ID for a notification. */
     val targetPhone: String,
     val messageBody: String,
     val status: MessageStatus = MessageStatus.PENDING,
     val createdAt: Long,
+    val channel: ReminderChannel = ReminderChannel.WHATSAPP,
 )

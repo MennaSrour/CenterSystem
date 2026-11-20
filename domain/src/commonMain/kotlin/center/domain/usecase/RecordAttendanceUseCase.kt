@@ -42,3 +42,5 @@ class RecordAttendanceUseCase(
             record
         }
 }
+
+class DuplicateAttendanceException : IllegalStateException("Attendance already recorded for this group today")

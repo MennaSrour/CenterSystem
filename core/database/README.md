@@ -7,8 +7,9 @@ models are infrastructure contracts, separate from business models in `domain`.
 
 `DatabaseFactory.kt` opens the SQLite file, creates or migrates the schema and enables
 foreign keys on every JDBC connection through SQLite driver properties. Database
-version 2 is produced by migration `1.sqm`. The desktop composition root registers
-`CenterDaos` and each DAO in Koin; the driver is closed at application shutdown.
+version 4 applies migrations `1.sqm` through `3.sqm`. The latest migration
+adds the optional grade and capacity columns to existing groups. The desktop Koin
+module registers domain repositories, use cases, and the legacy DAOs; the driver is closed at application shutdown.
 The path remains `%LOCALAPPDATA%/CenterSystem/center.db` (or `~/CenterSystem/center.db`).
 There is no server, synchronization client or messaging transport in this module.
 
@@ -44,30 +45,27 @@ val studentWithPayments: Flow<StudentWithPayments?> = daos.students.getStudentWi
 
 ## Storage rules
 
-- New IDs should be caller-generated UUID strings. Existing text student IDs are
-  preserved. Foreign keys and their lookup indices connect groups to teachers,
-  and attendance/payments to students and groups.
-- Attendance is unique by student, class and timestamp. All referenced rows use
-  restrictive deletion: remove dependent records explicitly or deactivate a student.
-- Changing a class's teacher through `ClassGroupDao` is rejected when payments
-  exist, preserving historical teacher attribution. Changing a teacher's commission
-  does not recalculate previously stored shares.
-- Amounts use the requested Double/SQLite REAL representation. Rates must be finite
-  and between 0 and 1; amounts must be finite and nonnegative. Stored shares must
-  sum to amountPaid within 0.000001. Business code calculates/rounds the allocation
-  before saving; do not treat floating point values as exact accounting decimals.
-- Timestamps are Unix epoch milliseconds. Monthly dues accept a half-open interval:
-  start inclusive, next month's start exclusive. Compute both boundaries in the
-  business timezone before calling the DAO, rather than assuming a fixed month duration.
-- Message and attendance enums are stored as checked strings. Students default to
-  active and teachers default to a 0.70 commission rate in Kotlin and SQLite.
-- Version-1 students retain their IDs and names. Newly added grade/parent-phone
-  fields are empty strings because the original schema did not contain those values;
-  complete those details during editing. No contact information is invented. The
-  legacy domain `StudentRepository` updates names without erasing the new fields.
-- SQL constraint failures propagate to the caller. Cancellation is not swallowed.
-  Do not import generated queries into UI; use domain repository adapters when
-  connecting feature workflows to persistence.
+- Migration preserves existing IDs, payments, attendance, and queued messages.
+  Legacy students fall back to their ID as a code. Existing per-session prices
+  stay in storage for compatibility and are never converted to monthly fees.
+  Staff must configure a legacy group's monthly terms and enrollments before it
+  enters billing calculations. Existing messages default to WhatsApp.
+- Groups store monthly prices in piastres, commission in basis points, room
+  numbers 1–8, education system, status, and ordered day/time slots. Students
+  and groups are related through the enrollment table.
+- Monthly billing uses explicit first-of-month attribution for new payments.
+  For legacy payments without that field, the Cairo receipt timestamp determines
+  the month. The overdue query uses the current month and only active groups and
+  students. The salary query uses full monthly fees without consulting receipts.
+- The ledger is a union of payments and the expense table, so each payment
+  becomes one income entry and receipt rollbacks cannot leave an orphan ledger
+  entry. Expenses distinguish operational costs and teacher payouts.
+- Domain payment and attendance writes use transactions to persist the event and
+  queued notification together. The attendance repository prevents duplicate
+  check-ins for the same student and group on a Cairo calendar day.
+- SQL errors propagate to callers. UI code should use domain contracts at the
+  application boundary. The Teachers, Courses, and Students routes subscribe to
+  the domain repository adapters through Koin.
 
 ## Validation
 

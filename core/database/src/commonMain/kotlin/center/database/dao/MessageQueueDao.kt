@@ -6,6 +6,7 @@ import app.cash.sqldelight.coroutines.mapToOneOrNull
 import center.database.CenterDatabase
 import center.database.entity.MessageQueueEntity
 import center.database.entity.MessageStatus
+import center.database.entity.ReminderChannel
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -23,7 +24,16 @@ class MessageQueueDao(
             .asFlow()
             .mapToList(dispatcher)
             .map { rows ->
-                rows.map { MessageQueueEntity(it.id, it.targetPhone, it.messageBody, MessageStatus.valueOf(it.status), it.createdAt) }
+                rows.map {
+                    MessageQueueEntity(
+                        it.id,
+                        it.targetPhone,
+                        it.messageBody,
+                        MessageStatus.valueOf(it.status),
+                        it.createdAt,
+                        ReminderChannel.valueOf(it.channel),
+                    )
+                }
             }
 
     fun observeById(id: String): Flow<MessageQueueEntity?> =
@@ -32,7 +42,16 @@ class MessageQueueDao(
             .asFlow()
             .mapToOneOrNull(dispatcher)
             .map { row ->
-                row?.let { MessageQueueEntity(it.id, it.targetPhone, it.messageBody, MessageStatus.valueOf(it.status), it.createdAt) }
+                row?.let {
+                    MessageQueueEntity(
+                        it.id,
+                        it.targetPhone,
+                        it.messageBody,
+                        MessageStatus.valueOf(it.status),
+                        it.createdAt,
+                        ReminderChannel.valueOf(it.channel),
+                    )
+                }
             }
 
     suspend fun save(entity: MessageQueueEntity): Unit =
@@ -43,6 +62,7 @@ class MessageQueueDao(
                 } else {
                     queries.updateRow(entity.targetPhone, entity.messageBody, entity.status.name, entity.createdAt, entity.id)
                 }
+                database.operationsQueries.setMessageChannel(entity.channel.name, entity.id)
             }
         }
 
@@ -54,7 +74,16 @@ class MessageQueueDao(
             .asFlow()
             .mapToList(dispatcher)
             .map { rows ->
-                rows.map { MessageQueueEntity(it.id, it.targetPhone, it.messageBody, MessageStatus.valueOf(it.status), it.createdAt) }
+                rows.map {
+                    MessageQueueEntity(
+                        it.id,
+                        it.targetPhone,
+                        it.messageBody,
+                        MessageStatus.valueOf(it.status),
+                        it.createdAt,
+                        ReminderChannel.valueOf(it.channel),
+                    )
+                }
             }
 
     suspend fun markSent(id: String): Unit = withContext(dispatcher) { queries.markSent(id) }

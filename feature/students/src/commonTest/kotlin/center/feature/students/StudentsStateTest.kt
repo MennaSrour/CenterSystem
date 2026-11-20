@@ -37,8 +37,8 @@ class StudentsStateTest {
     }
 
     @Test
-    fun overdueStartsOnTheSixthAndExcludesPaidAndFutureBalances() {
-        val state = StudentsPreviewData.state(LocalDate(2026, 11, 5))
+    fun overdueStartsOnTheFifthAndOnlyIncludesUnpaidCurrentBalances() {
+        val state = StudentsPreviewData.state(LocalDate(2026, 11, 4))
         assertTrue(state.overdueRows.isEmpty())
         val first = state.monthlyPayments.first()
         val extra =
@@ -48,9 +48,9 @@ class StudentsStateTest {
                 first.copy(id = "unknown", studentId = "missing"),
             )
         val withExtra = state.copy(monthlyPayments = state.monthlyPayments + extra)
-        assertEquals(listOf("previous"), withExtra.overdueRows.map { it.payment.id })
-        val afterDue = withExtra.copy(asOf = LocalDate(2026, 11, 6))
-        assertEquals(listOf("payment-1", "payment-2", "previous"), afterDue.overdueRows.map { it.payment.id })
+        assertTrue(withExtra.overdueRows.isEmpty())
+        val afterDue = withExtra.copy(asOf = LocalDate(2026, 11, 5))
+        assertEquals(listOf("payment-1", "payment-2"), afterDue.overdueRows.map { it.payment.id })
         assertEquals(
             listOf("payment-2"),
             afterDue.copy(stageFilter = StudentStageFilter.Overdue, searchQuery = "  NOHA  ").visibleOverdueRows.map { it.payment.id },

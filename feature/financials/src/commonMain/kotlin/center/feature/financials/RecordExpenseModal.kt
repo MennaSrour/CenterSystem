@@ -102,6 +102,7 @@ internal fun RecordExpenseModalContent(
             label = { Text(stringResource(Res.string.expense_amount)) },
             trailingIcon = { Text(stringResource(Res.string.currency)) },
             enabled = !state.isSubmitting,
+            readOnly = state.type == ExpenseType.TeacherPayout,
             isError = state.amountError != null,
             supportingText = state.amountError?.let { error -> ({ Text(error) }) },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),

@@ -44,10 +44,12 @@ the owning query instead of filtering an incomplete page locally.
 
 ## App wiring and shared components
 
-Dashboard → Students and Financials → Students open `desktopApp/StudentsRoute.kt`.
-That boundary owns an interactive fixture: tabs, search, filters, and form edits work;
-confirmation reports that no student was saved. Edit/delete report an unavailable
-demo action and do not change data.
+Dashboard and Financials link to the Students route. Its state holder observes
+SQLDelight-backed student and group repositories and publishes immutable UI state.
+Forms persist student details and group enrollments. Deletion requires confirmation
+and retains records protected by payment or attendance history. The overdue view
+uses the current Cairo month from the 5th onward. Reminder actions enqueue local
+WhatsApp entries and report the number queued.
 
 Pill tabs, tags, icon buttons, and a reusable page header live in `core:ui`. Financials
 also uses the page header. The shared modal supports configurable maximum width
