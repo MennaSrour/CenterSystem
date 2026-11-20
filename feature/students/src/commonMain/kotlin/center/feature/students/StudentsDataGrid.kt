@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.DeleteOutline
 import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -31,6 +32,8 @@ import center.ui.components.CenterOneIconButton
 import center.ui.components.CenterOneTable
 import center.ui.components.CenterOneTableColumn
 import center.ui.components.CenterOneTag
+import center.ui.localization.LocalAppLanguage
+import center.ui.localization.LocalizedText
 import center.ui.theme.Indigo
 import center.ui.theme.Pending
 import org.jetbrains.compose.resources.stringResource
@@ -42,6 +45,7 @@ fun StudentsDataGrid(
     onEvent: (StudentsEvent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val details = LocalizedText("عرض التفاصيل", "View details").resolve(LocalAppLanguage.current)
     val gradeById = grades.associateBy { it.id }
     val columns =
         listOf(
@@ -50,7 +54,7 @@ fun StudentsDataGrid(
             CenterOneTableColumn(stringResource(Res.string.grade), 1.3f),
             CenterOneTableColumn(stringResource(Res.string.system), 0.8f),
             CenterOneTableColumn(stringResource(Res.string.parent_phone), 1.5f),
-            CenterOneTableColumn(stringResource(Res.string.actions), 1.2f),
+            CenterOneTableColumn(stringResource(Res.string.actions), 1.5f),
         )
     CenterOneTable(columns, students, rowKey = {
         it.id
@@ -85,6 +89,7 @@ fun StudentsDataGrid(
             4 -> Text(student.parentPhone, style = MaterialTheme.typography.bodySmall.copy(textDirection = TextDirection.Ltr))
             5 ->
                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    CenterOneIconButton(Icons.Outlined.Info, details, { onEvent(StudentsEvent.OpenDetails(student.id)) })
                     CenterOneIconButton(Icons.Outlined.Edit, stringResource(Res.string.edit_student, student.name), {
                         onEvent(StudentsEvent.EditStudent(student.id))
                     })

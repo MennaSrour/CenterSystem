@@ -13,15 +13,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import center.app.resources.Res
 import center.app.resources.feature_unavailable
+import center.domain.model.AttendanceSession
 import center.domain.model.ClassGroup
 import center.domain.model.EducationSystem
 import center.domain.model.GroupStatus
+import center.domain.model.PersonType
 import center.domain.model.Student
+import center.domain.model.activeSchedule
 import center.feature.financials.ClassOption
 import center.feature.financials.StudentOption
 import center.feature.students.AddStudentState
 import center.feature.students.DeleteStudentState
 import center.feature.students.EducationStage
+import center.feature.students.StudentDetailsState
 import center.feature.students.StudentGrade
 import center.feature.students.StudentGroupOption
 import center.feature.students.StudentMonthlyPayment
@@ -37,12 +41,15 @@ import center.ui.localization.AppLanguage
 import center.ui.localization.LocalAppLanguage
 import center.ui.localization.LocalizedText
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
@@ -98,6 +105,7 @@ internal fun StudentsRoute(
     }
 }
 
+@OptIn(ExperimentalCoroutinesApi::class)
 internal class StudentsStateHolder(
     private val services: DirectoryServices,
     private val scope: CoroutineScope,
@@ -130,6 +138,8 @@ internal class StudentsStateHolder(
                 ),
             )
         }
+    private val detailId = MutableStateFlow<String?>(null)
+    private var history = emptyList<AttendanceSession>()
     private var records = emptyMap<String, Student>()
     private var groups = emptyList<ClassGroup>()
     private val mutableState =
@@ -158,6 +168,16 @@ internal class StudentsStateHolder(
         }
 
     init {
+        scope.launch {
+            detailId
+                .flatMapLatest { id ->
+                    if (id == null) flowOf(emptyList()) else services.sessions.observeHistory(PersonType.STUDENT, id)
+                }.catch { mutableFeedback.emit(failure) }
+                .collect {
+                    history = it
+                    mutableState.update { current -> current.copy(details = details()) }
+                }
+        }
         scope.launch {
             combine(
                 services.students.observeStudents(),
@@ -212,11 +232,33 @@ internal class StudentsStateHolder(
                         asOf = today,
                         dateLabel = today.toString(),
                         monthlyPayments = payments,
+                        details = details(),
                         addStudent = it.addStudent?.let { form -> form.copy(groupOptions = availableGroups(form.selectedGroupIds)) },
                     )
                 }
             }.catch { mutableFeedback.emit(failure) }.collect {}
         }
+    }
+
+    private fun details(): StudentDetailsState? {
+        val student = records[detailId.value] ?: return null
+        val groupLabels = groups.associate { it.id to it.name }
+        return StudentDetailsState(
+            student.id,
+            student.fullName,
+            student.code,
+            student.studentPhone,
+            student.parentPhone,
+            student.activeSchedule(groups).map { group ->
+                val ar = group.schedule.scheduleText(AppLanguage.Arabic)
+                val en = group.schedule.scheduleText(AppLanguage.English)
+                LocalizedText(
+                    "${group.name} · ${ar.ifBlank { "لم يحدد موعد" }}",
+                    "${group.name} · ${en.ifBlank { "No times set" }}",
+                )
+            },
+            history.filter { it.person.id == student.id }.map { it.summary(groupLabels[it.person.groupId]) },
+        )
     }
 
     private fun Student.gradeId(): String = grades.firstOrNull { it.id == gradeLevel }?.id ?: allGradeLabels[gradeLevel]?.id.orEmpty()
@@ -243,12 +285,25 @@ internal class StudentsStateHolder(
             editingId = student?.id,
             groupOptions = availableGroups(student?.enrolledGroupIds.orEmpty()),
             selectedGroupIds = student?.enrolledGroupIds.orEmpty(),
+            studentPhone = student?.studentPhone.orEmpty(),
+            discounts =
+                student?.groupDiscounts.orEmpty().mapValues { (_, discount) ->
+                    kotlin.math
+                        .round(discount * 100)
+                        .toLong()
+                        .decimalMinor()
+                },
         )
 
     private fun editForm(edit: (AddStudentState) -> AddStudentState) {
         val form = state.addStudent ?: return
         if (form.isSubmitting) return
         val updated = edit(form)
+        val invalidDiscounts =
+            updated.selectedGroupIds.filterTo(mutableSetOf()) { id ->
+                val discount = updated.discounts[id].orEmpty()
+                discount.isNotBlank() && discount.parseMinor() == null
+            }
         state =
             state.copy(
                 addStudent =
@@ -258,7 +313,9 @@ internal class StudentsStateHolder(
                             updated.name.isNotBlank() &&
                                 updated.code.isNotBlank() &&
                                 updated.selectedGradeId != null &&
-                                updated.parentPhone.isNotBlank(),
+                                updated.parentPhone.isNotBlank() &&
+                                invalidDiscounts.isEmpty(),
+                        invalidDiscounts = invalidDiscounts,
                     ),
             )
     }
@@ -295,6 +352,17 @@ internal class StudentsStateHolder(
                 }
             is StudentsEvent.SystemSelected -> editForm { it.copy(system = event.system) }
             is StudentsEvent.ParentPhoneChanged -> editForm { it.copy(parentPhone = event.value) }
+            is StudentsEvent.StudentPhoneChanged -> editForm { it.copy(studentPhone = event.value) }
+            is StudentsEvent.DiscountChanged -> editForm { it.copy(discounts = it.discounts + (event.groupId to event.value)) }
+            is StudentsEvent.OpenDetails ->
+                if (event.id in records) {
+                    detailId.value = event.id
+                    state = state.copy(details = details())
+                }
+            StudentsEvent.CloseDetails -> {
+                detailId.value = null
+                state = state.copy(details = null)
+            }
             StudentsEvent.SubmitAddStudent -> save()
             is StudentsEvent.EditStudent ->
                 records[event.id]?.let { state = state.copy(addStudent = formFor(it)) }
@@ -349,6 +417,8 @@ internal class StudentsStateHolder(
                             system = if (form.system == StudentSystem.Arabic) EducationSystem.ARABIC else EducationSystem.LANGUAGES,
                             parentPhone = form.parentPhone,
                             enrolledGroupIds = form.selectedGroupIds,
+                            studentPhone = form.studentPhone.trim().ifEmpty { null },
+                            groupDiscounts = form.selectedGroupIds.associateWith { (form.discounts[it]?.parseMinor() ?: 0L) / 100.0 },
                         ),
                     )
                 }

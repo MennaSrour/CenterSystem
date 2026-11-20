@@ -4,6 +4,26 @@ import center.ui.components.MainNavigation
 import center.ui.localization.AppLanguage
 
 sealed interface TeachersEvent {
+    data class StaffTabSelected(
+        val selected: Boolean,
+    ) : TeachersEvent
+
+    data class OpenStaff(
+        val id: String,
+    ) : TeachersEvent
+
+    data class EditStaff(
+        val id: String,
+    ) : TeachersEvent
+
+    data object AddStaff : TeachersEvent
+
+    data class StaffDraftChanged(
+        val draft: StaffDraft,
+    ) : TeachersEvent
+
+    data object SaveStaff : TeachersEvent
+
     data class SearchChanged(
         val query: String,
     ) : TeachersEvent

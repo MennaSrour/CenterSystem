@@ -67,6 +67,7 @@ data class StudentsState(
     val addStudent: AddStudentState? = null,
     val monthlyPayments: List<StudentMonthlyPayment> = emptyList(),
     val asOf: LocalDate? = null,
+    val details: StudentDetailsState? = null,
     val deleteStudent: DeleteStudentState? = null,
     val isReminding: Boolean = false,
 ) {
@@ -152,4 +153,7 @@ data class AddStudentState(
     val editingId: String? = null,
     val groupOptions: List<StudentGroupOption> = emptyList(),
     val selectedGroupIds: Set<String> = emptySet(),
+    val studentPhone: String = "",
+    val discounts: Map<String, String> = emptyMap(),
+    val invalidDiscounts: Set<String> = emptySet(),
 )

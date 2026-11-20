@@ -3,6 +3,21 @@ package center.feature.students
 import center.ui.localization.AppLanguage
 
 sealed interface StudentsEvent {
+    data class OpenDetails(
+        val id: String,
+    ) : StudentsEvent
+
+    data object CloseDetails : StudentsEvent
+
+    data class StudentPhoneChanged(
+        val value: String,
+    ) : StudentsEvent
+
+    data class DiscountChanged(
+        val groupId: String,
+        val value: String,
+    ) : StudentsEvent
+
     data class StageSelected(
         val filter: StudentStageFilter,
     ) : StudentsEvent

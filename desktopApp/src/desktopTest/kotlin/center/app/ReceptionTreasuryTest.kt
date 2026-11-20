@@ -5,6 +5,7 @@ import center.domain.model.ClassGroup
 import center.domain.model.EducationSystem
 import center.domain.model.GroupStatus
 import center.domain.model.LedgerKind
+import center.domain.model.StaffMember
 import center.domain.model.Student
 import center.domain.model.Teacher
 import center.domain.model.TreasuryExpense
@@ -33,6 +34,72 @@ import kotlin.test.assertTrue
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class ReceptionTreasuryTest {
+    @Test
+    fun receptionDistinguishesPeopleWithTheSameNameAndShowsRecordedTimes() =
+        runTest {
+            val directory = Files.createTempDirectory("center-reception-presence")
+            val start = LocalDate(2026, 11, 5).startMillis()
+            var now = start + (16 * 60 + 5) * 60_000L
+            try {
+                openDatabase(directory).use { driver ->
+                    val app =
+                        koinApplication {
+                            modules(persistenceModule(driver, StandardTestDispatcher(testScheduler), EpochClock { now }))
+                        }
+                    try {
+                        val services = app.koin.get<DirectoryServices>()
+                        services.teachers.save(Teacher("t", "Nour", "Physics"))
+                        services.staff.save(StaffMember("m", "Nour", "Secretary", "01000000001"))
+                        val reception = DashboardStateHolder(services, backgroundScope, AppLanguage.English)
+                        runCurrent()
+
+                        reception.onEvent(DashboardEvent.QueryChanged("Nour"))
+                        reception.onEvent(DashboardEvent.Search)
+                        val candidates = reception.uiState.value.candidates
+                        assertEquals(listOf("Teacher", "Staff"), candidates.map { it.label })
+                        reception.onEvent(DashboardEvent.SelectStudent(candidates.last().code))
+                        val staffKey =
+                            reception.uiState.value.student!!
+                                .code
+                        reception.onEvent(DashboardEvent.RegisterAttendance(staffKey))
+                        runCurrent()
+                        assertEquals(
+                            "16:05",
+                            reception.uiState.value.student!!
+                                .attendance!!
+                                .single()
+                                .checkIn,
+                        )
+
+                        now = start + (18 * 60 + 10) * 60_000L
+                        reception.onEvent(DashboardEvent.CheckOut(staffKey))
+                        runCurrent()
+                        assertEquals(
+                            "18:10",
+                            reception.uiState.value.student!!
+                                .attendance!!
+                                .single()
+                                .checkOut,
+                        )
+                        assertEquals("1", reception.uiState.value.attendance)
+
+                        reception.onEvent(DashboardEvent.QueryChanged("t"))
+                        reception.onEvent(DashboardEvent.Search)
+                        val teacherKey =
+                            reception.uiState.value.student!!
+                                .code
+                        reception.onEvent(DashboardEvent.RegisterAttendance(teacherKey))
+                        runCurrent()
+                        assertEquals("2", reception.uiState.value.attendance)
+                    } finally {
+                        app.close()
+                    }
+                }
+            } finally {
+                directory.toFile().deleteRecursively()
+            }
+        }
+
     @Test
     fun paymentAttendanceAndExpensesUpdateAllOpenScreens() =
         runTest {

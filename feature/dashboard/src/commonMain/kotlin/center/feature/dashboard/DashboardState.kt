@@ -23,11 +23,20 @@ data class QuickStudent(
     val grade: LocalizedText,
     val paymentStatus: PaymentStatus,
     val attendanceGroups: List<AttendanceGroup>? = null,
+    val isStudent: Boolean = true,
+    val attendance: List<QuickAttendance>? = null,
+)
+
+data class QuickAttendance(
+    val groupId: String,
+    val checkIn: String,
+    val checkOut: String?,
 )
 
 data class StudentCandidate(
     val code: String,
     val name: String,
+    val label: String = code,
 )
 
 data class AttendanceGroup(

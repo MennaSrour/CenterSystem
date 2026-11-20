@@ -75,6 +75,7 @@ fun StudentsScreen(
     CenterOneLocalization(LocalAppLanguage.current) {
         Box(modifier.fillMaxSize()) {
             StudentsContent(state, onEvent)
+            state.details?.let { StudentDetails(it) { onEvent(StudentsEvent.CloseDetails) } }
             state.addStudent?.let { form ->
                 Box(Modifier.matchParentSize().background(ModalScrim))
                 AddStudentModal(form, onEvent)

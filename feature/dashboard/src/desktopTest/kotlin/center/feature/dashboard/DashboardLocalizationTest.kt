@@ -69,7 +69,7 @@ class DashboardLocalizationTest {
             }
             val search = onNode(hasSetTextAction())
             search.performClick().performKeyInput { pressKey(Key.Enter) }
-            onNodeWithText("Register attendance").performScrollTo().performClick()
+            onNodeWithText("Check-in").performScrollTo().performClick()
             onNodeWithText("Pay subscription").performScrollTo().performClick()
             onNodeWithText("New student").performScrollTo().performClick()
             onNodeWithText("Collect subscription").performScrollTo().performClick()
@@ -106,8 +106,8 @@ class DashboardLocalizationTest {
             onNodeWithText("Paid").assertExists()
             onNodeWithText("Overdue").assertDoesNotExist()
             runOnIdle { state.value = state.value.copy(student = null, searchSubmitted = true) }
-            onNodeWithText("No student found.").assertExists()
-            onNodeWithText("Register attendance").assertDoesNotExist()
+            onNodeWithText("No matches found.").assertExists()
+            onNodeWithText("Check-in").assertDoesNotExist()
         }
 
     @Test

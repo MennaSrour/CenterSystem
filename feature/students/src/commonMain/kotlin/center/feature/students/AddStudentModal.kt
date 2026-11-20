@@ -128,6 +128,15 @@ internal fun AddStudentModalContent(
                         )
                     }
                     CenterOneTextField(
+                        value = state.studentPhone,
+                        onValueChange = { onEvent(StudentsEvent.StudentPhoneChanged(it)) },
+                        label = { Text(LocalizedText("هاتف الطالب (اختياري)", "Student phone (optional)").resolve(language)) },
+                        enabled = !state.isSubmitting,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                        textStyle = MaterialTheme.typography.bodyLarge.copy(textDirection = TextDirection.Ltr),
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    CenterOneTextField(
                         value = state.parentPhone,
                         onValueChange = { onEvent(StudentsEvent.ParentPhoneChanged(it)) },
                         label = { Text(stringResource(Res.string.phone_label)) },
@@ -163,6 +172,31 @@ internal fun AddStudentModalContent(
                         enabled = !state.isSubmitting,
                     )
                     Text(group.label)
+                }
+                if (group.id in state.selectedGroupIds) {
+                    CenterOneTextField(
+                        value = state.discounts[group.id].orEmpty(),
+                        onValueChange = { onEvent(StudentsEvent.DiscountChanged(group.id, it)) },
+                        label = { Text(LocalizedText("الخصم الشهري (ج.م)", "Monthly discount (EGP)").resolve(language)) },
+                        enabled = !state.isSubmitting,
+                        isError = group.id in state.invalidDiscounts,
+                        supportingText =
+                            if (group.id in state.invalidDiscounts) {
+                                {
+                                    Text(
+                                        LocalizedText(
+                                            "أدخل مبلغًا صالحًا بمنزلتين عشريتين كحد أقصى",
+                                            "Enter an amount with up to two decimal places",
+                                        ).resolve(language),
+                                    )
+                                }
+                            } else {
+                                null
+                            },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        textStyle = MaterialTheme.typography.bodyLarge.copy(textDirection = TextDirection.Ltr),
+                        modifier = Modifier.fillMaxWidth(),
+                    )
                 }
             }
         }

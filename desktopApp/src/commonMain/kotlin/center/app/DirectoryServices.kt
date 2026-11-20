@@ -7,8 +7,10 @@ import androidx.compose.runtime.rememberCoroutineScope
 import center.domain.RegisterStudent
 import center.domain.model.EducationStage
 import center.domain.repository.AttendanceRepository
+import center.domain.repository.AttendanceSessionRepository
 import center.domain.repository.ClassGroupRepository
 import center.domain.repository.MonthlyBillingRepository
+import center.domain.repository.StaffRepository
 import center.domain.repository.StudentRepository
 import center.domain.repository.TeacherRepository
 import center.domain.repository.TreasuryRepository
@@ -19,7 +21,7 @@ import center.domain.usecase.IdGenerator
 import center.domain.usecase.PayTeacherSalaryUseCase
 import center.domain.usecase.ProcessPaymentUseCase
 import center.domain.usecase.QueueReminderUseCase
-import center.domain.usecase.RecordAttendanceUseCase
+import center.domain.usecase.RegisterPresenceUseCase
 import center.ui.localization.AppLanguage
 import center.ui.localization.LocalizedText
 import kotlinx.coroutines.CancellationException
@@ -51,7 +53,9 @@ internal class DirectoryServices(
     val clock: EpochClock,
     val ids: IdGenerator,
     val attendance: AttendanceRepository,
-    val recordAttendance: RecordAttendanceUseCase,
+    val sessions: AttendanceSessionRepository,
+    val staff: StaffRepository,
+    val presence: RegisterPresenceUseCase,
     val processPayment: ProcessPaymentUseCase,
 ) {
     fun today(): LocalDate = Instant.fromEpochMilliseconds(clock.nowMillis()).toLocalDateTime(Cairo).date

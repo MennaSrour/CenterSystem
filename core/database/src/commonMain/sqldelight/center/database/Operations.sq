@@ -1,6 +1,7 @@
 CREATE TABLE enrollment (
     studentId TEXT NOT NULL REFERENCES student(id) ON DELETE RESTRICT,
     classId TEXT NOT NULL REFERENCES class_group(id) ON DELETE RESTRICT,
+    discountAmount REAL NOT NULL DEFAULT 0.0 CHECK (discountAmount >= 0.0),
     PRIMARY KEY (studentId, classId)
 );
 CREATE INDEX enrollment_class ON enrollment(classId);
@@ -25,12 +26,12 @@ CREATE TABLE treasury_expense (
 CREATE INDEX treasury_expense_time ON treasury_expense(recordedAt);
 
 selectDirectory:
-SELECT student.*, enrollment.classId AS enrolledGroupId
+SELECT student.*, enrollment.classId AS enrolledGroupId, enrollment.discountAmount
 FROM student LEFT JOIN enrollment ON student.id = enrollment.studentId
 ORDER BY student.id, enrollment.classId;
 
 selectStudentByCode:
-SELECT student.*, enrollment.classId AS enrolledGroupId
+SELECT student.*, enrollment.classId AS enrolledGroupId, enrollment.discountAmount
 FROM student LEFT JOIN enrollment ON student.id = enrollment.studentId
 WHERE coalesce(student.code, student.id) = :code ORDER BY enrollment.classId;
 
@@ -41,7 +42,10 @@ clearEnrollments:
 DELETE FROM enrollment WHERE studentId = ?;
 
 insertEnrollment:
-INSERT INTO enrollment(studentId, classId) VALUES (?, ?);
+INSERT INTO enrollment(studentId, classId, discountAmount) VALUES (?, ?, ?);
+
+enrollmentDiscount:
+SELECT discountAmount FROM enrollment WHERE studentId = ? AND classId = ?;
 
 hasEnrollment:
 SELECT EXISTS(SELECT 1 FROM enrollment WHERE studentId = ? AND classId = ?);
@@ -81,7 +85,7 @@ SELECT student.id AS studentId, coalesce(student.code, student.id) AS code,
        student.name AS studentName, student.parentPhone,
        class_group.id AS classId, class_group.name AS groupName,
        teacher.id AS teacherId, teacher.fullName AS teacherName,
-       CAST(class_group.monthlyPriceMinor - coalesce(sum(CAST(round(payment.amountPaid * 100) AS INTEGER)), 0) AS INTEGER) AS remainingMinor
+       CAST(max(0, class_group.monthlyPriceMinor - CAST(round(enrollment.discountAmount * 100) AS INTEGER)) - coalesce(sum(CAST(round(payment.amountPaid * 100) AS INTEGER)), 0) AS INTEGER) AS remainingMinor
 FROM enrollment
 JOIN student ON student.id = enrollment.studentId
 JOIN class_group ON class_group.id = enrollment.classId
@@ -134,7 +138,7 @@ selectAssignedGroups:
 SELECT id FROM class_group WHERE teacherId = ? ORDER BY id;
 
 selectDirectoryStudentById:
-SELECT student.*, enrollment.classId AS enrolledGroupId
+SELECT student.*, enrollment.classId AS enrolledGroupId, enrollment.discountAmount
 FROM student LEFT JOIN enrollment ON student.id = enrollment.studentId
 WHERE student.id = :id ORDER BY enrollment.classId;
 

@@ -27,7 +27,12 @@ class RegisterStudent(
         require(student.system != EducationSystem.BOTH) { "Students must use one education system" }
         require(student.parentPhone.isNotBlank()) { "Parent phone is required" }
         repository.save(
-            student.copy(code = student.code.trim(), fullName = student.fullName.trim(), parentPhone = student.parentPhone.trim()),
+            student.copy(
+                code = student.code.trim(),
+                fullName = student.fullName.trim(),
+                parentPhone = student.parentPhone.trim(),
+                studentPhone = student.studentPhone?.trim()?.takeIf { it.isNotEmpty() },
+            ),
         )
     }
 }

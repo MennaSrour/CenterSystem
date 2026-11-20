@@ -46,6 +46,8 @@ import center.ui.components.CenterOneTextField
 import center.ui.components.StatusBadge
 import center.ui.components.StatusTone
 import center.ui.localization.AppLanguage
+import center.ui.localization.LocalizedText
+import center.ui.text.isolateLtr
 import center.ui.theme.Gold
 import center.ui.theme.Indigo
 import center.ui.theme.Rose
@@ -90,7 +92,7 @@ internal fun StudentSearch(
                 LazyColumn(Modifier.fillMaxWidth().heightIn(max = 200.dp)) {
                     items(state.candidates, key = { it.code }) { candidate ->
                         CenterOneTextButton(onClick = { onEvent(DashboardEvent.SelectStudent(candidate.code)) }) {
-                            Text("${candidate.name} · ${candidate.code}")
+                            Text("${candidate.name} · ${candidate.label}")
                         }
                     }
                 }
@@ -113,6 +115,8 @@ internal fun StudentActionCard(
     val name = student.name.resolve(language)
     val groups = student.attendanceGroups
     val groupId = attendanceGroupId?.takeIf { id -> groups?.any { it.id == id } == true } ?: groups?.singleOrNull()?.id
+    val session = student.attendance?.firstOrNull { it.groupId == groupId.orEmpty() }
+    val canSelectGroup = groups == null || groups.isEmpty() || groupId != null
     val (label, tone) =
         when (student.paymentStatus) {
             PaymentStatus.Paid -> DashboardText.PAID to StatusTone.Success
@@ -132,11 +136,9 @@ internal fun StudentActionCard(
                     Text(name, style = MaterialTheme.typography.titleLarge)
                     Text(student.grade.resolve(language), color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
-                StatusBadge(dashboardString(label), tone)
+                if (student.isStudent) StatusBadge(dashboardString(label), tone)
             }
-            if (groups != null && groups.isEmpty()) {
-                Text(dashboardString(DashboardText.NO_GROUPS), style = MaterialTheme.typography.bodySmall)
-            } else if (groups != null && groups.size > 1) {
+            if (groups != null && groups.size > 1) {
                 CenterOneDropdown(
                     value = groups.firstOrNull { it.id == groupId }?.name.orEmpty(),
                     label = dashboardString(DashboardText.ATTENDANCE_GROUP),
@@ -147,16 +149,31 @@ internal fun StudentActionCard(
                     enabled = !checkingIn,
                 )
             }
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            if (session != null) {
+                val enter = session.checkIn.isolateLtr()
+                val exit = session.checkOut?.isolateLtr() ?: "—"
+                Text(LocalizedText("حضور $enter · انصراف $exit", "Check-in $enter · Check-out $exit").resolve(language))
+            }
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 CenterOnePrimaryButton(
                     onClick = { onEvent(DashboardEvent.RegisterAttendance(student.code, groupId)) },
-                    enabled = !checkingIn && (groups == null || groupId != null),
+                    enabled = !checkingIn && canSelectGroup && session == null,
                     tone = CenterOneButtonTone.Success,
                 ) {
                     Text(dashboardString(DashboardText.CHECK_IN))
                 }
-                CenterOnePrimaryButton(onClick = { onEvent(DashboardEvent.PaySubscription(student.code)) }) {
-                    Text(dashboardString(DashboardText.PAY_SUBSCRIPTION))
+                if (student.attendance != null) {
+                    CenterOnePrimaryButton(
+                        onClick = { onEvent(DashboardEvent.CheckOut(student.code, groupId)) },
+                        enabled = !checkingIn && session != null && session.checkOut == null,
+                    ) {
+                        Text(LocalizedText("تسجيل انصراف", "Check-out").resolve(language))
+                    }
+                }
+                if (student.isStudent) {
+                    CenterOnePrimaryButton(onClick = { onEvent(DashboardEvent.PaySubscription(student.code)) }) {
+                        Text(dashboardString(DashboardText.PAY_SUBSCRIPTION))
+                    }
                 }
             }
         }
