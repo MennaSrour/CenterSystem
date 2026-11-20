@@ -57,6 +57,14 @@ sealed interface StudentsEvent {
         val id: String,
     ) : StudentsEvent
 
+    data object DismissDelete : StudentsEvent
+
+    data object ConfirmDelete : StudentsEvent
+
+    data class ToggleGroup(
+        val id: String,
+    ) : StudentsEvent
+
     data class Navigate(
         val destination: StudentsDestination,
     ) : StudentsEvent

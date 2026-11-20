@@ -48,16 +48,16 @@ At wide desktop sizes statistics occupy four columns. Smaller content widths use
 two columns; below a 1080 dp viewport the canvas scrolls horizontally. The sidebar
 remains at the physical left in RTL. Table rows render lazily with a bounded viewport.
 
-## Interactive fixture
+## Desktop integration
 
-`FinancialsPreviewData` explicitly supplies screenshot-inspired dummy data.
-`desktopApp/FinancialsRoute.kt` owns an interactive in-memory fixture. Open it using
-the dashboard's Payments action. Confirmation displays that nothing was saved;
-attachment requests explain that platform integration is pending. Switching the
-expense type shows/hides teacher fields without calling domain code.
-
-The existing Billing workspace remains available. No financial transaction,
-receipt upload, WhatsApp message, or logout occurs in this UI-first implementation.
+The desktop route observes the SQLDelight ledger and Treasury aggregates. Daily
+totals use Cairo calendar boundaries. Drawer balance is cumulative income less
+expenses through the current day. Monthly net uses the same cash basis for the
+current month. Payment collection uses a real student, group and balance, and
+queues a WhatsApp confirmation in the same transaction as the payment.
+Operational expenses and teacher salary payouts flow into the same ledger.
+Salary payouts use current dues and are limited to one per teacher per month.
+Preview data is reserved for feature previews and tests.
 
 ## Validation
 

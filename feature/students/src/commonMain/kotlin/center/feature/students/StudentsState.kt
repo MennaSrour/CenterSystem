@@ -23,8 +23,10 @@ data class StudentRow(
     val name: String,
     val englishName: String,
     val gradeId: String,
-    val system: StudentSystem,
+    val system: StudentSystem?,
     val parentPhone: String,
+    val stage: EducationStage? = null,
+    val gradeLabel: String? = null,
 )
 
 data class StudentMonthlyPayment(
@@ -35,6 +37,7 @@ data class StudentMonthlyPayment(
     val teacher: LocalizedText,
     val billingMonth: LocalDate,
     val remainingEgp: Long,
+    val remainingMinor: Long = remainingEgp * 100,
 ) {
     val dueOn: LocalDate get() = LocalDate(billingMonth.year, billingMonth.month, 5)
 }
@@ -64,6 +67,8 @@ data class StudentsState(
     val addStudent: AddStudentState? = null,
     val monthlyPayments: List<StudentMonthlyPayment> = emptyList(),
     val asOf: LocalDate? = null,
+    val deleteStudent: DeleteStudentState? = null,
+    val isReminding: Boolean = false,
 ) {
     val availableGrades: List<StudentGrade> get() = grades.filter { stageFilter.matches(it.stage) }
     val visibleStudents: List<StudentRow>
@@ -71,7 +76,7 @@ data class StudentsState(
             val query = searchQuery.trim()
             val gradeById = grades.associateBy { it.id }
             return students.filter { student ->
-                stageFilter.matches(gradeById[student.gradeId]?.stage) &&
+                stageFilter.matches(student.stage ?: gradeById[student.gradeId]?.stage) &&
                     (selectedGradeId == null || selectedGradeId == student.gradeId) &&
                     student.matchesSearch(query)
             }
@@ -83,7 +88,8 @@ data class StudentsState(
             val studentById = students.associateBy { it.id }
             return monthlyPayments.mapNotNull { payment ->
                 val student = studentById[payment.studentId]
-                if (student != null && payment.remainingEgp > 0 && date > payment.dueOn) {
+                val currentMonth = date.year == payment.billingMonth.year && date.month == payment.billingMonth.month
+                if (student != null && payment.remainingMinor > 0 && currentMonth && date >= payment.dueOn) {
                     OverdueStudentRow(student, payment)
                 } else {
                     null
@@ -116,6 +122,18 @@ private fun StudentStageFilter.matches(stage: EducationStage?): Boolean =
         StudentStageFilter.Secondary -> stage == EducationStage.Secondary
     }
 
+data class StudentGroupOption(
+    val id: String,
+    val label: String,
+)
+
+data class DeleteStudentState(
+    val id: String,
+    val name: String,
+    val busy: Boolean = false,
+    val message: String? = null,
+)
+
 data class AddStudentState(
     val name: String = "",
     val code: String = "",
@@ -131,4 +149,7 @@ data class AddStudentState(
     val message: String? = null,
     val canSubmit: Boolean = false,
     val isSubmitting: Boolean = false,
+    val editingId: String? = null,
+    val groupOptions: List<StudentGroupOption> = emptyList(),
+    val selectedGroupIds: Set<String> = emptySet(),
 )

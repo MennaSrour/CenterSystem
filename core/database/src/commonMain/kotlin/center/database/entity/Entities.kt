@@ -72,6 +72,8 @@ data class PaymentEntity(
 
 enum class MessageStatus { PENDING, SENT }
 
+enum class ReminderChannel { WHATSAPP, NOTIFICATION }
+
 data class MessageQueueEntity(
     val id: String,
     val targetPhone: String,
@@ -79,6 +81,7 @@ data class MessageQueueEntity(
     val status: MessageStatus = MessageStatus.PENDING,
     /** Unix epoch milliseconds. */
     val createdAt: Long,
+    val channel: ReminderChannel = ReminderChannel.WHATSAPP,
 ) {
     init {
         require(id.isNotBlank() && targetPhone.isNotBlank() && messageBody.isNotBlank())

@@ -33,6 +33,7 @@ kotlin {
             implementation(project(":core:utils"))
         }
         commonTest.dependencies { implementation(kotlin("test")) }
+        getByName("desktopTest").dependencies { implementation(libs.coroutines.test) }
     }
 }
 compose.desktop {

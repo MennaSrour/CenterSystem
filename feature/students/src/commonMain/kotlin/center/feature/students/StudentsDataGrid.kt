@@ -62,38 +62,26 @@ fun StudentsDataGrid(
                     CenterOneAvatar(student.name.take(1))
                     Column {
                         Text(student.name, style = MaterialTheme.typography.titleSmall)
-                        Text(
-                            student.englishName,
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
+                        if (student.englishName.isNotBlank() && student.englishName != student.name) {
+                            Text(
+                                student.englishName,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
                     }
                 }
             2 ->
                 Text(
-                    gradeById[student.gradeId]?.label ?: stringResource(Res.string.unknown_grade),
+                    gradeById[student.gradeId]?.label ?: student.gradeLabel ?: stringResource(Res.string.unknown_grade),
                     style = MaterialTheme.typography.bodySmall,
                 )
             3 ->
-                CenterOneTag(
-                    stringResource(
-                        if (student.system ==
-                            StudentSystem.Arabic
-                        ) {
-                            Res.string.arabic_system
-                        } else {
-                            Res.string.languages_system
-                        },
-                    ),
-                    color =
-                        if (student.system ==
-                            StudentSystem.Arabic
-                        ) {
-                            Pending
-                        } else {
-                            Indigo
-                        },
-                )
+                when (student.system) {
+                    StudentSystem.Arabic -> CenterOneTag(stringResource(Res.string.arabic_system), color = Pending)
+                    StudentSystem.Languages -> CenterOneTag(stringResource(Res.string.languages_system), color = Indigo)
+                    null -> Text("—", style = MaterialTheme.typography.bodySmall)
+                }
             4 -> Text(student.parentPhone, style = MaterialTheme.typography.bodySmall.copy(textDirection = TextDirection.Ltr))
             5 ->
                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {

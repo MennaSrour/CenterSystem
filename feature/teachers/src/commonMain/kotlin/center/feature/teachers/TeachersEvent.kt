@@ -9,11 +9,15 @@ sealed interface TeachersEvent {
     ) : TeachersEvent
 
     data class OpenTeacher(
-        val id: Int,
+        val id: String,
     ) : TeachersEvent
 
     data class PaySalary(
-        val id: Int,
+        val id: String,
+    ) : TeachersEvent
+
+    data class EditTeacher(
+        val id: String,
     ) : TeachersEvent
 
     data object OpenAddTeacher : TeachersEvent

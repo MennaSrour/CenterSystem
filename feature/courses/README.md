@@ -48,14 +48,14 @@ never computes payouts, generates business IDs, saves groups, or deletes records
 The owner should close card menus when opening a modal and keep only one form dropdown
 or day menu expanded.
 
-## Interactive fixture and shared components
+## Desktop wiring and shared components
 
 `CoursesPreviewData` provides six example groups, teachers, grades, schedules, rooms,
 and sample summary values (18 groups / 15 active / 12 teachers), which illustrate the
-screenshot rather than aggregate the six-row fixture. `desktopApp/CoursesRoute.kt`
-owns interactive demo state and creates unique draft slot IDs. Save, stop, and delete
-report that nothing was persisted. This wrapper is the stateful app boundary; the
-feature remains state/callback driven and ready for a lifecycle-owned domain adapter.
+screenshot rather than aggregate the six-row fixture. The desktop route observes
+SQLDelight-backed groups, teachers, and enrollments. It persists add and edit
+forms, archives groups, and deletes unreferenced groups after confirmation.
+The feature consumes immutable UI state and emits callbacks.
 
 Dashboard, Students, and Financials Courses links open this screen. New reusable
 capacity meter, destructive button, and confirmation surface live in `core:ui`.

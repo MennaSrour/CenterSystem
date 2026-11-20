@@ -20,7 +20,7 @@ sealed interface ReceptionShortcut {
     data class PayOverdue(
         val student: StudentOption,
         val group: ClassOption,
-        val remainingEgp: Long,
+        val remainingMinor: Long,
     ) : ReceptionShortcut
 
     data object RecordExpense : ReceptionShortcut

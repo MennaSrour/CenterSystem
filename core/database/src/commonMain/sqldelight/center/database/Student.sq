@@ -4,9 +4,13 @@ CREATE TABLE student (
     gradeLevel TEXT NOT NULL DEFAULT '',
     studentPhone TEXT,
     parentPhone TEXT NOT NULL DEFAULT '',
-    isActive INTEGER AS kotlin.Boolean NOT NULL DEFAULT 1 CHECK (isActive IN (0, 1))
+    isActive INTEGER AS kotlin.Boolean NOT NULL DEFAULT 1 CHECK (isActive IN (0, 1)),
+    code TEXT,
+    stage TEXT CHECK (stage IN ('PRIMARY', 'PREP', 'SECONDARY')),
+    system TEXT CHECK (system IN ('ARABIC', 'LANGUAGES'))
 );
 CREATE INDEX student_active_name ON student(isActive, name);
+CREATE UNIQUE INDEX student_effective_code ON student(coalesce(code, id));
 
 selectAll:
 SELECT * FROM student ORDER BY id;

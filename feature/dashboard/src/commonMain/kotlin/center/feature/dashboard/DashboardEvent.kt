@@ -10,8 +10,21 @@ sealed interface DashboardEvent {
 
     data object Search : DashboardEvent
 
+    data class SelectStudent(
+        val code: String,
+    ) : DashboardEvent
+
+    data class SelectAttendanceGroup(
+        val id: String,
+    ) : DashboardEvent
+
+    data class AttendanceGroupMenuChanged(
+        val expanded: Boolean,
+    ) : DashboardEvent
+
     data class RegisterAttendance(
         val studentCode: String,
+        val groupId: String? = null,
     ) : DashboardEvent
 
     data class PaySubscription(

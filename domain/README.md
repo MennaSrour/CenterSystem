@@ -2,11 +2,11 @@
 
 `src/commonMain/kotlin/center/domain/` contains:
 
-- `model/`: Student, Teacher, Payment, Attendance, QueuedMessage and domain enums.
-- `repository/`: StudentRepository, TeacherRepository, PaymentRepository,
-  AttendanceRepository and MessageQueueRepository.
-- `usecase/`: ProcessPaymentUseCase, RecordAttendanceUseCase,
-  GetTeacherMonthlyDuesUseCase and SyncPendingMessagesUseCase.
+- `model/` defines student, teacher, group, enrollment-facing, billing, ledger,
+  attendance and reminder contracts.
+- `repository/` exposes persistence interfaces independent of SQLDelight.
+- `usecase/` contains student registration, payment, attendance, salary,
+  overdue balances, collection deficits and reminder queuing.
 
 The module has no dependency on SQLite, Java, Android, Compose or Koin. Coroutines
 and kotlinx-datetime are KMP dependencies. All business code and tests use common
@@ -21,51 +21,39 @@ ordinary business failure. Clocks and ID generators are injected; the desktop
 composition root supplies epoch milliseconds and UUID strings. Tests use fixed
 clock/ID implementations.
 
-The existing database has no separate barcode/student-code column. A student's
-code is their existing primary ID, and `getStudentByCode` uses exact ID lookup.
-The use cases trim scanned student codes. Existing student identifiers and the
-legacy `center.domain.Student`/`StudentRepository` aliases remain supported.
-`RegisterStudent` updates a student's name without erasing grade/contact details.
+Student codes are separate from stable IDs. Legacy rows use the ID as their
+code. Full registration captures grade, stage, education system, parent phone and
+enrolled group IDs. The legacy name-update entry point preserves those details.
 
 ## Business operations
 
-`ProcessPaymentUseCase(studentCode, classId, amountPaid)`:
+- `ProcessPaymentUseCase` validates the amount, applies the group's commission,
+  and saves the payment and receipt together. It uses a first-of-month billing
+  date, defaulting to the current Cairo month. Paid-in-advance amounts apply to
+  their designated month. Configured groups require active enrollment and reject
+  amounts exceeding the remaining monthly balance.
+- `RecordAttendanceUseCase` stores attendance and its notification together.
+  SQL persistence allows one record per student and group per Cairo calendar day.
+- `GetOverdueStudentsUseCase` checks the current Cairo month starting at midnight
+  on the 5th. It returns one positive balance per active enrollment and applies
+  partial payments to the remaining amount.
+- `GetTeacherMonthlySalaryUseCase` sums contracted monthly commission over
+  current active enrollments. Each enrollment contributes its full monthly fee
+  times the group's commission, rounded to the nearest piastre.
+- `GetTeacherCollectionDeficitUseCase` separately reports the count of distinct
+  students with a balance and the total remaining across their groups.
+  `GetTeacherMonthlyDuesUseCase` remains available for commissions on historical
+  receipts, using their payment timestamps and stored shares.
+- `TreasuryRepository` exposes student payment income and operational or teacher
+  payout expenses together. The ledger uses actual transaction timestamps.
+- `QueueReminderUseCase` stores pending WhatsApp and notification reminders.
+  `SyncPendingMessagesUseCase` reads the pending snapshot, and
+  `MessageQueueRepository.markSent` acknowledges delivery. Delivery transport is
+  outside this step.
 
-1. Validates a positive finite amount with at most two decimal places, up to
-   1,000,000,000 to keep the existing SQLite REAL split check reliable.
-2. Fetches an active student with a parent phone and the teacher for the class.
-   A Teacher defaults to a 0.70 rate; invalid rates fail rather than silently
-   substituting a rate or accepting a missing teacher.
-3. Calculates the teacher share in integer cents with Kotlin's nearest/ties-to-even
-   rounding. The center receives the remaining cents, preserving the full amount.
-4. Creates a domain Payment and an Arabic receipt QueuedMessage with PENDING
-   status and the same timestamp, then persists both atomically.
-
-`RecordAttendanceUseCase(studentCode, classId, status)` validates the student and
-class, creates the attendance record and an Arabic notification distinguishing
-حضور from غياب, and persists both atomically. It does not infer enrollment because
-there is no student/group enrollment table in the current schema.
-
-PaymentRepository.saveWithReceipt and AttendanceRepository.saveWithNotification
-are transactional outbox contracts. Infrastructure maps the domain records to
-PaymentEntity/AttendanceEntity/MessageQueueEntity and inserts both records in one
-SQLite transaction. This avoids a committed payment/attendance record followed by
-a failed independent queue save. MessageQueueRepository handles queue observation,
-explicit message saves and sent acknowledgements. Duplicate event or message IDs
-fail without overwriting history; use cases generate fresh IDs, so a second user
-invocation is a new operation, not an automatic duplicate-payment retry.
-
-`GetTeacherMonthlyDuesUseCase(teacherId, month, year)` computes the month start
-inclusive and next-month start exclusive in an injected TimeZone (Africa/Cairo by
-default). It sums persisted teacherShare values from the teacher's payment stream
-and returns the payout rounded to cents; it never recalculates old payments using
-a new commission rate. Month lengths, leap years and year rollover use calendar
-arithmetic. An empty month returns 0.0.
-
-`SyncPendingMessagesUseCase()` returns a snapshot of pending messages only. It
-neither sends messages nor changes their status. Infrastructure/UI may later send
-them and acknowledge successful delivery with `MessageQueueRepository.markSent`.
-No WhatsApp script or network synchronization is implemented here.
+New subscription prices, salary totals and ledger amounts use integer piastres.
+Group commission uses basis points, where 7000 represents 70%. Existing payment
+rows retain their original decimal amount and share columns.
 
 ## Wiring and verification
 

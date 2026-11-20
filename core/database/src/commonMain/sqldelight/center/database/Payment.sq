@@ -6,10 +6,12 @@ CREATE TABLE payment (
     teacherShare REAL NOT NULL CHECK (teacherShare >= 0),
     centerShare REAL NOT NULL CHECK (centerShare >= 0),
     paymentDate INTEGER NOT NULL,
+    billingMonth TEXT,
     CHECK (abs(amountPaid - teacherShare - centerShare) <= 0.000001)
 );
 CREATE INDEX payment_student_date ON payment(studentId, paymentDate);
 CREATE INDEX payment_class_date ON payment(classId, paymentDate);
+CREATE INDEX payment_subscription_month ON payment(studentId, classId, billingMonth);
 
 selectAll:
 SELECT * FROM payment ORDER BY id;

@@ -7,7 +7,8 @@ import center.ui.localization.LocalizedText
 import center.ui.localization.StringResources
 
 internal enum class TeacherText {
-    Demo,
+    Directory,
+    Edit,
     Search,
     Add,
     NoResults,
@@ -16,7 +17,7 @@ internal enum class TeacherText {
     SalaryDue,
     MonthlySalary,
     PaySalary,
-    DemoPaid,
+    Paid,
     NoSalary,
     Details,
     Close,
@@ -37,7 +38,8 @@ internal enum class TeacherText {
 private val strings =
     StringResources(
         mapOf(
-            TeacherText.Demo to LocalizedText("بيانات تجريبية", "Demo data"),
+            TeacherText.Directory to LocalizedText("دليل المدرسين", "Teacher directory"),
+            TeacherText.Edit to LocalizedText("تعديل المدرس", "Edit teacher"),
             TeacherText.Search to LocalizedText("ابحث بالاسم أو المادة أو رقم الهاتف", "Search by name, subject, or phone"),
             TeacherText.Add to LocalizedText("إضافة مدرس", "Add teacher"),
             TeacherText.NoResults to LocalizedText("لا يوجد مدرسون مطابقون.", "No matching teachers."),
@@ -46,7 +48,7 @@ private val strings =
             TeacherText.SalaryDue to LocalizedText("المرتب الشهري المستحق", "Monthly salary due"),
             TeacherText.MonthlySalary to LocalizedText("المرتب الشهري", "Monthly salary"),
             TeacherText.PaySalary to LocalizedText("صرف المرتب", "Pay Salary"),
-            TeacherText.DemoPaid to LocalizedText("تم الصرف في العرض التجريبي", "Paid in demo"),
+            TeacherText.Paid to LocalizedText("تم الصرف", "Paid"),
             TeacherText.NoSalary to LocalizedText("لم يُحدد المرتب بعد", "Salary pending setup"),
             TeacherText.Details to LocalizedText("بيانات المدرس", "Teacher details"),
             TeacherText.Close to LocalizedText("إغلاق", "Close"),
@@ -80,15 +82,16 @@ internal fun teacherString(
 ): String = strings.get(key, LocalAppLanguage.current, *arguments)
 
 @Composable
-internal fun formatEgp(egp: Long): String {
+internal fun formatEgp(minor: Long): String {
     val grouped =
-        egp
+        (minor / 100)
             .toString()
             .reversed()
             .chunked(3)
             .joinToString(",")
             .reversed()
-    return teacherString(TeacherText.Currency, grouped)
+    val decimal = if (minor % 100 == 0L) "" else ".${(minor % 100).toString().padStart(2, '0')}"
+    return teacherString(TeacherText.Currency, grouped + decimal)
 }
 
 @Composable

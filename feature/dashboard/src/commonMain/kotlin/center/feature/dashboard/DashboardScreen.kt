@@ -63,7 +63,7 @@ fun DashboardScreen(
                             CenterOnePageHeader(
                                 title = MainNavigation.Reception.label(AppLanguage.Arabic),
                                 englishTitle = MainNavigation.Reception.label(AppLanguage.English),
-                                subtitle = dashboardString(DashboardText.DEMO),
+                                subtitle = state.dateLabel ?: dashboardString(DashboardText.DEMO),
                                 contentPadding = PaddingValues(),
                             ) {
                                 CenterOneLanguageToggle(state.language, { onEvent(DashboardEvent.LanguageSelected(it)) })
@@ -85,7 +85,16 @@ fun DashboardScreen(
                                 )
                             }
                             StudentSearch(state, onEvent)
-                            state.student?.let { StudentActionCard(it, state.language, onEvent) }
+                            state.student?.let {
+                                StudentActionCard(
+                                    it,
+                                    state.language,
+                                    onEvent,
+                                    state.attendanceGroupId,
+                                    state.groupMenuExpanded,
+                                    state.checkingIn,
+                                )
+                            }
                             ReceptionShortcuts(onEvent)
                         }
                     }

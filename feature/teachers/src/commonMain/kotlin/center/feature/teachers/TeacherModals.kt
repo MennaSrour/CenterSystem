@@ -35,6 +35,7 @@ import center.ui.theme.PendingOutline
 internal fun TeacherDetails(
     teacher: Teacher,
     onEvent: (TeachersEvent) -> Unit,
+    paying: Boolean = false,
 ) {
     val language = LocalAppLanguage.current
     CenterOneModalContent(
@@ -51,7 +52,10 @@ internal fun TeacherDetails(
             Text(teacher.phone, style = MaterialTheme.typography.bodyLarge.copy(textDirection = TextDirection.Ltr))
         }
         if (teacher.notes.isNotBlank()) Text(teacher.notes, style = MaterialTheme.typography.bodyMedium)
-        SalaryBox(teacher, onPay = { onEvent(TeachersEvent.PaySalary(teacher.id)) })
+        CenterOnePrimaryButton(onClick = {
+            onEvent(TeachersEvent.EditTeacher(teacher.id))
+        }, enabled = !paying) { Text(teacherString(TeacherText.Edit)) }
+        SalaryBox(teacher, paying, onPay = { onEvent(TeachersEvent.PaySalary(teacher.id)) })
         if (teacher.unpaidStudents.isNotEmpty()) CollectionDeficit(teacher.unpaidStudents)
         Text(teacherString(TeacherText.Groups), style = MaterialTheme.typography.titleMedium)
         if (teacher.groups.isEmpty()) {
@@ -70,24 +74,25 @@ internal fun TeacherDetails(
 @Composable
 private fun SalaryBox(
     teacher: Teacher,
+    paying: Boolean,
     onPay: () -> Unit,
 ) {
     CenterOneGradientCard(CenterOneBrushes.Treasury) {
         Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(
-                teacherString(if (teacher.salaryPaidInDemo) TeacherText.MonthlySalary else TeacherText.SalaryDue),
+                teacherString(if (teacher.salaryPaid) TeacherText.MonthlySalary else TeacherText.SalaryDue),
                 style = MaterialTheme.typography.labelLarge,
             )
             Text(
-                teacher.monthlySalaryEgp?.let { formatEgp(it) } ?: teacherString(TeacherText.NoSalary),
+                teacher.monthlySalaryMinor?.let { formatEgp(it) } ?: teacherString(TeacherText.NoSalary),
                 color = GoldLight,
                 style = MaterialTheme.typography.headlineLarge,
             )
             Text(teacherString(TeacherText.SalaryPolicy), style = MaterialTheme.typography.bodySmall)
-            if (teacher.salaryPaidInDemo) {
-                StatusBadge(teacherString(TeacherText.DemoPaid), StatusTone.Success)
+            if (teacher.salaryPaid) {
+                StatusBadge(teacherString(TeacherText.Paid), StatusTone.Success)
             } else {
-                CenterOnePrimaryButton(onClick = onPay, enabled = (teacher.monthlySalaryEgp ?: 0) > 0) {
+                CenterOnePrimaryButton(onClick = onPay, enabled = !paying && (teacher.monthlySalaryMinor ?: 0) > 0) {
                     Text(teacherString(TeacherText.PaySalary))
                 }
             }
@@ -107,13 +112,21 @@ private fun CollectionDeficit(students: List<UnpaidStudent>) {
         Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text(teacherString(TeacherText.DeficitTitle), style = MaterialTheme.typography.titleMedium)
             Text(
-                teacherString(TeacherText.DeficitDescription, students.size.toString(), formatEgp(students.sumOf { it.subscriptionEgp })),
+                teacherString(
+                    TeacherText.DeficitDescription,
+                    students
+                        .distinctBy {
+                            it.studentId
+                        }.size
+                        .toString(),
+                    formatEgp(students.sumOf { it.subscriptionMinor }),
+                ),
                 style = MaterialTheme.typography.bodySmall,
             )
             students.forEach { student ->
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text(student.name.resolve(language), Modifier.weight(1f), style = MaterialTheme.typography.bodySmall)
-                    Text(formatEgp(student.subscriptionEgp), style = MaterialTheme.typography.labelMedium)
+                    Text(formatEgp(student.subscriptionMinor), style = MaterialTheme.typography.labelMedium)
                 }
             }
         }
@@ -124,13 +137,17 @@ private fun CollectionDeficit(students: List<UnpaidStudent>) {
 internal fun AddTeacherForm(
     draft: TeacherDraft,
     onEvent: (TeachersEvent) -> Unit,
+    editing: Boolean = false,
+    saving: Boolean = false,
+    message: String? = null,
 ) {
     CenterOneModalContent(
-        title = teacherString(TeacherText.Add),
+        title = teacherString(if (editing) TeacherText.Edit else TeacherText.Add),
         subtitle = teacherString(TeacherText.AddHint),
         closeLabel = teacherString(TeacherText.Close),
         onClose = { onEvent(TeachersEvent.CloseModal) },
         modifier = Modifier.padding(16.dp),
+        enabled = !saving,
     ) {
         BoxWithConstraints(Modifier.fillMaxWidth()) {
             val mainFields: @Composable (Modifier) -> Unit = { fieldModifier ->
@@ -139,12 +156,14 @@ internal fun AddTeacherForm(
                         draft.name,
                         { onEvent(TeachersEvent.NameChanged(it)) },
                         Modifier.fillMaxWidth(),
+                        enabled = !saving,
                         label = { Text(teacherString(TeacherText.Name)) },
                     )
                     CenterOneTextField(
                         draft.subject,
                         { onEvent(TeachersEvent.SubjectChanged(it)) },
                         Modifier.fillMaxWidth(),
+                        enabled = !saving,
                         label = { Text(teacherString(TeacherText.Subject)) },
                     )
                 }
@@ -155,6 +174,7 @@ internal fun AddTeacherForm(
                         draft.phone,
                         { onEvent(TeachersEvent.PhoneChanged(it)) },
                         Modifier.fillMaxWidth(),
+                        enabled = !saving,
                         label = { Text(teacherString(TeacherText.Phone)) },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                         textStyle = MaterialTheme.typography.bodyLarge.copy(textDirection = TextDirection.Ltr),
@@ -163,6 +183,7 @@ internal fun AddTeacherForm(
                         draft.notes,
                         { onEvent(TeachersEvent.NotesChanged(it)) },
                         Modifier.fillMaxWidth(),
+                        enabled = !saving,
                         label = { Text(teacherString(TeacherText.Notes)) },
                         singleLine = false,
                         minLines = 2,
@@ -182,10 +203,11 @@ internal fun AddTeacherForm(
                 }
             }
         }
+        message?.let { Text(it, color = MaterialTheme.colorScheme.error) }
         CenterOnePrimaryButton(
             onClick = { onEvent(TeachersEvent.SaveTeacher) },
             modifier = Modifier.align(Alignment.End),
-            enabled = draft.canSave,
+            enabled = draft.canSave && !saving,
         ) {
             Text(teacherString(TeacherText.Save))
         }

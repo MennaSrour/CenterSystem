@@ -6,10 +6,12 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextDirection
@@ -35,6 +37,8 @@ import center.ui.components.CenterOneModalContent
 import center.ui.components.CenterOnePrimaryButton
 import center.ui.components.CenterOneTextButton
 import center.ui.components.CenterOneTextField
+import center.ui.localization.LocalAppLanguage
+import center.ui.localization.LocalizedText
 import org.jetbrains.compose.resources.stringResource
 
 @Composable
@@ -54,8 +58,16 @@ internal fun AddStudentModalContent(
     onEvent: (StudentsEvent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val language = LocalAppLanguage.current
     CenterOneModalContent(
-        title = stringResource(Res.string.add_title),
+        title =
+            if (state.editingId ==
+                null
+            ) {
+                stringResource(Res.string.add_title)
+            } else {
+                LocalizedText("تعديل الطالب", "Edit student").resolve(language)
+            },
         subtitle = stringResource(Res.string.add_subtitle),
         closeLabel = stringResource(Res.string.close),
         onClose = { onEvent(StudentsEvent.DismissAddStudent) },
@@ -138,6 +150,19 @@ internal fun AddStudentModalContent(
                 Column(verticalArrangement = Arrangement.spacedBy(20.dp)) {
                     identityFields(Modifier.fillMaxWidth())
                     enrollmentFields(Modifier.fillMaxWidth())
+                }
+            }
+        }
+        if (state.groupOptions.isNotEmpty()) {
+            Text(LocalizedText("المجموعات المسجل بها", "Enrolled groups").resolve(language), style = MaterialTheme.typography.titleSmall)
+            state.groupOptions.forEach { group ->
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Checkbox(
+                        checked = group.id in state.selectedGroupIds,
+                        onCheckedChange = { onEvent(StudentsEvent.ToggleGroup(group.id)) },
+                        enabled = !state.isSubmitting,
+                    )
+                    Text(group.label)
                 }
             }
         }

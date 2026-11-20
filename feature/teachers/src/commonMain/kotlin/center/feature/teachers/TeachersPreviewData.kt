@@ -8,11 +8,11 @@ object TeachersPreviewData {
             teachers =
                 listOf(
                     Teacher(
-                        id = 1,
+                        id = "1",
                         name = LocalizedText("كريم عادل", "Karim Adel"),
                         phone = "01000001001",
                         subject = LocalizedText("الفيزياء", "Physics"),
-                        monthlySalaryEgp = 4_000,
+                        monthlySalaryMinor = 4000_00,
                         groups =
                             listOf(
                                 TeacherGroup(
@@ -26,17 +26,17 @@ object TeachersPreviewData {
                             ),
                         unpaidStudents =
                             listOf(
-                                UnpaidStudent(LocalizedText("يوسف أحمد", "Youssef Ahmed"), 200),
-                                UnpaidStudent(LocalizedText("مريم خالد", "Mariam Khaled"), 200),
-                                UnpaidStudent(LocalizedText("سارة محمود", "Sara Mahmoud"), 200),
+                                UnpaidStudent(LocalizedText("يوسف أحمد", "Youssef Ahmed"), 20_000),
+                                UnpaidStudent(LocalizedText("مريم خالد", "Mariam Khaled"), 20_000),
+                                UnpaidStudent(LocalizedText("سارة محمود", "Sara Mahmoud"), 20_000),
                             ),
                     ),
                     Teacher(
-                        id = 2,
+                        id = "2",
                         name = LocalizedText("نهى حسن", "Noha Hassan"),
                         phone = "01000001002",
                         subject = LocalizedText("الرياضيات", "Mathematics"),
-                        monthlySalaryEgp = 3_500,
+                        monthlySalaryMinor = 3500_00,
                         groups =
                             listOf(
                                 TeacherGroup(
@@ -46,11 +46,11 @@ object TeachersPreviewData {
                             ),
                     ),
                     Teacher(
-                        id = 3,
+                        id = "3",
                         name = LocalizedText("هبة سامي", "Heba Sami"),
                         phone = "01000001003",
                         subject = LocalizedText("اللغة الإنجليزية", "English"),
-                        monthlySalaryEgp = 3_800,
+                        monthlySalaryMinor = 3800_00,
                         groups =
                             listOf(
                                 TeacherGroup(
@@ -58,7 +58,7 @@ object TeachersPreviewData {
                                     LocalizedText("الأحد والأربعاء · ٥ مساءً", "Sun and Wed · 5 PM"),
                                 ),
                             ),
-                        unpaidStudents = listOf(UnpaidStudent(LocalizedText("عمر مصطفى", "Omar Mostafa"), 180)),
+                        unpaidStudents = listOf(UnpaidStudent(LocalizedText("عمر مصطفى", "Omar Mostafa"), 18_000)),
                     ),
                 ),
         )

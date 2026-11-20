@@ -2,7 +2,14 @@ CREATE TABLE class_group (
     id TEXT NOT NULL PRIMARY KEY,
     name TEXT NOT NULL,
     teacherId TEXT NOT NULL REFERENCES teacher(id) ON DELETE RESTRICT,
-    sessionPrice REAL NOT NULL CHECK (sessionPrice >= 0)
+    sessionPrice REAL NOT NULL CHECK (sessionPrice >= 0),
+    monthlyPriceMinor INTEGER CHECK (monthlyPriceMinor BETWEEN 0 AND 100000000000),
+    commissionBasisPoints INTEGER CHECK (commissionBasisPoints BETWEEN 0 AND 10000),
+    roomNumber INTEGER CHECK (roomNumber BETWEEN 1 AND 8),
+    system TEXT NOT NULL DEFAULT 'BOTH' CHECK (system IN ('ARABIC', 'LANGUAGES', 'BOTH')),
+    status TEXT NOT NULL DEFAULT 'ACTIVE' CHECK (status IN ('ACTIVE', 'ARCHIVED')),
+    gradeId TEXT,
+    maxCapacity INTEGER CHECK (maxCapacity BETWEEN 1 AND 2147483647)
 );
 CREATE INDEX class_teacher ON class_group(teacherId);
 
