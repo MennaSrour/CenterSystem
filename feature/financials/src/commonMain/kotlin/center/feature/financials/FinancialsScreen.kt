@@ -28,7 +28,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.dp
 import center.feature.financials.resources.Res
-import center.feature.financials.resources.closed_treasury
 import center.feature.financials.resources.expense_log
 import center.feature.financials.resources.expense_transactions
 import center.feature.financials.resources.expense_transactions_en
@@ -38,7 +37,6 @@ import center.feature.financials.resources.income_log
 import center.feature.financials.resources.income_transactions
 import center.feature.financials.resources.income_transactions_en
 import center.feature.financials.resources.notifications
-import center.feature.financials.resources.open_treasury
 import center.feature.financials.resources.receive_payment
 import center.feature.financials.resources.record_expense
 import center.feature.financials.resources.search_records
@@ -55,8 +53,6 @@ import center.ui.components.CenterOnePageHeader
 import center.ui.components.CenterOnePrimaryButton
 import center.ui.components.CenterOneTabs
 import center.ui.components.CenterOneTextField
-import center.ui.components.StatusBadge
-import center.ui.components.StatusTone
 import center.ui.localization.AppLanguage
 import center.ui.localization.LocalAppLanguage
 import center.ui.theme.CenterOneSpacing
@@ -106,23 +102,17 @@ internal fun FinancialsContent(
                         verticalArrangement = Arrangement.spacedBy(CenterOneSpacing.Large),
                     ) {
                         item {
-                            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                                Column(Modifier.weight(1f)) {
-                                    Text(
-                                        stringResource(Res.string.treasury_management),
-                                        style = MaterialTheme.typography.labelMedium,
-                                        color = MaterialTheme.colorScheme.tertiary,
-                                    )
-                                    Text(stringResource(Res.string.summary), style = MaterialTheme.typography.headlineLarge)
-                                    Text(
-                                        stringResource(Res.string.summary_subtitle),
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    )
-                                }
-                                StatusBadge(
-                                    stringResource(if (state.isTreasuryOpen) Res.string.open_treasury else Res.string.closed_treasury),
-                                    if (state.isTreasuryOpen) StatusTone.Success else StatusTone.Pending,
+                            Column(Modifier.fillMaxWidth()) {
+                                Text(
+                                    stringResource(Res.string.treasury_management),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.tertiary,
+                                )
+                                Text(stringResource(Res.string.summary), style = MaterialTheme.typography.headlineLarge)
+                                Text(
+                                    stringResource(Res.string.summary_subtitle),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
                             }
                         }

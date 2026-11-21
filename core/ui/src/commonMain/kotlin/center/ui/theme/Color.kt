@@ -6,6 +6,8 @@ import androidx.compose.ui.graphics.lerp
 
 val Navy = Color(0xFF172554)
 internal val RoyalBlue = Color(0xFF1E3A8A)
+private val SlateRoyal = Color(0xFF2B4162)
+private val SlateRoyalLight = Color(0xFF38557E)
 internal val IndigoDeep = Color(0xFF3730A3)
 val Indigo = Color(0xFF4F46E5)
 val Gold = Color(0xFFD97706)
@@ -33,7 +35,7 @@ val ModalScrim = Navy.copy(alpha = 0.55f)
 
 object CenterOneBrushes {
     val Canvas = Brush.verticalGradient(listOf(OffWhite, Sand))
-    val Sidebar = Brush.verticalGradient(listOf(Navy, RoyalBlue))
+    val Sidebar = Brush.verticalGradient(listOf(SlateRoyal, SlateRoyalLight))
     val ActionGold = Brush.verticalGradient(listOf(GoldLight, Gold))
     val Treasury = Brush.verticalGradient(listOf(RoyalBlue, IndigoDeep))
     val Attendance = Brush.verticalGradient(0f to TealDeep, 0.65f to lerp(TealDeep, Success, 0.28f), 1f to Success)
