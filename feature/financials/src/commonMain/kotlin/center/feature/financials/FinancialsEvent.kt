@@ -69,7 +69,9 @@ sealed interface FinancialsEvent {
 
     data object OpenNotifications : FinancialsEvent
 
-    data object RequestEnglish : FinancialsEvent
+    data class LanguageSelected(
+        val language: center.ui.localization.AppLanguage,
+    ) : FinancialsEvent
 
     data object LogOut : FinancialsEvent
 }

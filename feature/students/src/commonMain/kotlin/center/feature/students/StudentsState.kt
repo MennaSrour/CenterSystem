@@ -70,6 +70,7 @@ data class StudentsState(
     val details: StudentDetailsState? = null,
     val deleteStudent: DeleteStudentState? = null,
     val isReminding: Boolean = false,
+    val canDelete: Boolean = true,
 ) {
     val availableGrades: List<StudentGrade> get() = grades.filter { stageFilter.matches(it.stage) }
     val visibleStudents: List<StudentRow>

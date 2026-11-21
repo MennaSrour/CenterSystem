@@ -46,6 +46,7 @@ fun CourseCard(
     menuExpanded: Boolean,
     onEvent: (CoursesEvent) -> Unit,
     modifier: Modifier = Modifier,
+    canDelete: Boolean = true,
 ) {
     val accent = if (group.isActive) Indigo else Rose
     CenterOneCard(modifier) {
@@ -64,9 +65,11 @@ fun CourseCard(
                         DropdownMenuItem(text = {
                             Text(stringResource(Res.string.deactivate_group))
                         }, onClick = { onEvent(CoursesEvent.DeactivateGroup(group.id)) }, enabled = group.isActive)
-                        DropdownMenuItem(text = {
-                            Text(stringResource(Res.string.delete_group), color = MaterialTheme.colorScheme.tertiary)
-                        }, onClick = { onEvent(CoursesEvent.RequestDeleteGroup(group.id)) })
+                        if (canDelete) {
+                            DropdownMenuItem(text = {
+                                Text(stringResource(Res.string.delete_group), color = MaterialTheme.colorScheme.error)
+                            }, onClick = { onEvent(CoursesEvent.RequestDeleteGroup(group.id)) })
+                        }
                     }
                 }
                 Spacer(Modifier.weight(1f))

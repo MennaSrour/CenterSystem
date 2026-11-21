@@ -60,10 +60,12 @@ internal fun StudentsRoute(
     services: DirectoryServices,
     openAddStudent: Boolean,
     onLanguageSelected: (AppLanguage) -> Unit,
+    canDelete: () -> Boolean,
 ) {
     val language = LocalAppLanguage.current
     val scope = rememberDirectoryScope(language)
-    val holder = remember(services, scope, language, openAddStudent) { StudentsStateHolder(services, scope, language, openAddStudent) }
+    val holder =
+        remember(services, scope, language, openAddStudent) { StudentsStateHolder(services, scope, language, openAddStudent, canDelete) }
     val state by holder.uiState.collectAsState()
     val snackbar = remember { SnackbarHostState() }
     val unavailable = stringResource(Res.string.feature_unavailable)
@@ -111,6 +113,7 @@ internal class StudentsStateHolder(
     private val scope: CoroutineScope,
     private val language: AppLanguage,
     openAddStudent: Boolean = false,
+    private val canDelete: () -> Boolean,
 ) {
     private val grades = gradeCatalog(language)
     private val allGradeLabels =
@@ -150,6 +153,7 @@ internal class StudentsStateHolder(
                 uiGrades,
                 "",
                 services.today().toString(),
+                canDelete = canDelete(),
                 addStudent = if (openAddStudent) AddStudentState(grades = uiGrades) else null,
             ),
         )
@@ -367,7 +371,7 @@ internal class StudentsStateHolder(
             is StudentsEvent.EditStudent ->
                 records[event.id]?.let { state = state.copy(addStudent = formFor(it)) }
             is StudentsEvent.DeleteStudent ->
-                records[event.id]?.let { state = state.copy(deleteStudent = DeleteStudentState(it.id, it.fullName)) }
+                if (canDelete()) records[event.id]?.let { state = state.copy(deleteStudent = DeleteStudentState(it.id, it.fullName)) }
             StudentsEvent.DismissDelete -> if (state.deleteStudent?.busy != true) state = state.copy(deleteStudent = null)
             StudentsEvent.ConfirmDelete -> delete()
             is StudentsEvent.ToggleGroup ->
@@ -427,6 +431,7 @@ internal class StudentsStateHolder(
     }
 
     private fun delete() {
+        if (!canDelete()) return
         val deletion = state.deleteStudent ?: return
         if (deletion.busy) return
         state = state.copy(deleteStudent = deletion.copy(busy = true, message = null))

@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import center.ui.components.CenterOneAvatar
 import center.ui.components.CenterOneCanvas
 import center.ui.components.CenterOneCard
+import center.ui.components.CenterOneConfirmationContent
 import center.ui.components.CenterOneLanguageToggle
 import center.ui.components.CenterOneMainNavigation
 import center.ui.components.CenterOneModal
@@ -69,6 +70,20 @@ fun TeachersScreen(
     }
     when (val modal = state.modal) {
         TeachersModal.Closed -> Unit
+        is TeachersModal.Delete ->
+            CenterOneModal(onDismissRequest = close) {
+                CenterOneConfirmationContent(
+                    title = staffLabel("حذف المدرس", "Delete teacher"),
+                    message = staffLabel("هل تريد حذف ${modal.name}؟", "Delete ${modal.name}?"),
+                    confirmLabel = staffLabel("حذف", "Delete"),
+                    cancelLabel = staffLabel("إلغاء", "Cancel"),
+                    onConfirm = { onEvent(TeachersEvent.ConfirmDeleteTeacher) },
+                    onCancel = close,
+                    icon = {},
+                    enabled = !modal.deleting,
+                    error = modal.message,
+                )
+            }
         is TeachersModal.StaffDetails ->
             state.staff.firstOrNull { it.id == modal.id }?.let { member ->
                 CenterOneModal(onDismissRequest = close) { StaffDetails(member, state.history, onEvent) }
@@ -77,7 +92,9 @@ fun TeachersScreen(
         is TeachersModal.Details ->
             state.teachers.firstOrNull { it.id == modal.teacherId }?.let { teacher ->
                 CenterOneModal(onDismissRequest = close) {
-                    CenterOneLocalization(language) { TeacherDetails(teacher, onEvent, state.payingTeacherId == teacher.id, state.history) }
+                    CenterOneLocalization(
+                        language,
+                    ) { TeacherDetails(teacher, onEvent, state.payingTeacherId == teacher.id, state.history, state.canDelete) }
                 }
             }
         is TeachersModal.Add ->

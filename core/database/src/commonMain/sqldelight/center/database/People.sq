@@ -65,3 +65,6 @@ ORDER BY checkInTime DESC LIMIT 10;
 
 sessionsOnDate:
 SELECT * FROM attendance_session WHERE date = ? ORDER BY checkInTime;
+
+hasPersonAttendance:
+SELECT EXISTS(SELECT 1 FROM attendance_session WHERE personType = ? AND personId = ?);

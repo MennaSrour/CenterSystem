@@ -72,6 +72,7 @@ data class CoursesState(
     val searchQuery: String = "",
     val expandedGroupMenuId: String? = null,
     val modal: CoursesModal = CoursesModal.Closed,
+    val canDelete: Boolean = true,
 ) {
     val visibleGroups: List<CourseGroup>
         get() {

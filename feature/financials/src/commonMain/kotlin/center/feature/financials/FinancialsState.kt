@@ -10,7 +10,7 @@ data class FinancialSummary(
     val todayInflow: String,
     val todayOutflow: String,
     val currentBalance: String,
-    val monthlyProfit: String,
+    val monthlyProfit: String?,
 )
 
 data class FinancialRecord(

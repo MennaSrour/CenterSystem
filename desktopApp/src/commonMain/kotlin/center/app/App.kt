@@ -6,8 +6,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
@@ -16,65 +14,68 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import center.app.resources.Res
-import center.app.resources.center_one_logo
+import center.domain.repository.Permission
+import center.domain.usecase.AuthSession
 import center.feature.billing.BillingScreen
 import center.feature.dashboard.DashboardEvent
-import center.feature.dashboard.DashboardText
 import center.feature.reception.ReceptionScreen
 import center.feature.reports.ReportsScreen
 import center.ui.components.CenterOneCanvas
 import center.ui.components.CenterOneMainNavigation
-import center.ui.components.LocalCenterOneLogo
+import center.ui.components.HeaderIdentity
+import center.ui.components.LocalCenterOneLogout
+import center.ui.components.LocalHeaderIdentity
 import center.ui.components.MainNavigation
 import center.ui.localization.AppLanguage
-import center.ui.localization.CenterOneLocalization
-import center.ui.theme.CenterOneTheme
-import org.jetbrains.compose.resources.painterResource
 
 @Composable
 internal fun App(
     root: RootComponent,
     services: DirectoryServices,
+    session: AuthSession,
+    language: AppLanguage,
+    onLanguageSelected: (AppLanguage) -> Unit,
 ) {
+    val user = session.user.value ?: return
     val state = remember(root) { mutableStateOf(root.stack.value) }
     DisposableEffect(root) {
         val subscription = root.stack.subscribe { state.value = it }
         onDispose { subscription.cancel() }
     }
     val stack by state
-    var language by remember { mutableStateOf(AppLanguage.Arabic) }
-    CompositionLocalProvider(LocalCenterOneLogo provides painterResource(Res.drawable.center_one_logo)) {
-        CenterOneLocalization(language) {
-            CenterOneTheme {
-                val dashboardScope = rememberDirectoryScope(services)
-                val dashboard = remember(services, dashboardScope) { DashboardStateHolder(services, dashboardScope, language) }
-                LaunchedEffect(language) { dashboard.onEvent(DashboardEvent.LanguageSelected(language)) }
-                val route = stack.active.configuration
-                key(route) {
-                    when (route.destination) {
-                        Destination.Dashboard -> DashboardRoute(root, dashboard, onLanguageSelected = { language = it })
-                        Destination.Financials -> FinancialsRoute(root, services, route.shortcut)
-                        Destination.Students ->
-                            StudentsRoute(
-                                root,
-                                services = services,
-                                openAddStudent = route.shortcut == ReceptionShortcut.AddStudent,
-                                onLanguageSelected = { language = it },
-                            )
-                        Destination.Courses -> CoursesRoute(root, services)
-                        Destination.Teachers ->
-                            TeachersRoute(
-                                root,
-                                services,
-                                onLanguageSelected = { language = it },
-                            )
-                        else -> SecondaryRoute(root, route.destination, language)
-                    }
-                }
+    val canDelete = remember(session) { { session.allows(Permission.DELETE_DIRECTORY_RECORDS) } }
+    CompositionLocalProvider(
+        LocalCenterOneLogout provides session::logout,
+        LocalHeaderIdentity provides HeaderIdentity(user.displayName, user.role.localizedRole()),
+    ) {
+        val dashboardScope = rememberDirectoryScope(services)
+        val dashboard = remember(services, dashboardScope) { DashboardStateHolder(services, dashboardScope, language) }
+        LaunchedEffect(language) { dashboard.onEvent(DashboardEvent.LanguageSelected(language)) }
+        val route = stack.active.configuration
+        key(route) {
+            when (route.destination) {
+                Destination.Dashboard -> DashboardRoute(root, dashboard, onLanguageSelected)
+                Destination.Financials ->
+                    FinancialsRoute(
+                        root,
+                        services,
+                        route.shortcut,
+                        session.allows(Permission.VIEW_MONTHLY_PROFIT),
+                        onLanguageSelected,
+                    )
+                Destination.Students ->
+                    StudentsRoute(
+                        root,
+                        services,
+                        route.shortcut == ReceptionShortcut.AddStudent,
+                        onLanguageSelected,
+                        canDelete,
+                    )
+                Destination.Courses -> CoursesRoute(root, services, canDelete, onLanguageSelected)
+                Destination.Teachers -> TeachersRoute(root, services, onLanguageSelected, canDelete)
+                else -> SecondaryRoute(root, route.destination, language, session, onLanguageSelected)
             }
         }
     }
@@ -85,6 +86,8 @@ private fun SecondaryRoute(
     root: RootComponent,
     destination: Destination,
     language: AppLanguage,
+    session: AuthSession,
+    onLanguageSelected: (AppLanguage) -> Unit,
 ) {
     val selected =
         when (destination) {
@@ -101,10 +104,8 @@ private fun SecondaryRoute(
                     Destination.Reception -> ReceptionScreen()
                     Destination.Billing -> BillingScreen()
                     Destination.Reports -> ReportsScreen()
-                    Destination.Settings -> {
-                        Text(requireNotNull(selected).label(language), style = MaterialTheme.typography.headlineLarge)
-                        Text(DashboardText.FEATURE_UNAVAILABLE.text(language), color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
+                    Destination.Settings ->
+                        SettingsScreen(session, session.allows(Permission.MANAGE_USERS), onLanguageSelected)
                     else -> Unit
                 }
             }

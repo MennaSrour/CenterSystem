@@ -165,7 +165,7 @@ internal fun StudentsContent(
                                     )
                                 } else {
                                     val visible = state.visibleStudents
-                                    StudentsDataGrid(visible, state.grades, onEvent, Modifier.fillMaxWidth())
+                                    StudentsDataGrid(visible, state.grades, onEvent, Modifier.fillMaxWidth(), canDelete = state.canDelete)
                                     HorizontalDivider(color = MaterialTheme.colorScheme.outline)
                                     Text(
                                         stringResource(Res.string.displayed_count, visible.size.toString()),

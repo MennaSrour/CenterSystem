@@ -26,7 +26,6 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import center.feature.financials.resources.Res
 import center.feature.financials.resources.closed_treasury
@@ -59,6 +58,7 @@ import center.ui.components.CenterOneTextField
 import center.ui.components.StatusBadge
 import center.ui.components.StatusTone
 import center.ui.localization.AppLanguage
+import center.ui.localization.LocalAppLanguage
 import center.ui.theme.CenterOneSpacing
 import center.ui.theme.ModalScrim
 import org.jetbrains.compose.resources.stringResource
@@ -70,7 +70,7 @@ fun FinancialsScreen(
     onEvent: (FinancialsEvent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+    CompositionLocalProvider(LocalLayoutDirection provides LocalAppLanguage.current.layoutDirection) {
         Box(modifier.fillMaxSize()) {
             FinancialsContent(state, onEvent)
             if (state.modal != FinancialsModal.Closed) {
@@ -96,6 +96,7 @@ internal fun FinancialsContent(
             val contentWidth = maxOf(maxWidth, 1080.dp)
             val sidebarWidth = if (contentWidth >= 1600.dp) 300.dp else 250.dp
             Row(Modifier.horizontalScroll(rememberScrollState()).width(contentWidth)) {
+                if (LocalAppLanguage.current == AppLanguage.English) FinancialsSidebar(onEvent, Modifier.width(sidebarWidth))
                 Column(Modifier.weight(1f)) {
                     FinancialsHeader(state, onEvent)
                     HorizontalDivider(color = MaterialTheme.colorScheme.outline)
@@ -167,7 +168,7 @@ internal fun FinancialsContent(
                         }
                     }
                 }
-                FinancialsSidebar(onEvent, Modifier.width(sidebarWidth))
+                if (LocalAppLanguage.current == AppLanguage.Arabic) FinancialsSidebar(onEvent, Modifier.width(sidebarWidth))
             }
         }
     }
@@ -222,9 +223,7 @@ private fun FinancialsHeader(
         stringResource(Res.string.financials_en),
         state.dateLabel,
     ) {
-        CenterOneLanguageToggle(AppLanguage.Arabic, { language ->
-            if (language == AppLanguage.English) onEvent(FinancialsEvent.RequestEnglish)
-        })
+        CenterOneLanguageToggle(LocalAppLanguage.current, { onEvent(FinancialsEvent.LanguageSelected(it)) })
         CenterOneIconButton(
             Icons.Outlined.Notifications,
             stringResource(Res.string.notifications),

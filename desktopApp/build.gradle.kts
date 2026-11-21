@@ -28,6 +28,7 @@ kotlin {
         }
         getByName("desktopMain").dependencies {
             implementation(compose.desktop.currentOs)
+            implementation(compose.materialIconsExtended)
             implementation(project(":core:database"))
             implementation(project(":core:network"))
             implementation(project(":core:utils"))
@@ -40,11 +41,15 @@ compose.desktop {
     application {
         mainClass = "center.app.MainKt"
         nativeDistributions {
-            targetFormats(TargetFormat.Msi, TargetFormat.Exe)
+            targetFormats(TargetFormat.Msi, TargetFormat.Exe, TargetFormat.Deb)
             packageName = "CenterSystem"
             packageVersion = "1.0.0"
             modules("java.sql", "jdk.unsupported")
+            linux {
+                iconFile.set(project.file("packaging/center-one.png"))
+            }
             windows {
+                iconFile.set(project.file("packaging/center-one.ico"))
                 menuGroup = "CenterSystem"
                 shortcut = true
             }

@@ -3,6 +3,7 @@ package center.app
 import app.cash.sqldelight.db.SqlDriver
 import center.database.CenterDaos
 import center.database.CenterDatabase
+import center.database.SqlAuthRepository
 import center.database.SqlStudentRepository
 import center.database.repository.SqlAttendanceRepository
 import center.database.repository.SqlAttendanceSessionRepository
@@ -16,6 +17,7 @@ import center.database.repository.SqlTreasuryRepository
 import center.domain.RegisterStudent
 import center.domain.repository.AttendanceRepository
 import center.domain.repository.AttendanceSessionRepository
+import center.domain.repository.AuthRepository
 import center.domain.repository.ClassGroupRepository
 import center.domain.repository.MessageQueueRepository
 import center.domain.repository.MonthlyBillingRepository
@@ -24,6 +26,7 @@ import center.domain.repository.StaffRepository
 import center.domain.repository.StudentRepository
 import center.domain.repository.TeacherRepository
 import center.domain.repository.TreasuryRepository
+import center.domain.usecase.AuthSession
 import center.domain.usecase.EpochClock
 import center.domain.usecase.GetOverdueStudentsUseCase
 import center.domain.usecase.GetTeacherCollectionDeficitUseCase
@@ -47,6 +50,9 @@ internal fun persistenceModule(
     clock: EpochClock = EpochClock { System.currentTimeMillis() },
 ) = module {
     single { CenterDatabase(driver) }
+    single { SqlAuthRepository(get(), dispatcher) }
+    single<AuthRepository> { get<SqlAuthRepository>() }
+    single { AuthSession(get()) }
     single { CenterDaos(get(), dispatcher) }
     single { get<CenterDaos>().teachers }
     single { get<CenterDaos>().students }
