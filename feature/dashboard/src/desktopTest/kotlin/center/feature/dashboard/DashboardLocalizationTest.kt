@@ -6,6 +6,7 @@ import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -45,7 +46,9 @@ class DashboardLocalizationTest {
             onNode(hasSetTextAction()).performTextReplacement("10234")
             val attendance = onNodeWithText("حضور اليوم")
             assertEquals(LayoutDirection.Rtl, attendance.fetchSemanticsNode().layoutInfo.layoutDirection)
-            onNodeWithText("English").performClick()
+            onNodeWithText("عربي").assertIsDisplayed().assertIsSelected()
+            onNodeWithText("English").assertIsDisplayed().performClick()
+            onNodeWithText("English").assertIsDisplayed().assertIsSelected()
             assertEquals(LayoutDirection.Ltr, onNodeWithText("Today's Attendance").fetchSemanticsNode().layoutInfo.layoutDirection)
             onNodeWithText("Today's Treasury").assertExists()
             onNodeWithText("Youssef Ahmed").assertExists()
@@ -54,7 +57,8 @@ class DashboardLocalizationTest {
             onNodeWithText("حضور اليوم").assertDoesNotExist()
             onNodeWithText("Recent activity").assertDoesNotExist()
             onNode(hasSetTextAction() and hasText("10234")).assertExists()
-            onNodeWithText("عربي").performClick()
+            onNodeWithText("عربي").assertIsDisplayed().performClick()
+            onNodeWithText("عربي").assertIsDisplayed().assertIsSelected()
             assertEquals(LayoutDirection.Rtl, attendance.fetchSemanticsNode().layoutInfo.layoutDirection)
         }
 

@@ -4,8 +4,6 @@
     <string name="treasury_management">إدارة النقدية</string>
     <string name="summary">ملخص الخزنة</string>
     <string name="summary_subtitle">تابع حركة الأموال ورصيد الخزنة</string>
-    <string name="open_treasury">الخزنة مفتوحة</string>
-    <string name="closed_treasury">الخزنة مغلقة</string>
     <string name="inflow">إيرادات اليوم / Today’s Inflow</string>
     <string name="outflow">مصروفات اليوم / Today’s Outflow</string>
     <string name="balance">رصيد الخزنة الحالي / Current Balance</string>

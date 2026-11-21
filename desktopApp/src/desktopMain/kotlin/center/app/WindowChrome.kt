@@ -44,7 +44,6 @@ import center.ui.components.CenterOnePrimaryButton
 import center.ui.localization.LocalAppLanguage
 import center.ui.theme.CenterOneBrushes
 import center.ui.theme.GoldLight
-import center.ui.theme.Navy
 import center.ui.theme.Rose
 import center.ui.theme.White
 
@@ -54,7 +53,7 @@ internal fun FrameWindowScope.WindowTitleBar(
     onClose: () -> Unit,
 ) {
     val maximized = state.placement == WindowPlacement.Maximized
-    Row(Modifier.fillMaxWidth().height(44.dp).background(Navy), verticalAlignment = Alignment.CenterVertically) {
+    Row(Modifier.fillMaxWidth().height(44.dp).background(CenterOneBrushes.Sidebar), verticalAlignment = Alignment.CenterVertically) {
         WindowDraggableArea(Modifier.weight(1f).fillMaxHeight()) {
             Row(
                 Modifier.fillMaxSize().padding(horizontal = 14.dp),
