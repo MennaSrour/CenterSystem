@@ -21,6 +21,7 @@ internal fun CoursesSidebar(
                         MainNavigation.Teachers -> CoursesDestination.Teachers
                         MainNavigation.Courses -> CoursesDestination.Courses
                         MainNavigation.Treasury -> CoursesDestination.Financials
+                        MainNavigation.Print -> CoursesDestination.Print
                         MainNavigation.Settings -> CoursesDestination.Settings
                     },
                 ),

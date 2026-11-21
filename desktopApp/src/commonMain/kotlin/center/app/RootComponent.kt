@@ -8,7 +8,7 @@ import com.arkivanov.decompose.router.stack.StackNavigation
 import com.arkivanov.decompose.router.stack.childStack
 import com.arkivanov.decompose.router.stack.replaceCurrent
 
-enum class Destination { Dashboard, Financials, Reception, Billing, Students, Courses, Reports, Teachers, Settings }
+enum class Destination { Dashboard, Financials, Reception, Billing, Students, Courses, Reports, Teachers, Print, Settings }
 
 sealed interface ReceptionShortcut {
     data object AddStudent : ReceptionShortcut
@@ -55,6 +55,7 @@ class RootComponent(
                 MainNavigation.Teachers -> Destination.Teachers
                 MainNavigation.Courses -> Destination.Courses
                 MainNavigation.Treasury -> Destination.Financials
+                MainNavigation.Print -> Destination.Print
                 MainNavigation.Settings -> Destination.Settings
             },
         )

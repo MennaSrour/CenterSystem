@@ -21,6 +21,7 @@ internal fun StudentsSidebar(
                         MainNavigation.Teachers -> StudentsDestination.Teachers
                         MainNavigation.Courses -> StudentsDestination.Courses
                         MainNavigation.Treasury -> StudentsDestination.Financials
+                        MainNavigation.Print -> StudentsDestination.Print
                         MainNavigation.Settings -> StudentsDestination.Settings
                     },
                 ),

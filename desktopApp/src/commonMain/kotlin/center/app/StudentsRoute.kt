@@ -85,6 +85,7 @@ internal fun StudentsRoute(
                         StudentsDestination.Reports -> root.navigate(Destination.Reports)
                         StudentsDestination.Students -> Unit
                         StudentsDestination.Teachers -> root.navigate(Destination.Teachers)
+                        StudentsDestination.Print -> root.navigate(Destination.Print)
                         StudentsDestination.Settings -> root.navigate(Destination.Settings)
                         StudentsDestination.Schedule -> notify(unavailable)
                     }

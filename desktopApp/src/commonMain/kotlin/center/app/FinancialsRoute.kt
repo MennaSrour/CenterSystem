@@ -87,6 +87,7 @@ internal fun FinancialsRoute(
                         FinancialsDestination.Reports -> root.navigate(Destination.Reports)
                         FinancialsDestination.Financials -> Unit
                         FinancialsDestination.Teachers -> root.navigate(Destination.Teachers)
+                        FinancialsDestination.Print -> root.navigate(Destination.Print)
                         FinancialsDestination.Settings -> root.navigate(Destination.Settings)
                         FinancialsDestination.Schedule -> notify(unavailable)
                     }

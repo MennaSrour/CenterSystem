@@ -80,6 +80,7 @@ internal fun CoursesRoute(
                         CoursesDestination.Reports -> root.navigate(Destination.Reports)
                         CoursesDestination.Courses -> Unit
                         CoursesDestination.Teachers -> root.navigate(Destination.Teachers)
+                        CoursesDestination.Print -> root.navigate(Destination.Print)
                         CoursesDestination.Settings -> root.navigate(Destination.Settings)
                         CoursesDestination.Schedule -> notify(unavailable)
                     }
