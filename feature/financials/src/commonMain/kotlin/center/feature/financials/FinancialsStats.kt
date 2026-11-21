@@ -46,7 +46,7 @@ internal fun FinancialsStats(
     modifier: Modifier = Modifier,
 ) {
     val metrics =
-        listOf(
+        listOfNotNull(
             FinancialMetric(Res.string.inflow, summary.todayInflow, Success, Icons.Outlined.ArrowUpward, CenterOneBrushes.Attendance),
             FinancialMetric(Res.string.outflow, summary.todayOutflow, Rose, Icons.Outlined.ArrowDownward),
             FinancialMetric(
@@ -56,11 +56,11 @@ internal fun FinancialsStats(
                 Icons.Outlined.AccountBalanceWallet,
                 CenterOneBrushes.Treasury,
             ),
-            FinancialMetric(Res.string.profit, summary.monthlyProfit, Pending, Icons.AutoMirrored.Outlined.TrendingUp),
+            summary.monthlyProfit?.let { FinancialMetric(Res.string.profit, it, Pending, Icons.AutoMirrored.Outlined.TrendingUp) },
         )
     val caption = stringResource(Res.string.currency)
     BoxWithConstraints(modifier) {
-        val columns = if (maxWidth >= 1000.dp) 4 else 2
+        val columns = if (maxWidth >= 1000.dp) metrics.size else 2
         Column(verticalArrangement = Arrangement.spacedBy(CenterOneSpacing.Medium)) {
             metrics.chunked(columns).forEach { group ->
                 Row(horizontalArrangement = Arrangement.spacedBy(CenterOneSpacing.Medium)) {

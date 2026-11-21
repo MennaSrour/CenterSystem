@@ -55,10 +55,12 @@ import org.jetbrains.compose.resources.stringResource
 internal fun CoursesRoute(
     root: RootComponent,
     services: DirectoryServices,
+    canDelete: () -> Boolean,
+    onLanguageSelected: (AppLanguage) -> Unit,
 ) {
     val language = LocalAppLanguage.current
     val scope = rememberDirectoryScope(language)
-    val holder = remember(services, scope, language) { CoursesStateHolder(services, scope, language) }
+    val holder = remember(services, scope, language) { CoursesStateHolder(services, scope, language, canDelete) }
     val state by holder.uiState.collectAsState()
     val snackbar = remember { SnackbarHostState() }
     val unavailable = stringResource(Res.string.feature_unavailable)
@@ -81,7 +83,8 @@ internal fun CoursesRoute(
                         CoursesDestination.Settings -> root.navigate(Destination.Settings)
                         CoursesDestination.Schedule -> notify(unavailable)
                     }
-                CoursesEvent.OpenNotifications, CoursesEvent.RequestEnglish, CoursesEvent.LogOut -> notify(unavailable)
+                is CoursesEvent.LanguageSelected -> onLanguageSelected(event.language)
+                CoursesEvent.OpenNotifications, CoursesEvent.LogOut -> notify(unavailable)
                 else -> holder.onEvent(event)
             }
         })
@@ -93,6 +96,7 @@ internal class CoursesStateHolder(
     private val services: DirectoryServices,
     private val scope: CoroutineScope,
     language: AppLanguage,
+    private val canDelete: () -> Boolean,
 ) {
     private val grades =
         gradeCatalog(language).map {
@@ -109,7 +113,16 @@ internal class CoursesStateHolder(
     private val rooms = (1..8).map { CourseRoom(it.toString(), if (language == AppLanguage.Arabic) "قاعة $it" else "Room $it") }
     private val mutableState =
         MutableStateFlow(
-            CoursesState(CoursesSummary("0", "0", "0"), emptyList(), emptyList(), grades, rooms, "", services.today().toString()),
+            CoursesState(
+                CoursesSummary("0", "0", "0"),
+                emptyList(),
+                emptyList(),
+                grades,
+                rooms,
+                "",
+                services.today().toString(),
+                canDelete = canDelete(),
+            ),
         )
     val uiState = mutableState.asStateFlow()
     private val mutableFeedback = MutableSharedFlow<String>(extraBufferCapacity = 4)
@@ -243,12 +256,14 @@ internal class CoursesStateHolder(
                 scope.launch { if (directoryResult { services.groups.archive(event.id) }.isFailure) mutableFeedback.emit(failure) }
             }
             is CoursesEvent.RequestDeleteGroup ->
-                state.groups.firstOrNull { it.id == event.id }?.let { group ->
-                    state =
-                        state.copy(
-                            modal = CoursesModal.Delete(DeleteGroupState(group.id, group.subject)),
-                            expandedGroupMenuId = null,
-                        )
+                if (canDelete()) {
+                    state.groups.firstOrNull { it.id == event.id }?.let { group ->
+                        state =
+                            state.copy(
+                                modal = CoursesModal.Delete(DeleteGroupState(group.id, group.subject)),
+                                expandedGroupMenuId = null,
+                            )
+                    }
                 }
             CoursesEvent.DismissModal -> {
                 val busy =
@@ -364,7 +379,7 @@ internal class CoursesStateHolder(
                 }
             CoursesEvent.SubmitGroup -> submit()
             CoursesEvent.ConfirmDeleteGroup -> delete()
-            is CoursesEvent.Navigate, CoursesEvent.OpenNotifications, CoursesEvent.RequestEnglish, CoursesEvent.LogOut -> Unit
+            is CoursesEvent.Navigate, CoursesEvent.OpenNotifications, is CoursesEvent.LanguageSelected, CoursesEvent.LogOut -> Unit
         }
     }
 
@@ -433,6 +448,7 @@ internal class CoursesStateHolder(
     }
 
     private fun delete() {
+        if (!canDelete()) return
         val form = (state.modal as? CoursesModal.Delete)?.state ?: return
         if (form.isDeleting) return
         state = state.copy(modal = CoursesModal.Delete(form.copy(isDeleting = true, message = null)))

@@ -35,6 +35,13 @@ data class TeacherDraft(
 }
 
 sealed interface TeachersModal {
+    data class Delete(
+        val id: String,
+        val name: String,
+        val deleting: Boolean = false,
+        val message: String? = null,
+    ) : TeachersModal
+
     data class StaffDetails(
         val id: String,
     ) : TeachersModal
@@ -68,6 +75,7 @@ data class TeachersState(
     val showStaff: Boolean = false,
     val staff: List<StaffCardModel> = emptyList(),
     val history: List<LocalizedText> = emptyList(),
+    val canDelete: Boolean = true,
 ) {
     val visibleTeachers: List<Teacher>
         get() {

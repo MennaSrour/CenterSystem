@@ -204,6 +204,10 @@ class UseCasesTest {
 
         override suspend fun students() = listOf(student)
 
+        override suspend fun deleteTeacher(id: String) {
+            if (teacher?.id == id) teacher = null
+        }
+
         override fun observeTeachers() = flowOf(listOfNotNull(teacher))
 
         override suspend fun getTeacherForClass(classId: String) = teacher.takeIf { classId == "class" }

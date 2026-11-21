@@ -137,8 +137,9 @@ class ReceptionTreasuryTest {
                                 backgroundScope,
                                 AppLanguage.English,
                                 ReceptionShortcut.CollectSubscription("10234"),
+                                canViewProfit = true,
                             )
-                        val students = StudentsStateHolder(services, backgroundScope, AppLanguage.English)
+                        val students = StudentsStateHolder(services, backgroundScope, AppLanguage.English, canDelete = { true })
                         runCurrent()
 
                         reception.onEvent(DashboardEvent.QueryChanged("١٠٢٣٤"))

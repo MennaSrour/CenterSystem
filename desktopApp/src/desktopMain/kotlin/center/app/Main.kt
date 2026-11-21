@@ -1,43 +1,131 @@
 package center.app
 
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
+import center.app.resources.Res
+import center.app.resources.center_one_logo
+import center.database.SqlAuthRepository
 import center.database.openDatabase
+import center.domain.usecase.AuthSession
+import center.ui.components.LocalCenterOneLogo
+import center.ui.localization.AppLanguage
+import center.ui.localization.CenterOneLocalization
+import center.ui.theme.CenterOneTheme
 import com.arkivanov.decompose.DefaultComponentContext
 import com.arkivanov.essenty.lifecycle.LifecycleRegistry
 import com.arkivanov.essenty.lifecycle.destroy
 import com.arkivanov.essenty.lifecycle.resume
-import org.koin.core.context.startKoin
-import org.koin.core.context.stopKoin
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
+import org.jetbrains.compose.resources.painterResource
+import org.koin.dsl.koinApplication
 import java.nio.file.Path
 
-fun main() {
-    val directory = Path.of(System.getenv("LOCALAPPDATA") ?: System.getProperty("user.home"), "CenterSystem")
-    openDatabase(directory).use { driver ->
-        val koin = startKoin { modules(persistenceModule(driver)) }.koin
-        try {
-            val services = koin.get<DirectoryServices>()
-            application {
-                val lifecycle = remember { LifecycleRegistry() }
-                val root = remember { RootComponent(DefaultComponentContext(lifecycle)) }
-                DisposableEffect(lifecycle) {
-                    lifecycle.resume()
-                    onDispose { lifecycle.destroy() }
-                }
-                Window(
-                    onCloseRequest = ::exitApplication,
-                    title = "Center One",
-                    state = rememberWindowState(width = 1440.dp, height = 960.dp),
-                ) {
-                    App(root, services)
+fun main() =
+    application {
+        val directory = remember { Path.of(System.getenv("LOCALAPPDATA") ?: System.getProperty("user.home"), "CenterSystem") }
+        var language by remember { mutableStateOf(AppLanguage.Arabic) }
+        val logo = painterResource(Res.drawable.center_one_logo)
+        val windowState = rememberWindowState(width = 1440.dp, height = 960.dp)
+        Window(
+            onCloseRequest = ::exitApplication,
+            title = brandTitle.resolve(language),
+            icon = logo,
+            state = windowState,
+            undecorated = true,
+        ) {
+            CompositionLocalProvider(LocalCenterOneLogo provides logo) {
+                CenterOneLocalization(language) {
+                    CenterOneTheme {
+                        Column(Modifier.fillMaxSize()) {
+                            WindowTitleBar(windowState, ::exitApplication)
+                            Startup(directory, language, onLanguageSelected = { language = it })
+                        }
+                    }
                 }
             }
-        } finally {
-            stopKoin()
         }
+    }
+
+private data class StartupData(
+    val services: DirectoryServices,
+    val auth: AuthSession,
+)
+
+@Composable
+private fun Startup(
+    directory: Path,
+    language: AppLanguage,
+    onLanguageSelected: (AppLanguage) -> Unit,
+) {
+    var data by remember(directory) { mutableStateOf<StartupData?>(null) }
+    var failed by remember(directory) { mutableStateOf(false) }
+    var attempt by remember(directory) { mutableStateOf(0) }
+    LaunchedEffect(directory, attempt) {
+        // Assign owned resources on the IO thread so cleanup also covers cancellation during startup.
+        var database: AutoCloseable? = null
+        var dependencies: org.koin.core.KoinApplication? = null
+        try {
+            val started = System.nanoTime()
+            val result =
+                directoryResult {
+                    withContext(Dispatchers.IO) {
+                        val driver = openDatabase(directory).also { database = it }
+                        val app = koinApplication { modules(persistenceModule(driver)) }.also { dependencies = it }
+                        app.koin.get<SqlAuthRepository>().seedIfEmpty()
+                        StartupData(app.koin.get(), app.koin.get())
+                    }
+                }
+            delay((1_500 - (System.nanoTime() - started) / 1_000_000).coerceAtLeast(0))
+            data = result.getOrNull()
+            failed = result.isFailure
+            if (result.isSuccess) awaitCancellation()
+        } finally {
+            withContext(NonCancellable + Dispatchers.IO) {
+                try {
+                    dependencies?.close()
+                } finally {
+                    database?.close()
+                }
+            }
+        }
+    }
+
+    val ready = data
+    if (ready == null) {
+        StartupSplash(failed, onRetry = {
+            failed = false
+            attempt++
+        })
+        return
+    }
+    val user by ready.auth.user.collectAsState()
+    if (user == null) {
+        LoginScreen(ready.auth, onLanguageSelected)
+    } else {
+        val lifecycle = remember { LifecycleRegistry() }
+        val root = remember(lifecycle) { RootComponent(DefaultComponentContext(lifecycle)) }
+        DisposableEffect(lifecycle) {
+            lifecycle.resume()
+            onDispose { lifecycle.destroy() }
+        }
+        App(root, ready.services, ready.auth, language, onLanguageSelected)
     }
 }

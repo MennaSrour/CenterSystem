@@ -10,11 +10,21 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextOverflow
 import center.ui.localization.AppLanguage
 import center.ui.localization.LocalAppLanguage
+import center.ui.localization.LocalizedText
 import center.ui.theme.CenterOneSpacing
+
+data class HeaderIdentity(
+    val displayName: String,
+    val role: LocalizedText,
+)
+
+val LocalHeaderIdentity = staticCompositionLocalOf<HeaderIdentity?> { null }
 
 @Composable
 fun CenterOnePageHeader(
@@ -37,6 +47,12 @@ fun CenterOnePageHeader(
             )
             if (subtitle.isNotBlank()) {
                 Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+        LocalHeaderIdentity.current?.let { identity ->
+            Column(Modifier.weight(0.55f, fill = false), horizontalAlignment = Alignment.End) {
+                Text(identity.displayName, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(identity.role.resolve(LocalAppLanguage.current), style = MaterialTheme.typography.labelSmall)
             }
         }
         actions()

@@ -44,6 +44,7 @@ fun StudentsDataGrid(
     grades: List<StudentGrade>,
     onEvent: (StudentsEvent) -> Unit,
     modifier: Modifier = Modifier,
+    canDelete: Boolean = true,
 ) {
     val details = LocalizedText("عرض التفاصيل", "View details").resolve(LocalAppLanguage.current)
     val gradeById = grades.associateBy { it.id }
@@ -93,9 +94,11 @@ fun StudentsDataGrid(
                     CenterOneIconButton(Icons.Outlined.Edit, stringResource(Res.string.edit_student, student.name), {
                         onEvent(StudentsEvent.EditStudent(student.id))
                     })
-                    CenterOneIconButton(Icons.Outlined.DeleteOutline, stringResource(Res.string.delete_student, student.name), {
-                        onEvent(StudentsEvent.DeleteStudent(student.id))
-                    }, color = MaterialTheme.colorScheme.error)
+                    if (canDelete) {
+                        CenterOneIconButton(Icons.Outlined.DeleteOutline, stringResource(Res.string.delete_student, student.name), {
+                            onEvent(StudentsEvent.DeleteStudent(student.id))
+                        }, color = MaterialTheme.colorScheme.error)
+                    }
                 }
         }
     }

@@ -36,9 +36,9 @@ class DirectoryPersistenceTest {
                         koinApplication { modules(persistenceModule(driver, StandardTestDispatcher(testScheduler), EpochClock { now })) }
                     try {
                         val services = app.koin.get<DirectoryServices>()
-                        val teachers = TeachersStateHolder(services, backgroundScope, AppLanguage.English)
-                        val courses = CoursesStateHolder(services, backgroundScope, AppLanguage.English)
-                        val students = StudentsStateHolder(services, backgroundScope, AppLanguage.English)
+                        val teachers = TeachersStateHolder(services, backgroundScope, AppLanguage.English, canDelete = { true })
+                        val courses = CoursesStateHolder(services, backgroundScope, AppLanguage.English, canDelete = { true })
+                        val students = StudentsStateHolder(services, backgroundScope, AppLanguage.English, canDelete = { true })
                         runCurrent()
 
                         teachers.onEvent(TeachersEvent.OpenAddTeacher)

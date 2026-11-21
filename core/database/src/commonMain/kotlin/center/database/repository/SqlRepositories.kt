@@ -82,6 +82,14 @@ class SqlTeacherRepository(
             }
         }
 
+    override suspend fun deleteTeacher(id: String): Unit =
+        withContext(dispatcher) {
+            database.transaction {
+                check(!database.peopleQueries.hasPersonAttendance("TEACHER", id).executeAsOne()) { "Teacher has attendance records" }
+                database.teacherQueries.deleteById(id)
+            }
+        }
+
     override suspend fun save(teacher: Teacher): Unit =
         withContext(dispatcher) {
             require(teacher.id.isNotBlank() && teacher.fullName.isNotBlank() && teacher.subject.isNotBlank())

@@ -4,6 +4,12 @@ import center.ui.components.MainNavigation
 import center.ui.localization.AppLanguage
 
 sealed interface TeachersEvent {
+    data class RequestDeleteTeacher(
+        val id: String,
+    ) : TeachersEvent
+
+    data object ConfirmDeleteTeacher : TeachersEvent
+
     data class StaffTabSelected(
         val selected: Boolean,
     ) : TeachersEvent

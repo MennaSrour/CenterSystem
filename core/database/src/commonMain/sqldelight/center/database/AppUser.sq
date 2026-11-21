@@ -1,0 +1,26 @@
+CREATE TABLE app_user (
+    id TEXT PRIMARY KEY NOT NULL,
+    username TEXT NOT NULL COLLATE NOCASE UNIQUE,
+    passwordHash TEXT NOT NULL,
+    displayName TEXT NOT NULL,
+    role TEXT NOT NULL CHECK (role IN ('ADMIN', 'RECEPTION')),
+    isActive INTEGER AS kotlin.Boolean NOT NULL DEFAULT 1 CHECK (isActive IN (0, 1))
+);
+
+findUser:
+SELECT * FROM app_user WHERE username = ?;
+
+selectUsers:
+SELECT id, username, displayName, role, isActive FROM app_user ORDER BY username;
+
+countUsers:
+SELECT count(*) FROM app_user;
+
+insertUser:
+INSERT INTO app_user(id, username, passwordHash, displayName, role) VALUES (?, ?, ?, ?, ?);
+
+updatePassword:
+UPDATE app_user SET passwordHash = ? WHERE id = ?;
+
+userExists:
+SELECT EXISTS(SELECT 1 FROM app_user WHERE id = ?);

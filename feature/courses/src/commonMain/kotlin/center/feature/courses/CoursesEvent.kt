@@ -108,7 +108,9 @@ sealed interface CoursesEvent {
 
     data object OpenNotifications : CoursesEvent
 
-    data object RequestEnglish : CoursesEvent
+    data class LanguageSelected(
+        val language: center.ui.localization.AppLanguage,
+    ) : CoursesEvent
 
     data object LogOut : CoursesEvent
 }

@@ -61,10 +61,12 @@ internal fun FinancialsRoute(
     root: RootComponent,
     services: DirectoryServices,
     shortcut: ReceptionShortcut?,
+    canViewProfit: Boolean,
+    onLanguageSelected: (AppLanguage) -> Unit,
 ) {
     val language = LocalAppLanguage.current
     val scope = rememberDirectoryScope(language)
-    val holder = remember(services, scope, shortcut, language) { FinancialsStateHolder(services, scope, language, shortcut) }
+    val holder = remember(services, scope, shortcut, language) { FinancialsStateHolder(services, scope, language, shortcut, canViewProfit) }
     val state by holder.uiState.collectAsState()
     val snackbar = remember { SnackbarHostState() }
     val unavailable = stringResource(Res.string.feature_unavailable)
@@ -88,7 +90,8 @@ internal fun FinancialsRoute(
                         FinancialsDestination.Settings -> root.navigate(Destination.Settings)
                         FinancialsDestination.Schedule -> notify(unavailable)
                     }
-                FinancialsEvent.OpenNotifications, FinancialsEvent.RequestEnglish, FinancialsEvent.LogOut -> notify(unavailable)
+                is FinancialsEvent.LanguageSelected -> onLanguageSelected(event.language)
+                FinancialsEvent.OpenNotifications, FinancialsEvent.LogOut -> notify(unavailable)
                 else -> holder.onEvent(event)
             }
         })
@@ -102,8 +105,12 @@ internal class FinancialsStateHolder(
     private val scope: CoroutineScope,
     private val language: AppLanguage,
     shortcut: ReceptionShortcut? = null,
+    private val canViewProfit: Boolean,
 ) {
-    private val state = MutableStateFlow(FinancialsState(FinancialSummary("0", "0", "0", "0"), emptyList(), emptyList(), "", ""))
+    private val state =
+        MutableStateFlow(
+            FinancialsState(FinancialSummary("0", "0", "0", if (canViewProfit) "0" else null), emptyList(), emptyList(), "", ""),
+        )
     val uiState = state.asStateFlow()
     private val messages = MutableSharedFlow<String>(extraBufferCapacity = 4)
     val feedback = messages.asSharedFlow()
@@ -143,7 +150,7 @@ internal class FinancialsStateHolder(
                                 totals.todayIncomeMinor.formattedMinor(),
                                 totals.todayExpenseMinor.formattedMinor(),
                                 totals.drawerBalanceMinor.formattedMinor(),
-                                totals.monthNetMinor.formattedMinor(),
+                                if (canViewProfit) totals.monthNetMinor.formattedMinor() else null,
                             ),
                         incomeRecords = records.filter { it.first == LedgerDirection.INCOME }.map { it.second },
                         expenseRecords = records.filter { it.first == LedgerDirection.EXPENSE }.map { it.second },

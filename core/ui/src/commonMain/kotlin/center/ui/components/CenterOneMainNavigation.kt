@@ -1,7 +1,9 @@
 package center.ui.components
 
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.Logout
 import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import androidx.compose.material.icons.outlined.AccountBalanceWallet
 import androidx.compose.material.icons.outlined.Home
@@ -12,6 +14,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
@@ -39,6 +42,8 @@ enum class MainNavigation(
     fun label(language: AppLanguage): String = label.resolve(language)
 }
 
+val LocalCenterOneLogout = staticCompositionLocalOf<(() -> Unit)?> { null }
+
 @Composable
 fun CenterOneMainNavigation(
     selected: MainNavigation?,
@@ -46,6 +51,7 @@ fun CenterOneMainNavigation(
     modifier: Modifier = Modifier,
 ) {
     val language = LocalAppLanguage.current
+    val logout = LocalCenterOneLogout.current
     CenterOneLocalization(language) {
         CenterOneSidebar(
             modifier = modifier,
@@ -54,13 +60,25 @@ fun CenterOneMainNavigation(
                 HorizontalDivider(color = SidebarInk.copy(alpha = ACCENT_TINT_ALPHA))
             },
             footer = {
-                IconButton(onClick = { onNavigate(MainNavigation.Settings) }, modifier = Modifier.size(CenterOneSize.ButtonHeight)) {
-                    Icon(
-                        MainNavigation.Settings.icon,
-                        contentDescription = MainNavigation.Settings.label(language),
-                        modifier = Modifier.size(20.dp),
-                        tint = White,
-                    )
+                Row {
+                    IconButton(onClick = { onNavigate(MainNavigation.Settings) }, modifier = Modifier.size(CenterOneSize.ButtonHeight)) {
+                        Icon(
+                            MainNavigation.Settings.icon,
+                            contentDescription = MainNavigation.Settings.label(language),
+                            modifier = Modifier.size(20.dp),
+                            tint = White,
+                        )
+                    }
+                    if (logout != null) {
+                        IconButton(onClick = logout, modifier = Modifier.size(CenterOneSize.ButtonHeight)) {
+                            Icon(
+                                Icons.AutoMirrored.Outlined.Logout,
+                                contentDescription = LocalizedText("تسجيل الخروج", "Log out").resolve(language),
+                                modifier = Modifier.size(20.dp),
+                                tint = White,
+                            )
+                        }
+                    }
                 }
             },
         ) {

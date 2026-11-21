@@ -180,6 +180,7 @@ internal fun CoursesContent(
                                 teacherName = teacherById[group.teacherId]?.name ?: stringResource(Res.string.teacher_missing),
                                 gradeLabel = gradeById[group.gradeId]?.label ?: stringResource(Res.string.grade_missing),
                                 menuExpanded = state.expandedGroupMenuId == group.id,
+                                canDelete = state.canDelete,
                                 onEvent = onEvent,
                                 modifier = Modifier.fillMaxWidth(),
                             )
@@ -219,9 +220,7 @@ private fun CoursesHeader(
     onEvent: (CoursesEvent) -> Unit,
 ) {
     CenterOnePageHeader(stringResource(Res.string.courses_title), stringResource(Res.string.courses_title_en), state.dateLabel) {
-        CenterOneLanguageToggle(AppLanguage.Arabic, { language ->
-            if (language == AppLanguage.English) onEvent(CoursesEvent.RequestEnglish)
-        })
+        CenterOneLanguageToggle(LocalAppLanguage.current, { onEvent(CoursesEvent.LanguageSelected(it)) })
         CenterOneIconButton(
             Icons.Outlined.Notifications,
             stringResource(Res.string.notifications),

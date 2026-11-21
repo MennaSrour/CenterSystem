@@ -54,10 +54,11 @@ internal fun TeachersRoute(
     root: RootComponent,
     services: DirectoryServices,
     onLanguageSelected: (AppLanguage) -> Unit,
+    canDelete: () -> Boolean,
 ) {
     val language = LocalAppLanguage.current
     val scope = rememberDirectoryScope(language)
-    val holder = remember(services, scope, language) { TeachersStateHolder(services, scope, language) }
+    val holder = remember(services, scope, language) { TeachersStateHolder(services, scope, language, canDelete) }
     val state by holder.state.collectAsState()
     val snackbar = remember { SnackbarHostState() }
     LaunchedEffect(holder) { holder.feedback.collect { snackbar.showSnackbar(it) } }
@@ -78,8 +79,9 @@ internal class TeachersStateHolder(
     private val services: DirectoryServices,
     private val scope: CoroutineScope,
     private val language: AppLanguage,
+    private val canDelete: () -> Boolean,
 ) {
-    private val mutableState = MutableStateFlow(TeachersState(emptyList()))
+    private val mutableState = MutableStateFlow(TeachersState(emptyList(), canDelete = canDelete()))
     val state = mutableState.asStateFlow()
     private val mutableFeedback = MutableSharedFlow<String>(extraBufferCapacity = 4)
     val feedback = mutableFeedback.asSharedFlow()
@@ -209,6 +211,11 @@ internal class TeachersStateHolder(
                     if (!it.saving) setModal(it.copy(draft = event.draft, message = null))
                 }
             TeachersEvent.SaveStaff -> saveStaff()
+            is TeachersEvent.RequestDeleteTeacher ->
+                if (canDelete() && (current.modal as? TeachersModal.Details)?.teacherId == event.id && current.payingTeacherId == null) {
+                    records[event.id]?.let { setModal(TeachersModal.Delete(it.id, it.fullName)) }
+                }
+            TeachersEvent.ConfirmDeleteTeacher -> deleteTeacher()
             is TeachersEvent.SearchChanged -> mutableState.update { it.copy(query = event.query) }
             is TeachersEvent.OpenTeacher -> if (event.id in records) setModal(TeachersModal.Details(event.id))
             is TeachersEvent.EditTeacher ->
@@ -217,8 +224,11 @@ internal class TeachersStateHolder(
                 }
             TeachersEvent.OpenAddTeacher -> setModal(TeachersModal.Add())
             TeachersEvent.CloseModal ->
-                if ((current.modal as? TeachersModal.Add)?.saving != true && (current.modal as? TeachersModal.StaffForm)?.saving != true) {
-                    setModal(TeachersModal.Closed)
+                when (val modal = current.modal) {
+                    is TeachersModal.Add -> if (!modal.saving) setModal(TeachersModal.Closed)
+                    is TeachersModal.StaffForm -> if (!modal.saving) setModal(TeachersModal.Closed)
+                    is TeachersModal.Delete -> if (!modal.deleting) setModal(TeachersModal.Details(modal.id))
+                    else -> setModal(TeachersModal.Closed)
                 }
             is TeachersEvent.NameChanged -> edit { it.copy(name = event.value) }
             is TeachersEvent.PhoneChanged -> edit { it.copy(phone = event.value) }
@@ -227,6 +237,17 @@ internal class TeachersStateHolder(
             TeachersEvent.SaveTeacher -> save()
             is TeachersEvent.PaySalary -> pay(event.id)
             is TeachersEvent.Navigate, is TeachersEvent.LanguageSelected -> Unit
+        }
+    }
+
+    private fun deleteTeacher() {
+        if (!canDelete()) return
+        val modal = state.value.modal as? TeachersModal.Delete ?: return
+        if (modal.deleting) return
+        setModal(modal.copy(deleting = true, message = null))
+        scope.launch {
+            val result = directoryResult { services.teachers.deleteTeacher(modal.id) }
+            setModal(if (result.isSuccess) TeachersModal.Closed else modal.copy(deleting = false, message = failure))
         }
     }
 

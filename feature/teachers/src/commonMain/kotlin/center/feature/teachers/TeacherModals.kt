@@ -19,6 +19,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.dp
 import center.ui.components.AttendanceHistory
+import center.ui.components.CenterOneDestructiveButton
 import center.ui.components.CenterOneGradientCard
 import center.ui.components.CenterOneModalContent
 import center.ui.components.CenterOnePrimaryButton
@@ -39,6 +40,7 @@ internal fun TeacherDetails(
     onEvent: (TeachersEvent) -> Unit,
     paying: Boolean = false,
     history: List<LocalizedText> = emptyList(),
+    canDelete: Boolean = true,
 ) {
     val language = LocalAppLanguage.current
     CenterOneModalContent(
@@ -78,6 +80,11 @@ internal fun TeacherDetails(
             }
         }
         AttendanceHistory(history)
+        if (canDelete) {
+            CenterOneDestructiveButton(onClick = { onEvent(TeachersEvent.RequestDeleteTeacher(teacher.id)) }, enabled = !paying) {
+                Text(staffLabel("حذف المدرس", "Delete teacher"))
+            }
+        }
     }
 }
 
