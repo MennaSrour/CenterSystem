@@ -21,6 +21,7 @@ import center.app.resources.center_one_logo
 import center.database.SqlAuthRepository
 import center.database.openDatabase
 import center.domain.usecase.AuthSession
+import center.feature.print.PrintCenter
 import center.ui.components.LocalCenterOneLogo
 import center.ui.localization.AppLanguage
 import center.ui.localization.CenterOneLocalization
@@ -126,6 +127,8 @@ private fun Startup(
             lifecycle.resume()
             onDispose { lifecycle.destroy() }
         }
-        App(root, ready.services, ready.auth, language, onLanguageSelected)
+        App(root, ready.services, ready.auth, language, onLanguageSelected) {
+            PrintCenter(root::navigate, onLanguageSelected) { Res.readBytes("drawable/center_one_logo.webp") }
+        }
     }
 }

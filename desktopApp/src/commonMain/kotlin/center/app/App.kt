@@ -37,6 +37,7 @@ internal fun App(
     session: AuthSession,
     language: AppLanguage,
     onLanguageSelected: (AppLanguage) -> Unit,
+    printCenter: @Composable () -> Unit,
 ) {
     val user = session.user.value ?: return
     val state = remember(root) { mutableStateOf(root.stack.value) }
@@ -74,6 +75,7 @@ internal fun App(
                         canDelete,
                     )
                 Destination.Courses -> CoursesRoute(root, services, canDelete, onLanguageSelected)
+                Destination.Print -> printCenter()
                 Destination.Teachers -> TeachersRoute(root, services, onLanguageSelected, canDelete)
                 else -> SecondaryRoute(root, route.destination, language, session, onLanguageSelected)
             }

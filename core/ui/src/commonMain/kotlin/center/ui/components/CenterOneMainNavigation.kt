@@ -8,6 +8,7 @@ import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import androidx.compose.material.icons.outlined.AccountBalanceWallet
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.PeopleOutline
+import androidx.compose.material.icons.outlined.Print
 import androidx.compose.material.icons.outlined.School
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.HorizontalDivider
@@ -36,6 +37,7 @@ enum class MainNavigation(
     Teachers(LocalizedText("المدرسين", "Teachers"), Icons.Outlined.School),
     Courses(LocalizedText("المجموعات", "Courses"), Icons.AutoMirrored.Outlined.MenuBook),
     Treasury(LocalizedText("الخزنة", "Treasury"), Icons.Outlined.AccountBalanceWallet),
+    Print(LocalizedText("الطباعة", "Print"), Icons.Outlined.Print),
     Settings(LocalizedText("الإعدادات", "Settings"), Icons.Outlined.Settings),
     ;
 

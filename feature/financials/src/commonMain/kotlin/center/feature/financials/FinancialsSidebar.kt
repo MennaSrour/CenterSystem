@@ -21,6 +21,7 @@ internal fun FinancialsSidebar(
                         MainNavigation.Teachers -> FinancialsDestination.Teachers
                         MainNavigation.Courses -> FinancialsDestination.Courses
                         MainNavigation.Treasury -> FinancialsDestination.Financials
+                        MainNavigation.Print -> FinancialsDestination.Print
                         MainNavigation.Settings -> FinancialsDestination.Settings
                     },
                 ),

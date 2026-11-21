@@ -28,6 +28,7 @@ kotlin {
         }
         getByName("desktopMain").dependencies {
             implementation(compose.desktop.currentOs)
+            implementation(project(":feature:print"))
             implementation(compose.materialIconsExtended)
             implementation(project(":core:database"))
             implementation(project(":core:network"))

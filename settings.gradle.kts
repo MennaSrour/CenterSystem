@@ -21,3 +21,4 @@ include(":feature:financials")
 
 include(":feature:courses")
 include(":feature:teachers")
+include(":feature:print")

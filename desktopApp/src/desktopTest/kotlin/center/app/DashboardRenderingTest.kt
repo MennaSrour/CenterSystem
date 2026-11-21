@@ -44,7 +44,7 @@ class DashboardRenderingTest {
                     ImageComposeScene(width = 800, height = 960, density = Density(1f)) {
                         CompositionLocalProvider(LocalCenterOneLogo provides painterResource(Res.drawable.center_one_logo)) {
                             CenterOneLocalization(AppLanguage.Arabic) {
-                                CenterOneTheme { App(root, services, session, AppLanguage.Arabic, {}) }
+                                CenterOneTheme { App(root, services, session, AppLanguage.Arabic, {}) {} }
                             }
                         }
                     }

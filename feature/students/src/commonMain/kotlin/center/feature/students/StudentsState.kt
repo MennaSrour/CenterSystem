@@ -9,7 +9,7 @@ enum class StudentStageFilter { All, Primary, Prep, Secondary, Overdue }
 
 enum class StudentSystem { Arabic, Languages }
 
-enum class StudentsDestination { Home, Students, Teachers, Courses, Schedule, Financials, Reports, Settings }
+enum class StudentsDestination { Home, Students, Teachers, Courses, Schedule, Financials, Reports, Print, Settings }
 
 data class StudentGrade(
     val id: String,
