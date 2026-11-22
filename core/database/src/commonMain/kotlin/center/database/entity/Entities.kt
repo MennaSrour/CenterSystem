@@ -82,6 +82,7 @@ data class MessageQueueEntity(
     /** Unix epoch milliseconds. */
     val createdAt: Long,
     val channel: ReminderChannel = ReminderChannel.WHATSAPP,
+    val reminderStudentId: String? = null,
 ) {
     init {
         require(id.isNotBlank() && targetPhone.isNotBlank() && messageBody.isNotBlank())

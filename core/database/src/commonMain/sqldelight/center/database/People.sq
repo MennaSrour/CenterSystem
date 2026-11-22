@@ -21,6 +21,8 @@ CREATE TABLE attendance_session (
     date TEXT NOT NULL,
     checkInTime INTEGER NOT NULL,
     checkOutTime INTEGER CHECK (checkOutTime >= checkInTime),
+    syncStatus TEXT NOT NULL DEFAULT 'PENDING',
+    updatedAt INTEGER NOT NULL DEFAULT 0,
     PRIMARY KEY (personType, personId, date, groupId)
 );
 CREATE INDEX attendance_session_date ON attendance_session(date);
@@ -64,7 +66,8 @@ FROM attendance WHERE :personType = 'STUDENT' AND studentId = :personId AND stat
 ORDER BY checkInTime DESC LIMIT 10;
 
 sessionsOnDate:
-SELECT * FROM attendance_session WHERE date = ? ORDER BY checkInTime;
+SELECT personType, personId, groupId, date, checkInTime, checkOutTime
+FROM attendance_session WHERE date = ? ORDER BY checkInTime;
 
 hasPersonAttendance:
 SELECT EXISTS(SELECT 1 FROM attendance_session WHERE personType = ? AND personId = ?);

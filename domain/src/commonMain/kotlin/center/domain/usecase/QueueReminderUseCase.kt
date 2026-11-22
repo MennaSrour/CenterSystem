@@ -31,6 +31,7 @@ class QueueReminderUseCase(
                 message.trim(),
                 createdAt = clock.nowMillis(),
                 channel = channel,
+                reminderStudentId = student.id,
             ).also { messages.save(it) }
         }
 }

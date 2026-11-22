@@ -1,0 +1,16 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function currentParent(phone) {
+      return request.auth != null &&
+             request.auth.token.portalRole == 'parent' &&
+             request.auth.token.portalPhone == phone &&
+             request.auth.token.portalUntil > request.time.toMillis() &&
+             request.auth.token.portalGeneration == get(/databases/$(database)/documents/parents/$(phone)).data.generation &&
+             get(/databases/$(database)/documents/parents/$(phone)).data.active == true;
+    }
+    match /parents/{phone}/{section}/{id} {
+      allow read: if section in ['children', 'attendance', 'payments', 'grades', 'notifications'] && currentParent(phone);
+    }
+  }
+}

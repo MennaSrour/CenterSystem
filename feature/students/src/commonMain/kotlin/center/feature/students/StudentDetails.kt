@@ -6,6 +6,7 @@ import androidx.compose.runtime.Composable
 import center.ui.components.AttendanceHistory
 import center.ui.components.CenterOneModal
 import center.ui.components.CenterOneModalContent
+import center.ui.components.LocalStudentPortalDetails
 import center.ui.localization.LocalAppLanguage
 import center.ui.localization.LocalizedText
 import center.ui.text.isolateLtr
@@ -43,6 +44,7 @@ internal fun StudentDetails(
             )
             if (state.groups.isEmpty()) Text(LocalizedText("لا توجد مجموعات نشطة", "No active groups").resolve(language))
             state.groups.forEach { Text(it.resolve(language)) }
+            LocalStudentPortalDetails.current(state.id, state.parentPhone)
             AttendanceHistory(state.history)
         }
     }

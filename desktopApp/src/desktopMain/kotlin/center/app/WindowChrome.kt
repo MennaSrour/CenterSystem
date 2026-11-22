@@ -51,6 +51,7 @@ import center.ui.theme.White
 internal fun FrameWindowScope.WindowTitleBar(
     state: WindowState,
     onClose: () -> Unit,
+    status: @Composable () -> Unit = {},
 ) {
     val maximized = state.placement == WindowPlacement.Maximized
     Row(Modifier.fillMaxWidth().height(44.dp).background(CenterOneBrushes.Sidebar), verticalAlignment = Alignment.CenterVertically) {
@@ -64,6 +65,7 @@ internal fun FrameWindowScope.WindowTitleBar(
                 Text(brandTitle.resolve(LocalAppLanguage.current), color = White, style = MaterialTheme.typography.titleSmall)
             }
         }
+        status()
         WindowControl(Icons.Outlined.Remove, authText("تصغير", "Minimize")) { state.isMinimized = true }
         WindowControl(
             if (maximized) Icons.Outlined.FilterNone else Icons.Outlined.CropSquare,

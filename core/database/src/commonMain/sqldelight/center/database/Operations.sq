@@ -21,17 +21,23 @@ CREATE TABLE treasury_expense (
     recordedAt INTEGER NOT NULL,
     description TEXT NOT NULL,
     teacherId TEXT REFERENCES teacher(id) ON DELETE RESTRICT,
+    syncStatus TEXT NOT NULL DEFAULT 'PENDING',
+    updatedAt INTEGER NOT NULL DEFAULT 0,
     CHECK ((kind = 'TEACHER_PAYOUT' AND teacherId IS NOT NULL) OR (kind = 'OPERATIONAL' AND teacherId IS NULL))
 );
 CREATE INDEX treasury_expense_time ON treasury_expense(recordedAt);
 
 selectDirectory:
-SELECT student.*, enrollment.classId AS enrolledGroupId, enrollment.discountAmount
+SELECT student.id, student.name, student.gradeLevel, student.studentPhone, student.parentPhone,
+       student.isActive, student.code, student.stage, student.system,
+       enrollment.classId AS enrolledGroupId, enrollment.discountAmount
 FROM student LEFT JOIN enrollment ON student.id = enrollment.studentId
 ORDER BY student.id, enrollment.classId;
 
 selectStudentByCode:
-SELECT student.*, enrollment.classId AS enrolledGroupId, enrollment.discountAmount
+SELECT student.id, student.name, student.gradeLevel, student.studentPhone, student.parentPhone,
+       student.isActive, student.code, student.stage, student.system,
+       enrollment.classId AS enrolledGroupId, enrollment.discountAmount
 FROM student LEFT JOIN enrollment ON student.id = enrollment.studentId
 WHERE coalesce(student.code, student.id) = :code ORDER BY enrollment.classId;
 
@@ -138,7 +144,9 @@ selectAssignedGroups:
 SELECT id FROM class_group WHERE teacherId = ? ORDER BY id;
 
 selectDirectoryStudentById:
-SELECT student.*, enrollment.classId AS enrolledGroupId, enrollment.discountAmount
+SELECT student.id, student.name, student.gradeLevel, student.studentPhone, student.parentPhone,
+       student.isActive, student.code, student.stage, student.system,
+       enrollment.classId AS enrolledGroupId, enrollment.discountAmount
 FROM student LEFT JOIN enrollment ON student.id = enrollment.studentId
 WHERE student.id = :id ORDER BY enrollment.classId;
 

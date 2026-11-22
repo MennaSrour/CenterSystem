@@ -24,6 +24,7 @@ import center.ui.components.CenterOneGradientCard
 import center.ui.components.CenterOneModalContent
 import center.ui.components.CenterOnePrimaryButton
 import center.ui.components.CenterOneTextField
+import center.ui.components.LocalTeacherPortalDetails
 import center.ui.components.StatusBadge
 import center.ui.components.StatusTone
 import center.ui.localization.LocalAppLanguage
@@ -56,6 +57,7 @@ internal fun TeacherDetails(
             Text(teacherString(TeacherText.Phone), style = MaterialTheme.typography.labelMedium)
             Text(teacher.phone, style = MaterialTheme.typography.bodyLarge.copy(textDirection = TextDirection.Ltr))
         }
+        LocalTeacherPortalDetails.current(teacher.id)
         if (teacher.notes.isNotBlank()) Text(teacher.notes, style = MaterialTheme.typography.bodyMedium)
         CenterOnePrimaryButton(onClick = {
             onEvent(TeachersEvent.EditTeacher(teacher.id))

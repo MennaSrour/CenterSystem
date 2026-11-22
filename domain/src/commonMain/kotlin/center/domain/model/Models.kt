@@ -61,4 +61,5 @@ data class QueuedMessage(
     val status: MessageStatus = MessageStatus.PENDING,
     val createdAt: Long,
     val channel: ReminderChannel = ReminderChannel.WHATSAPP,
+    val reminderStudentId: String? = null,
 )

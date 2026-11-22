@@ -31,6 +31,9 @@ kotlin {
             implementation(project(":feature:print"))
             implementation(compose.materialIconsExtended)
             implementation(project(":core:database"))
+            implementation("com.google.firebase:firebase-admin:9.7.0")
+            implementation("org.apache.commons:commons-csv:1.14.1")
+            implementation("org.apache.poi:poi-ooxml:5.4.1")
             implementation(project(":core:network"))
             implementation(project(":core:utils"))
         }
@@ -45,7 +48,7 @@ compose.desktop {
             targetFormats(TargetFormat.Msi, TargetFormat.Exe, TargetFormat.Deb)
             packageName = "CenterSystem"
             packageVersion = "1.0.0"
-            modules("java.sql", "jdk.unsupported")
+            modules("java.sql", "java.naming", "java.prefs", "jdk.crypto.ec", "jdk.unsupported")
             linux {
                 iconFile.set(project.file("packaging/center-one.png"))
             }
@@ -59,3 +62,8 @@ compose.desktop {
 }
 
 compose.resources { packageOfResClass = "center.app.resources" }
+
+// Firebase's JVM dependencies take the bundled JAR past the standard ZIP entry limit.
+tasks.withType<Zip>().configureEach {
+    if (name == "packageUberJarForCurrentOS") isZip64 = true
+}
