@@ -18,7 +18,10 @@ import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
 import center.app.resources.Res
 import center.app.resources.center_one_logo
+import center.database.DatabaseBackup
 import center.database.SqlAuthRepository
+import center.database.SqlStudentRepository
+import center.database.lockDatabaseDirectory
 import center.database.openDatabase
 import center.domain.usecase.AuthSession
 import center.feature.print.PrintCenter
@@ -57,7 +60,7 @@ fun main() =
                     CenterOneTheme {
                         Column(Modifier.fillMaxSize()) {
                             WindowTitleBar(windowState, ::exitApplication)
-                            Startup(directory, language, onLanguageSelected = { language = it })
+                            Startup(directory, language, onLanguageSelected = { language = it }, onClose = ::exitApplication)
                         }
                     }
                 }
@@ -68,6 +71,7 @@ fun main() =
 private data class StartupData(
     val services: DirectoryServices,
     val auth: AuthSession,
+    val students: SqlStudentRepository,
 )
 
 @Composable
@@ -75,12 +79,15 @@ private fun Startup(
     directory: Path,
     language: AppLanguage,
     onLanguageSelected: (AppLanguage) -> Unit,
+    onClose: () -> Unit,
 ) {
+    val backup = remember(directory) { DatabaseBackup(directory) }
     var data by remember(directory) { mutableStateOf<StartupData?>(null) }
     var failed by remember(directory) { mutableStateOf(false) }
     var attempt by remember(directory) { mutableStateOf(0) }
     LaunchedEffect(directory, attempt) {
         // Assign owned resources on the IO thread so cleanup also covers cancellation during startup.
+        var directoryLock: AutoCloseable? = null
         var database: AutoCloseable? = null
         var dependencies: org.koin.core.KoinApplication? = null
         try {
@@ -88,25 +95,33 @@ private fun Startup(
             val result =
                 directoryResult {
                     withContext(Dispatchers.IO) {
+                        directoryLock = lockDatabaseDirectory(directory)
+                        backup.applyPendingRestore()
                         val driver = openDatabase(directory).also { database = it }
                         val app = koinApplication { modules(persistenceModule(driver)) }.also { dependencies = it }
                         app.koin.get<SqlAuthRepository>().seedIfEmpty()
-                        StartupData(app.koin.get(), app.koin.get())
+                        StartupData(app.koin.get(), app.koin.get(), app.koin.get())
                     }
                 }
             delay((1_500 - (System.nanoTime() - started) / 1_000_000).coerceAtLeast(0))
-            data = result.getOrNull()
-            failed = result.isFailure
-            if (result.isSuccess) awaitCancellation()
+            result.getOrNull()?.let { ready ->
+                data = ready
+                awaitCancellation()
+            }
         } finally {
             withContext(NonCancellable + Dispatchers.IO) {
                 try {
                     dependencies?.close()
                 } finally {
-                    database?.close()
+                    try {
+                        database?.close()
+                    } finally {
+                        directoryLock?.close()
+                    }
                 }
             }
         }
+        failed = true
     }
 
     val ready = data
@@ -127,7 +142,15 @@ private fun Startup(
             lifecycle.resume()
             onDispose { lifecycle.destroy() }
         }
-        App(root, ready.services, ready.auth, language, onLanguageSelected) {
+        App(
+            root,
+            ready.services,
+            ready.auth,
+            language,
+            onLanguageSelected,
+            studentImport = { StudentImportActions(ready.services, ready.students) },
+            databaseBackup = { DatabaseBackupCard(backup, ready.auth, onClose) },
+        ) {
             PrintCenter(root::navigate, onLanguageSelected) { Res.readBytes("drawable/center_one_logo.webp") }
         }
     }

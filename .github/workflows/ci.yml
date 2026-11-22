@@ -38,9 +38,10 @@ jobs:
             throw 'WiX 3 candle.exe and light.exe were not found on the runner.'
           }
           "WIX_PATH=$wix" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          $wix | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
           Write-Host "Using preinstalled WiX: $wix"
       - name: Windows installers
-        run: ./gradlew.bat :desktopApp:packageMsi :desktopApp:packageExe --no-daemon
+        run: ./gradlew.bat :desktopApp:createDistributable :desktopApp:packageMsi :desktopApp:packageExe --no-daemon
       - uses: actions/upload-artifact@v4
         with:
           name: windows-installers

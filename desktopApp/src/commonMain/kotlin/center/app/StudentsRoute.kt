@@ -61,6 +61,7 @@ internal fun StudentsRoute(
     openAddStudent: Boolean,
     onLanguageSelected: (AppLanguage) -> Unit,
     canDelete: () -> Boolean,
+    directoryActions: @Composable () -> Unit,
 ) {
     val language = LocalAppLanguage.current
     val scope = rememberDirectoryScope(language)
@@ -103,7 +104,7 @@ internal fun StudentsRoute(
                 StudentsEvent.OpenNotifications, StudentsEvent.LogOut -> notify(unavailable)
                 else -> holder.onEvent(event)
             }
-        })
+        }, directoryActions = directoryActions)
         SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter))
     }
 }

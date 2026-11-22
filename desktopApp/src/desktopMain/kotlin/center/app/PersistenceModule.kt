@@ -60,7 +60,8 @@ internal fun persistenceModule(
     single { get<CenterDaos>().attendance }
     single { get<CenterDaos>().payments }
     single { get<CenterDaos>().messages }
-    single<StudentRepository> { SqlStudentRepository(get(), dispatcher) }
+    single { SqlStudentRepository(get(), dispatcher) }
+    single<StudentRepository> { get<SqlStudentRepository>() }
     single<TeacherRepository> { SqlTeacherRepository(get(), dispatcher) }
     single<ClassGroupRepository> { SqlClassGroupRepository(get(), dispatcher) }
     single<PaymentRepository> { SqlPaymentRepository(get(), dispatcher) }

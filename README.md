@@ -47,26 +47,42 @@ From the repository directory on Windows PowerShell:
 ```powershell
 .\gradlew.bat :desktopApp:run
 .\gradlew.bat ktlintCheck allTests :desktopApp:desktopJar
-.\gradlew.bat :desktopApp:packageMsi :desktopApp:packageExe
+.\gradlew.bat :desktopApp:createDistributable :desktopApp:packageMsi :desktopApp:packageExe
 ```
 
 On Linux/macOS use `./gradlew` for build/tests or development launch. Launch needs
 a graphical desktop. Windows installers must be built on Windows with JDK 21 and
 WiX Toolset 3.x. Set `WIX_PATH` to the directory containing `candle.exe` and
-`light.exe` before running packaging, for example:
+`light.exe` and add it to `PATH` before running packaging:
 
 ```powershell
 $env:WIX_PATH = "C:\Program Files (x86)\WiX Toolset v3.14\bin"
+$env:Path = "$env:WIX_PATH;$env:Path"
 ```
 
-CI discovers the runner's preinstalled WiX 3 and exports `WIX_PATH`, so Compose
-uses it directly instead of downloading WiX during packaging. Installers are
+CI discovers the runner's preinstalled WiX 3 and adds it to the packaging environment. Installers are
 written under `desktopApp/build/compose/binaries/main/`. The package includes its
 Java runtime; end users do not need to install Java.
 
 Use `./gradlew ktlintFormat` to format Kotlin and Gradle scripts. CI triggers for
 pushes and pull requests to `main`, runs all configured unit tests, checks style,
 builds the desktop JAR and publishes MSI/EXE workflow artifacts.
+
+## Student import and local backup
+
+- Admin and Reception can download the template from Students. Keep the headers
+  `name,grade,studentPhone,parentPhone,groupName` and export as CSV UTF-8. Format
+  phone columns as text in Excel to preserve leading zeroes. Name, grade and parent
+  phone are required. Use a grade label from the app in Arabic or English, or its
+  ID (for example, `primary-1`). Group name is optional and must match one active
+  group when provided. An optional `code` column preserves supplied student codes.
+- The import defaults new students to the Arabic education system. It skips rows
+  with matching name, grade, student phone, parent phone and group. A validation
+  or code conflict rolls back the file so it can be corrected and retried.
+- Admin can export a SQLite backup to a folder from Settings. Restore accepts a
+  compatible `.db` file, closes the app after confirmation, and applies the backup
+  on the next launch. Restored accounts come from the selected backup. The prior
+  database is retained as `center.before-restore.db` next to `center.db`.
 
 ## Architecture and extension points
 

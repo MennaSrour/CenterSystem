@@ -43,7 +43,7 @@ compose.desktop {
         mainClass = "center.app.MainKt"
         nativeDistributions {
             targetFormats(TargetFormat.Msi, TargetFormat.Exe, TargetFormat.Deb)
-            packageName = "CenterSystem"
+            packageName = "CenterOne"
             packageVersion = "1.0.0"
             modules("java.sql", "jdk.unsupported")
             linux {
@@ -51,7 +51,8 @@ compose.desktop {
             }
             windows {
                 iconFile.set(project.file("packaging/center-one.ico"))
-                menuGroup = "CenterSystem"
+                menuGroup = "CenterOne"
+                menu = true
                 shortcut = true
             }
         }
