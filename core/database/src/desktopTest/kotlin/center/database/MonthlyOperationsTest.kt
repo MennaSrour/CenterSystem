@@ -17,8 +17,11 @@ import center.domain.model.GroupScheduleSlot
 import center.domain.model.GroupStatus
 import center.domain.model.LedgerDirection
 import center.domain.model.LedgerKind
+import center.domain.model.LessonEnrollment
+import center.domain.model.LessonType
 import center.domain.model.ReminderChannel
 import center.domain.model.Student
+import center.domain.model.StudentTrack
 import center.domain.model.Teacher
 import center.domain.model.TreasuryExpense
 import center.domain.usecase.EpochClock
@@ -48,6 +51,72 @@ class MonthlyOperationsTest {
     private val month = LocalDate(2026, 11, 1)
     private val day = LocalDate(2026, 11, 5)
     private val now = day.atStartOfDayIn(TimeZone.of("Africa/Cairo")).toEpochMilliseconds()
+
+    @Test
+    fun mixedTracksCustomPricesAndMultipleLessonsAggregateMonthlyDue() =
+        runTest {
+            val path = Files.createTempDirectory("center-enrollment-pricing")
+            try {
+                openDatabase(path).use { driver ->
+                    val database = CenterDatabase(driver)
+                    val dispatcher = StandardTestDispatcher(testScheduler)
+                    val teachers = SqlTeacherRepository(database, dispatcher)
+                    val students = SqlStudentRepository(database, dispatcher)
+                    val groups = SqlClassGroupRepository(database, dispatcher)
+                    val billing = SqlMonthlyBillingRepository(database, dispatcher)
+                    teachers.save(Teacher("teacher", "Teacher", "Arabic"))
+                    val arabicStudent = Student("student-ar", "Student Arabic", parentPhone = "01000000001", code = "ST-1001")
+                    val languagesStudent = Student("student-lang", "Student Languages", parentPhone = "01000000002", code = "ST-1002")
+                    students.save(arabicStudent)
+                    students.save(languagesStudent)
+                    groups.save(
+                        ClassGroup(
+                            id = "mixed",
+                            name = "Arabic and Languages",
+                            teacherId = "teacher",
+                            monthlyPriceMinor = 12_000,
+                            commissionBasisPoints = 7_000,
+                            roomNumber = 1,
+                            system = EducationSystem.BOTH,
+                            status = GroupStatus.ACTIVE,
+                            lessonType = LessonType.MIXED,
+                            languagesPriceMinor = 15_000,
+                            enrollments =
+                                mapOf(
+                                    arabicStudent.id to LessonEnrollment(11_000, StudentTrack.ARABIC),
+                                    languagesStudent.id to LessonEnrollment(15_000, StudentTrack.LANGUAGES),
+                                ),
+                        ),
+                    )
+                    groups.save(
+                        ClassGroup(
+                            id = "private",
+                            name = "Private lesson",
+                            teacherId = "teacher",
+                            monthlyPriceMinor = 7_000,
+                            commissionBasisPoints = 7_000,
+                            roomNumber = 2,
+                            system = EducationSystem.ARABIC,
+                            status = GroupStatus.ACTIVE,
+                            lessonType = LessonType.PRIVATE,
+                            enrollments = mapOf(arabicStudent.id to LessonEnrollment(7_000, StudentTrack.PRIVATE)),
+                        ),
+                    )
+                    val balances = billing.remainingBalances(month).associateBy { it.studentId to it.groupId }
+                    assertEquals(11_000L, balances.getValue(arabicStudent.id to "mixed").remainingMinor)
+                    assertEquals(15_000L, balances.getValue(languagesStudent.id to "mixed").remainingMinor)
+                    val totals = billing.monthlyDueTotals(month).associate { it.studentId to it.totalMinor }
+                    assertEquals(18_000L, totals.getValue(arabicStudent.id))
+                    assertEquals(15_000L, totals.getValue(languagesStudent.id))
+                    val persistedArabic = students.getStudentById(arabicStudent.id)!!
+                    assertEquals(11_000L, persistedArabic.groupCustomPricesMinor.getValue("mixed"))
+                    assertEquals(StudentTrack.ARABIC, persistedArabic.groupTracks["mixed"] ?: StudentTrack.ARABIC)
+                    assertEquals(15_000L, students.getStudentById(languagesStudent.id)!!.groupCustomPricesMinor.getValue("mixed"))
+                }
+            } finally {
+                path.toFile().deleteRecursively()
+            }
+        }
 
     @Test
     fun joinsMonthlyBalancesAndLedgerWithoutReducingSalaryForUnpaidStudents() =

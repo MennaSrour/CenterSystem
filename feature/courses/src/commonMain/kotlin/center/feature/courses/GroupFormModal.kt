@@ -3,9 +3,16 @@ package center.feature.courses
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -17,6 +24,8 @@ import androidx.compose.ui.unit.dp
 import center.feature.courses.resources.Res
 import center.feature.courses.resources.add_title
 import center.feature.courses.resources.arabic_system
+import center.feature.courses.resources.arabic_track
+import center.feature.courses.resources.arabic_track_price
 import center.feature.courses.resources.cancel
 import center.feature.courses.resources.close
 import center.feature.courses.resources.commission
@@ -24,17 +33,21 @@ import center.feature.courses.resources.edit_title
 import center.feature.courses.resources.form_subtitle
 import center.feature.courses.resources.grade
 import center.feature.courses.resources.languages_system
+import center.feature.courses.resources.languages_track
+import center.feature.courses.resources.lesson_base_price
 import center.feature.courses.resources.max_capacity
-import center.feature.courses.resources.mixed_system
-import center.feature.courses.resources.private_lesson
 import center.feature.courses.resources.mixed_languages_price
-import center.feature.courses.resources.monthly_price
+import center.feature.courses.resources.private_lesson
 import center.feature.courses.resources.room
 import center.feature.courses.resources.save
+import center.feature.courses.resources.show_other_grades
+import center.feature.courses.resources.step_basic
+import center.feature.courses.resources.step_pricing
+import center.feature.courses.resources.student_enrollment
+import center.feature.courses.resources.student_price
+import center.feature.courses.resources.student_search
 import center.feature.courses.resources.subject
-import center.feature.courses.resources.system
 import center.feature.courses.resources.teacher
-import center.ui.components.CenterOneChoiceGroup
 import center.ui.components.CenterOneDropdown
 import center.ui.components.CenterOneDropdownOption
 import center.ui.components.CenterOneModal
@@ -42,6 +55,8 @@ import center.ui.components.CenterOneModalContent
 import center.ui.components.CenterOnePrimaryButton
 import center.ui.components.CenterOneTextButton
 import center.ui.components.CenterOneTextField
+import center.ui.localization.LocalAppLanguage
+import center.ui.localization.LocalizedText
 import org.jetbrains.compose.resources.stringResource
 
 @Composable
@@ -56,11 +71,13 @@ fun GroupFormModal(
 }
 
 @Composable
+@OptIn(ExperimentalLayoutApi::class)
 internal fun GroupFormModalContent(
     state: GroupFormState,
     onEvent: (CoursesEvent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val language = LocalAppLanguage.current
     CenterOneModalContent(
         title = stringResource(if (state.mode is GroupFormMode.Edit) Res.string.edit_title else Res.string.add_title),
         subtitle = stringResource(Res.string.form_subtitle),
@@ -70,6 +87,7 @@ internal fun GroupFormModalContent(
         enabled = !state.isSubmitting,
         maxWidth = 920.dp,
     ) {
+        Text(stringResource(Res.string.step_basic), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
         BoxWithConstraints(Modifier.fillMaxWidth()) {
             val twoColumns = maxWidth >= 600.dp
             val right: @Composable (Modifier) -> Unit = { columnModifier ->
@@ -113,37 +131,10 @@ internal fun GroupFormModalContent(
                         error = state.fieldErrors[GroupField.Grade],
                         modifier = Modifier.fillMaxWidth(),
                     )
-                    Text(stringResource(Res.string.system), style = MaterialTheme.typography.labelSmall)
-                    CenterOneChoiceGroup(
-                        labels =
-                            listOf(
-                                stringResource(Res.string.arabic_system),
-                                stringResource(Res.string.languages_system),
-                                stringResource(Res.string.mixed_system),
-                                stringResource(Res.string.private_lesson),
-                            ),
-                        selectedIndex = CourseLessonType.entries.indexOf(state.lessonType),
-                        onSelected = {
-                            onEvent(CoursesEvent.LessonTypeSelected(CourseLessonType.entries[it]))
-                        },
-                        enabled = !state.isSubmitting,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
                 }
             }
             val left: @Composable (Modifier) -> Unit = { columnModifier ->
                 Column(columnModifier, verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    GroupInput(state.monthlyPrice, stringResource(Res.string.monthly_price), {
-                        onEvent(CoursesEvent.MonthlyPriceChanged(it))
-                    }, !state.isSubmitting, state.fieldErrors[GroupField.MonthlyPrice], KeyboardType.Decimal)
-                    if (state.lessonType == CourseLessonType.Mixed) {
-                        GroupInput(state.languagesPrice, stringResource(Res.string.mixed_languages_price), {
-                            onEvent(CoursesEvent.LanguagesPriceChanged(it))
-                        }, !state.isSubmitting, state.fieldErrors[GroupField.LanguagesPrice], KeyboardType.Decimal)
-                    }
-                    GroupInput(state.teacherCommission, stringResource(Res.string.commission), {
-                        onEvent(CoursesEvent.CommissionChanged(it))
-                    }, !state.isSubmitting, state.fieldErrors[GroupField.Commission], KeyboardType.Decimal)
                     GroupInput(state.maxCapacity, stringResource(Res.string.max_capacity), {
                         onEvent(CoursesEvent.MaxCapacityChanged(it))
                     }, !state.isSubmitting, state.fieldErrors[GroupField.MaxCapacity], KeyboardType.Number)
@@ -180,6 +171,122 @@ internal fun GroupFormModalContent(
             }
         }
         GroupScheduleEditor(state, onEvent, Modifier.fillMaxWidth())
+        Text(
+            stringResource(Res.string.step_pricing),
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.primary,
+        )
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            val lessonTypes =
+                listOf(
+                    CourseLessonType.Arabic to stringResource(Res.string.arabic_system),
+                    CourseLessonType.Languages to stringResource(Res.string.languages_system),
+                    CourseLessonType.Mixed to LocalizedText("مشترك (عربي + لغات)", "Mixed (Arabic + Languages)").resolve(language),
+                    CourseLessonType.Private to stringResource(Res.string.private_lesson),
+                )
+            lessonTypes.forEach { (type, label) ->
+                FilterChip(
+                    selected = state.lessonType == type,
+                    onClick = { onEvent(CoursesEvent.LessonTypeSelected(type)) },
+                    label = { Text(label) },
+                    enabled = !state.isSubmitting,
+                )
+            }
+        }
+        val priceLabel =
+            if (state.lessonType == CourseLessonType.Mixed) {
+                stringResource(Res.string.arabic_track_price)
+            } else {
+                stringResource(Res.string.lesson_base_price)
+            }
+        GroupInput(state.monthlyPrice, priceLabel, {
+            onEvent(CoursesEvent.MonthlyPriceChanged(it))
+        }, !state.isSubmitting, state.fieldErrors[GroupField.MonthlyPrice], KeyboardType.Decimal)
+        if (state.lessonType == CourseLessonType.Mixed) {
+            GroupInput(state.languagesPrice, stringResource(Res.string.mixed_languages_price), {
+                onEvent(CoursesEvent.LanguagesPriceChanged(it))
+            }, !state.isSubmitting, state.fieldErrors[GroupField.LanguagesPrice], KeyboardType.Decimal)
+        }
+        GroupInput(state.teacherCommission, stringResource(Res.string.commission), {
+            onEvent(CoursesEvent.CommissionChanged(it))
+        }, !state.isSubmitting, state.fieldErrors[GroupField.Commission], KeyboardType.Decimal)
+        Text(
+            stringResource(Res.string.student_enrollment),
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.primary,
+        )
+        CenterOneTextField(
+            state.studentSearch,
+            { onEvent(CoursesEvent.StudentSearchChanged(it)) },
+            Modifier.fillMaxWidth(),
+            enabled = !state.isSubmitting,
+            label = { Text(stringResource(Res.string.student_search)) },
+        )
+        Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+            Checkbox(
+                checked = state.showOtherGrades,
+                onCheckedChange = { onEvent(CoursesEvent.ShowOtherGradesChanged(it)) },
+                enabled = !state.isSubmitting,
+            )
+            Text(stringResource(Res.string.show_other_grades), style = MaterialTheme.typography.bodySmall)
+        }
+        LazyColumn(Modifier.fillMaxWidth().heightIn(max = 280.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            items(
+                state.students.filter { student ->
+                    (state.showOtherGrades || student.gradeId == state.selectedGradeId) &&
+                        student.name.contains(state.studentSearch.trim(), ignoreCase = true)
+                },
+                key = { it.id },
+            ) { student ->
+                Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                    Checkbox(
+                        checked = student.id in state.enrollments,
+                        onCheckedChange = { onEvent(CoursesEvent.StudentEnrollmentToggled(student.id, it)) },
+                        enabled = !state.isSubmitting,
+                    )
+                    Text(student.name, Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
+                    Text(
+                        student.gradeLabel,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                state.enrollments[student.id]?.let { enrollment ->
+                    if (state.lessonType == CourseLessonType.Mixed) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            FilterChip(
+                                selected = enrollment.track == center.domain.model.StudentTrack.ARABIC,
+                                onClick = {
+                                    onEvent(
+                                        CoursesEvent.StudentTrackSelected(student.id, center.domain.model.StudentTrack.ARABIC),
+                                    )
+                                },
+                                label = { Text(stringResource(Res.string.arabic_track)) },
+                                enabled = !state.isSubmitting,
+                            )
+                            FilterChip(
+                                selected = enrollment.track == center.domain.model.StudentTrack.LANGUAGES,
+                                onClick = {
+                                    onEvent(
+                                        CoursesEvent.StudentTrackSelected(student.id, center.domain.model.StudentTrack.LANGUAGES),
+                                    )
+                                },
+                                label = { Text(stringResource(Res.string.languages_track)) },
+                                enabled = !state.isSubmitting,
+                            )
+                        }
+                    }
+                    GroupInput(
+                        enrollment.price,
+                        stringResource(Res.string.student_price),
+                        { onEvent(CoursesEvent.StudentPriceChanged(student.id, it)) },
+                        !state.isSubmitting,
+                        null,
+                        KeyboardType.Decimal,
+                    )
+                }
+            }
+        }
         state.message?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error) }
         HorizontalDivider(color = MaterialTheme.colorScheme.outline)
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {

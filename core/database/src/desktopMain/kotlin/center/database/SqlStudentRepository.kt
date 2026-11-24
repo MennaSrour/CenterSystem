@@ -5,6 +5,7 @@ import app.cash.sqldelight.coroutines.mapToList
 import center.domain.model.EducationStage
 import center.domain.model.EducationSystem
 import center.domain.model.Student
+import center.domain.model.StudentTrack
 import center.domain.repository.StudentRepository
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -79,21 +80,34 @@ class SqlStudentRepository(
                     )
                     directory.updateStudentDetails(student.code.trim(), student.stage?.name, student.system?.name, student.id)
                 }
-                val existingDiscounts =
-                    directory
-                        .selectStudentByCode(student.code.trim())
-                        .executeAsList()
-                        .mapNotNull { row -> row.enrolledGroupId?.let { it to checkNotNull(row.discountAmount) } }
-                        .toMap()
                 val discounts = student.enrolledGroupIds.associateWith { student.groupDiscounts[it] ?: 0.0 }
-                if (existingDiscounts != discounts) {
-                    (student.enrolledGroupIds - existingDiscounts.keys).forEach { groupId ->
+                val existingRows =
+                    directory
+                        .selectDirectoryStudentById(student.id, ::studentWithGroup)
+                        .executeAsList()
+                        .mapNotNull { it.second }
+                        .associate { it.groupId to (it.discountAmount to (it.customPriceMinor to it.studentTrack)) }
+                val requestedRows =
+                    student.enrolledGroupIds.associateWith { groupId ->
+                        (discounts[groupId] ?: 0.0) to
+                            (student.groupCustomPricesMinor[groupId] to (student.groupTracks[groupId] ?: StudentTrack.ARABIC))
+                    }
+                if (existingRows != requestedRows) {
+                    (student.enrolledGroupIds - existingRows.keys).forEach { groupId ->
                         val group =
                             requireNotNull(database.classGroupQueries.selectById(groupId).executeAsOneOrNull()) { "Group not found" }
                         require(group.status == "ACTIVE") { "Cannot enroll in an archived group" }
                     }
                     directory.clearEnrollments(student.id)
-                    discounts.forEach { (groupId, discount) -> directory.insertEnrollment(student.id, groupId, discount) }
+                    requestedRows.forEach { (groupId, enrollment) ->
+                        directory.insertEnrollment(
+                            student.id,
+                            groupId,
+                            enrollment.first,
+                            enrollment.second.first,
+                            enrollment.second.second.name,
+                        )
+                    }
                 }
             }
         }
@@ -121,7 +135,9 @@ private fun studentWithGroup(
     system: String?,
     groupId: String?,
     discountAmount: Double?,
-): Pair<Student, Pair<String, Double>?> =
+    customPriceMinor: Long?,
+    studentTrack: String?,
+): Pair<Student, EnrollmentRow?> =
     Student(
         id,
         name,
@@ -132,10 +148,25 @@ private fun studentWithGroup(
         code ?: id,
         stage?.let(EducationStage::valueOf),
         system?.let(EducationSystem::valueOf),
-    ) to groupId?.let { it to checkNotNull(discountAmount) }
+    ) to groupId?.let { EnrollmentRow(it, checkNotNull(discountAmount), customPriceMinor, studentTrack?.let(StudentTrack::valueOf)) }
 
-private fun List<Pair<Student, Pair<String, Double>?>>.studentsWithEnrollments(): List<Student> =
-    groupBy({ it.first }, { it.second }).map { (student, groups) ->
-        val discounts = groups.filterNotNull().toMap()
-        student.copy(enrolledGroupIds = discounts.keys, groupDiscounts = discounts.filterValues { it != 0.0 })
+private data class EnrollmentRow(
+    val groupId: String,
+    val discountAmount: Double,
+    val customPriceMinor: Long?,
+    val studentTrack: StudentTrack?,
+)
+
+private fun List<Pair<Student, EnrollmentRow?>>.studentsWithEnrollments(): List<Student> =
+    groupBy({ it.first }, { it.second }).map { (student, rows) ->
+        val enrollments = rows.filterNotNull().associateBy { it.groupId }
+        student.copy(
+            enrolledGroupIds = enrollments.keys,
+            groupDiscounts = enrollments.mapValues { it.value.discountAmount }.filterValues { it != 0.0 },
+            groupCustomPricesMinor = enrollments.mapNotNull { (id, row) -> row.customPriceMinor?.let { id to it } }.toMap(),
+            groupTracks =
+                enrollments
+                    .mapNotNull { (id, row) -> row.studentTrack?.takeIf { it != StudentTrack.ARABIC }?.let { id to it } }
+                    .toMap(),
+        )
     }

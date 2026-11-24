@@ -192,6 +192,7 @@ internal class StudentsStateHolder(
                 services.dates(),
             ) { students, groups, _, today ->
                 val balances = services.overdue().getOrThrow()
+                val monthlyDue = services.billing.monthlyDueTotals(today.monthStart()).associate { it.studentId to it.totalMinor }
                 val rows =
                     students.map { student ->
                         StudentRow(
@@ -204,6 +205,7 @@ internal class StudentsStateHolder(
                             student.parentPhone,
                             student.stage?.let { EducationStage.valueOf(it.name.lowercase().replaceFirstChar(Char::uppercase)) },
                             student.gradeLevel.takeIf { student.gradeId().isBlank() && it.isNotBlank() },
+                            monthlyDue[student.id] ?: 0L,
                         )
                     }
                 val catalogById = uiGrades.associateBy { it.id }
@@ -240,15 +242,20 @@ internal class StudentsStateHolder(
                         dateLabel = today.toString(),
                         monthlyPayments = payments,
                         details = details(),
-                        addStudent = it.addStudent?.let { form ->
-                            val code = if (form.editingId == null && form.code.isBlank()) nextStudentCode() else form.code
-                            form.copy(
-                                code = code,
-                                groupOptions = availableGroups(form.selectedGroupIds, form.selectedGradeId),
-                                canSubmit = form.name.isNotBlank() && code.isNotBlank() && form.selectedGradeId != null &&
-                                    form.parentPhone.isNotBlank() && form.invalidDiscounts.isEmpty(),
-                            )
-                        },
+                        addStudent =
+                            it.addStudent?.let { form ->
+                                val code = if (form.editingId == null && form.code.isBlank()) nextStudentCode() else form.code
+                                form.copy(
+                                    code = code,
+                                    groupOptions = availableGroups(form.selectedGroupIds, form.selectedGradeId),
+                                    canSubmit =
+                                        form.name.isNotBlank() &&
+                                            code.isNotBlank() &&
+                                            form.selectedGradeId != null &&
+                                            form.parentPhone.isNotBlank() &&
+                                            form.invalidDiscounts.isEmpty(),
+                                )
+                            },
                     )
                 }
             }.catch { mutableFeedback.emit(failure) }.collect {}
@@ -285,12 +292,15 @@ internal class StudentsStateHolder(
             else -> null
         }
 
-    private fun availableGroups(selected: Set<String>, gradeId: String? = null): List<StudentGroupOption> =
-        groups.filter {
-            (it.status == GroupStatus.ACTIVE || it.id in selected) &&
-                (if (gradeId == null) it.id in selected else it.gradeId == gradeId)
-        }
-            .map { StudentGroupOption(it.id, it.name) }
+    private fun availableGroups(
+        selected: Set<String>,
+        gradeId: String? = null,
+    ): List<StudentGroupOption> =
+        groups
+            .filter {
+                (it.status == GroupStatus.ACTIVE || it.id in selected) &&
+                    (if (gradeId == null) it.id in selected else it.gradeId == gradeId)
+            }.map { StudentGroupOption(it.id, it.name) }
 
     private fun formFor(student: Student?): AddStudentState =
         AddStudentState(
@@ -344,7 +354,10 @@ internal class StudentsStateHolder(
 
     private fun nextStudentCode(): String = nextSequentialCode("ST", records.values.map { it.code })
 
-    private fun nextSequentialCode(prefix: String, existing: Collection<String>): String = services.personCodes.next(prefix, existing)
+    private fun nextSequentialCode(
+        prefix: String,
+        existing: Collection<String>,
+    ): String = services.personCodes.next(prefix, existing)
 
     fun onEvent(event: StudentsEvent) {
         when (event) {

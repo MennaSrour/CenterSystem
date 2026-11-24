@@ -63,4 +63,5 @@
     <string name="english">English</string>
     <string name="arabic">عربي</string>
     <string name="notifications">الإشعارات</string>
+    <string name="monthly_due">إجمالي المستحق الشهري / Monthly Due</string>
 </resources>

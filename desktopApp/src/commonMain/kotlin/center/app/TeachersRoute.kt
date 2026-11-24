@@ -316,8 +316,10 @@ internal class TeachersStateHolder(
         }
     }
 
-    private fun nextCode(prefix: String, ids: Collection<String>): String =
-        services.personCodes.next(prefix, ids)
+    private fun nextCode(
+        prefix: String,
+        ids: Collection<String>,
+    ): String = services.personCodes.next(prefix, ids)
 
     private fun pay(id: String) {
         val current = state.value

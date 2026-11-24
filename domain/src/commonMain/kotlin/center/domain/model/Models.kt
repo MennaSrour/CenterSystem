@@ -14,9 +14,13 @@ data class Student(
     val system: EducationSystem? = null,
     val enrolledGroupIds: Set<String> = emptySet(),
     val groupDiscounts: Map<String, Double> = emptyMap(),
+    val groupCustomPricesMinor: Map<String, Long> = emptyMap(),
+    val groupTracks: Map<String, StudentTrack> = emptyMap(),
 ) {
     val name: String get() = fullName
 }
+
+enum class StudentTrack { ARABIC, LANGUAGES, PRIVATE }
 
 data class Teacher(
     val id: String,

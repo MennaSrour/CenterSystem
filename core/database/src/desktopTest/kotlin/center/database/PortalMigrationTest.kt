@@ -17,6 +17,8 @@ class PortalMigrationTest {
                 driver.execute(null, "INSERT INTO student (id, name) VALUES ('s', 'Student')", 0)
                 driver.execute(null, "INSERT INTO teacher (id, fullName, subject) VALUES ('t', 'Teacher', 'Math')", 0)
                 driver.execute(null, "INSERT INTO class_group (id, name, teacherId, sessionPrice) VALUES ('g', 'Group', 't', 10)", 0)
+                driver.execute(null, "UPDATE class_group SET monthlyPriceMinor = 12000 WHERE id = 'g'", 0)
+                driver.execute(null, "INSERT INTO enrollment(studentId, classId, discountAmount) VALUES ('s', 'g', 2)", 0)
                 driver.execute(
                     null,
                     """INSERT INTO payment (id, studentId, classId, amountPaid, teacherShare, centerShare, paymentDate)
@@ -43,6 +45,9 @@ class PortalMigrationTest {
                 val migratedLesson = db.classGroupQueries.selectById("g").executeAsOne()
                 assertEquals("MIXED", migratedLesson.lessonType)
                 assertEquals(null, migratedLesson.languagesPriceMinor)
+                val enrollment = db.operationsQueries.selectEnrollmentDetails("s", "g").executeAsOne()
+                assertEquals(11_800L, enrollment.customPriceMinor)
+                assertEquals("ARABIC", enrollment.studentTrack)
                 assertEquals(
                     "",
                     db.teacherQueries

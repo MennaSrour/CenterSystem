@@ -11,6 +11,7 @@ import center.domain.model.GroupStatus
 import center.domain.model.LedgerDirection
 import center.domain.model.LedgerEntry
 import center.domain.model.LedgerKind
+import center.domain.model.StudentMonthlyDue
 import center.domain.model.SubscriptionBalance
 import center.domain.model.TreasuryExpense
 import center.domain.model.TreasuryTotals
@@ -52,7 +53,9 @@ class SqlClassGroupRepository(
                     status = GroupStatus.valueOf(row.status),
                     gradeId = row.gradeId,
                     maxCapacity = row.maxCapacity?.toInt(),
-                    lessonType = center.domain.model.LessonType.valueOf(row.lessonType),
+                    lessonType =
+                        center.domain.model.LessonType
+                            .valueOf(row.lessonType),
                     languagesPriceMinor = row.languagesPriceMinor,
                     schedule =
                         slots.mapNotNull { slot ->
@@ -112,6 +115,13 @@ class SqlClassGroupRepository(
                 group.schedule.forEach {
                     queries.insertSlot(group.id, it.day.isoDayNumber.toLong(), it.from.minuteOfDay(), it.to.minuteOfDay())
                 }
+                group.enrollments?.let { enrollments ->
+                    queries.clearClassEnrollments(group.id)
+                    enrollments.forEach { (studentId, enrollment) ->
+                        require(enrollment.customPriceMinor in 0L..100_000_000_000L)
+                        queries.insertEnrollment(studentId, group.id, 0.0, enrollment.customPriceMinor, enrollment.studentTrack.name)
+                    }
+                }
             }
         }
 
@@ -125,6 +135,14 @@ class SqlMonthlyBillingRepository(
     private val dispatcher: CoroutineDispatcher,
     private val timeZone: TimeZone = TimeZone.of("Africa/Cairo"),
 ) : MonthlyBillingRepository {
+    override suspend fun monthlyDueTotals(month: LocalDate): List<StudentMonthlyDue> =
+        withContext(dispatcher) {
+            require(month.dayOfMonth == 1)
+            database.operationsQueries.monthlyDueTotals().executeAsList().map {
+                StudentMonthlyDue(it.studentId, checkNotNull(it.totalMinor))
+            }
+        }
+
     override fun observeChanges(): Flow<Unit> =
         database.operationsQueries
             .billingChanges()

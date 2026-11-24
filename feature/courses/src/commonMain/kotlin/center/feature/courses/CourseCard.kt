@@ -87,7 +87,10 @@ fun CourseCard(
             )
             if (group.lessonType == CourseLessonType.Mixed && group.languagesPrice.isNotBlank()) {
                 Text(
-                    LocalizedText("سعر مسار اللغات: ${group.languagesPrice} ج.م", "Languages track: ${group.languagesPrice} EGP").resolve(language),
+                    LocalizedText(
+                        "سعر مسار اللغات: ${group.languagesPrice} ج.م",
+                        "Languages track: ${group.languagesPrice} EGP",
+                    ).resolve(language),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

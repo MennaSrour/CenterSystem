@@ -313,11 +313,15 @@ internal class PortalStore(
     private fun Connection.balances(month: YearMonth): List<Fields> =
         rows(
             """SELECT enrollment.studentId,
-           max(0, class_group.monthlyPriceMinor / 100.0 - enrollment.discountAmount - coalesce(sum(payment.amountPaid), 0)) AS remaining
+           max(0, coalesce(enrollment.customPriceMinor / 100.0,
+               (CASE WHEN class_group.lessonType = 'MIXED' AND enrollment.studentTrack = 'LANGUAGES'
+                     THEN class_group.languagesPriceMinor ELSE class_group.monthlyPriceMinor END) / 100.0
+               - enrollment.discountAmount) - coalesce(sum(payment.amountPaid), 0)) AS remaining
            FROM enrollment JOIN class_group ON class_group.id = enrollment.classId
            LEFT JOIN payment ON payment.studentId = enrollment.studentId AND payment.classId = enrollment.classId
                AND (payment.billingMonth = ? OR (payment.billingMonth IS NULL AND payment.paymentDate >= ? AND payment.paymentDate < ?))
-           WHERE class_group.status = 'ACTIVE' AND class_group.monthlyPriceMinor IS NOT NULL
+           WHERE class_group.status = 'ACTIVE'
+             AND (enrollment.customPriceMinor IS NOT NULL OR class_group.monthlyPriceMinor IS NOT NULL)
            GROUP BY enrollment.studentId, enrollment.classId""",
             month.atDay(1).toString(),
             month

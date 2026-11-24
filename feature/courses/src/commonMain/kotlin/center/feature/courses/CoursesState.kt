@@ -5,6 +5,7 @@ enum class CourseStage { Primary, Prep, Secondary }
 enum class CourseStageFilter { All, Primary, Prep, Secondary }
 
 enum class CourseSystem { Arabic, Languages, Mixed }
+
 enum class CourseLessonType { Arabic, Languages, Mixed, Private }
 
 enum class CoursesDestination { Home, Students, Teachers, Courses, Schedule, Financials, Reports, Print, Settings }
@@ -36,6 +37,21 @@ data class CourseSchedule(
     val to: String,
 )
 
+data class CourseStudent(
+    val id: String,
+    val name: String,
+    val gradeId: String,
+    val gradeLabel: String,
+    val enrolledGroupIds: Set<String>,
+    val groupTracks: Map<String, center.domain.model.StudentTrack>,
+    val groupCustomPricesMinor: Map<String, Long>,
+)
+
+data class CourseStudentEnrollment(
+    val track: center.domain.model.StudentTrack,
+    val price: String,
+)
+
 data class CourseGroup(
     val id: String,
     val subject: String,
@@ -49,11 +65,12 @@ data class CourseGroup(
     val maxCapacity: Int,
     val schedule: List<CourseSchedule>,
     val isActive: Boolean = true,
-    val lessonType: CourseLessonType = when (system) {
-        CourseSystem.Arabic -> CourseLessonType.Arabic
-        CourseSystem.Languages -> CourseLessonType.Languages
-        CourseSystem.Mixed -> CourseLessonType.Mixed
-    },
+    val lessonType: CourseLessonType =
+        when (system) {
+            CourseSystem.Arabic -> CourseLessonType.Arabic
+            CourseSystem.Languages -> CourseLessonType.Languages
+            CourseSystem.Mixed -> CourseLessonType.Mixed
+        },
     val languagesPrice: String = "",
 ) {
     val capacityProgress: Float get() = if (maxCapacity > 0) (enrolled.toFloat() / maxCapacity).coerceIn(0f, 1f) else 0f
@@ -80,6 +97,7 @@ data class CoursesState(
     val expandedGroupMenuId: String? = null,
     val modal: CoursesModal = CoursesModal.Closed,
     val canDelete: Boolean = true,
+    val students: List<CourseStudent> = emptyList(),
 ) {
     val visibleGroups: List<CourseGroup>
         get() {
@@ -141,6 +159,10 @@ data class GroupFormState(
     val expandedDropdown: GroupDropdown? = null,
     val expandedDaySlotId: String? = null,
     val timeSlots: List<GroupTimeSlotState> = emptyList(),
+    val students: List<CourseStudent> = emptyList(),
+    val studentSearch: String = "",
+    val showOtherGrades: Boolean = false,
+    val enrollments: Map<String, CourseStudentEnrollment> = emptyMap(),
     val fieldErrors: Map<GroupField, String> = emptyMap(),
     val message: String? = null,
     val canSubmit: Boolean = false,

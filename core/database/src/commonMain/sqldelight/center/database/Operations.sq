@@ -2,6 +2,8 @@ CREATE TABLE enrollment (
     studentId TEXT NOT NULL REFERENCES student(id) ON DELETE RESTRICT,
     classId TEXT NOT NULL REFERENCES class_group(id) ON DELETE RESTRICT,
     discountAmount REAL NOT NULL DEFAULT 0.0 CHECK (discountAmount >= 0.0),
+    customPriceMinor INTEGER CHECK (customPriceMinor BETWEEN 0 AND 100000000000),
+    studentTrack TEXT NOT NULL DEFAULT 'ARABIC' CHECK (studentTrack IN ('ARABIC', 'LANGUAGES', 'PRIVATE')),
     PRIMARY KEY (studentId, classId)
 );
 CREATE INDEX enrollment_class ON enrollment(classId);
@@ -30,14 +32,14 @@ CREATE INDEX treasury_expense_time ON treasury_expense(recordedAt);
 selectDirectory:
 SELECT student.id, student.name, student.gradeLevel, student.studentPhone, student.parentPhone,
        student.isActive, student.code, student.stage, student.system,
-       enrollment.classId AS enrolledGroupId, enrollment.discountAmount
+       enrollment.classId AS enrolledGroupId, enrollment.discountAmount, enrollment.customPriceMinor, enrollment.studentTrack
 FROM student LEFT JOIN enrollment ON student.id = enrollment.studentId
 ORDER BY student.id, enrollment.classId;
 
 selectStudentByCode:
 SELECT student.id, student.name, student.gradeLevel, student.studentPhone, student.parentPhone,
        student.isActive, student.code, student.stage, student.system,
-       enrollment.classId AS enrolledGroupId, enrollment.discountAmount
+       enrollment.classId AS enrolledGroupId, enrollment.discountAmount, enrollment.customPriceMinor, enrollment.studentTrack
 FROM student LEFT JOIN enrollment ON student.id = enrollment.studentId
 WHERE coalesce(student.code, student.id) = :code ORDER BY enrollment.classId;
 
@@ -48,10 +50,16 @@ clearEnrollments:
 DELETE FROM enrollment WHERE studentId = ?;
 
 insertEnrollment:
-INSERT INTO enrollment(studentId, classId, discountAmount) VALUES (?, ?, ?);
+INSERT INTO enrollment(studentId, classId, discountAmount, customPriceMinor, studentTrack) VALUES (?, ?, ?, ?, ?);
+
+clearClassEnrollments:
+DELETE FROM enrollment WHERE classId = ?;
 
 enrollmentDiscount:
 SELECT discountAmount FROM enrollment WHERE studentId = ? AND classId = ?;
+
+selectEnrollmentDetails:
+SELECT customPriceMinor, studentTrack FROM enrollment WHERE studentId = ? AND classId = ?;
 
 hasEnrollment:
 SELECT EXISTS(SELECT 1 FROM enrollment WHERE studentId = ? AND classId = ?);
@@ -79,7 +87,10 @@ FROM teacher LEFT JOIN class_group ON class_group.teacherId = teacher.id
 ORDER BY teacher.id, class_group.id;
 
 monthlySalary:
-SELECT CAST(coalesce(sum((class_group.monthlyPriceMinor * class_group.commissionBasisPoints + 5000) / 10000), 0) AS INTEGER)
+SELECT CAST(coalesce(sum((coalesce(enrollment.customPriceMinor,
+    CASE WHEN class_group.lessonType = 'MIXED' AND enrollment.studentTrack = 'LANGUAGES'
+         THEN class_group.languagesPriceMinor ELSE class_group.monthlyPriceMinor END
+         ) * class_group.commissionBasisPoints + 5000) / 10000), 0) AS INTEGER)
 FROM class_group
 JOIN enrollment ON enrollment.classId = class_group.id
 JOIN student ON student.id = enrollment.studentId
@@ -91,7 +102,11 @@ SELECT student.id AS studentId, coalesce(student.code, student.id) AS code,
        student.name AS studentName, student.parentPhone,
        class_group.id AS classId, class_group.name AS groupName,
        teacher.id AS teacherId, teacher.fullName AS teacherName,
-       CAST(max(0, class_group.monthlyPriceMinor - CAST(round(enrollment.discountAmount * 100) AS INTEGER)) - coalesce(sum(CAST(round(payment.amountPaid * 100) AS INTEGER)), 0) AS INTEGER) AS remainingMinor
+       CAST(max(0, coalesce(enrollment.customPriceMinor,
+           CASE WHEN class_group.lessonType = 'MIXED' AND enrollment.studentTrack = 'LANGUAGES'
+                THEN class_group.languagesPriceMinor ELSE class_group.monthlyPriceMinor END
+           - CAST(round(enrollment.discountAmount * 100) AS INTEGER)))
+           - coalesce(sum(CAST(round(payment.amountPaid * 100) AS INTEGER)), 0) AS INTEGER) AS remainingMinor
 FROM enrollment
 JOIN student ON student.id = enrollment.studentId
 JOIN class_group ON class_group.id = enrollment.classId
@@ -104,6 +119,19 @@ WHERE student.isActive = 1 AND class_group.status = 'ACTIVE' AND class_group.mon
 GROUP BY student.id, class_group.id
 HAVING remainingMinor > 0
 ORDER BY student.id, class_group.id;
+
+monthlyDueTotals:
+SELECT student.id AS studentId,
+       CAST(sum(max(0, coalesce(enrollment.customPriceMinor,
+           CASE WHEN class_group.lessonType = 'MIXED' AND enrollment.studentTrack = 'LANGUAGES'
+                THEN class_group.languagesPriceMinor ELSE class_group.monthlyPriceMinor END
+           - CAST(round(enrollment.discountAmount * 100) AS INTEGER)))) AS INTEGER) AS totalMinor
+FROM enrollment
+JOIN student ON student.id = enrollment.studentId
+JOIN class_group ON class_group.id = enrollment.classId
+WHERE student.isActive = 1 AND class_group.status = 'ACTIVE'
+GROUP BY student.id
+ORDER BY student.id;
 
 paidForMonth:
 SELECT CAST(coalesce(sum(CAST(round(amountPaid * 100) AS INTEGER)), 0) AS INTEGER)
@@ -146,7 +174,7 @@ SELECT id FROM class_group WHERE teacherId = ? ORDER BY id;
 selectDirectoryStudentById:
 SELECT student.id, student.name, student.gradeLevel, student.studentPhone, student.parentPhone,
        student.isActive, student.code, student.stage, student.system,
-       enrollment.classId AS enrolledGroupId, enrollment.discountAmount
+       enrollment.classId AS enrolledGroupId, enrollment.discountAmount, enrollment.customPriceMinor, enrollment.studentTrack
 FROM student LEFT JOIN enrollment ON student.id = enrollment.studentId
 WHERE student.id = :id ORDER BY enrollment.classId;
 

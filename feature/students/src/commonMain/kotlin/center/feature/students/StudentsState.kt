@@ -27,6 +27,7 @@ data class StudentRow(
     val parentPhone: String,
     val stage: EducationStage? = null,
     val gradeLabel: String? = null,
+    val monthlyDueMinor: Long = 0,
 )
 
 data class StudentMonthlyPayment(

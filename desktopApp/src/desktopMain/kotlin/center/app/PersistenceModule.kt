@@ -35,10 +35,10 @@ import center.domain.usecase.GetTeacherMonthlySalaryUseCase
 import center.domain.usecase.IdGenerator
 import center.domain.usecase.PayTeacherSalaryUseCase
 import center.domain.usecase.ProcessPaymentUseCase
-import center.domain.usecase.SequentialPersonCodeGenerator
 import center.domain.usecase.QueueReminderUseCase
 import center.domain.usecase.RecordAttendanceUseCase
 import center.domain.usecase.RegisterPresenceUseCase
+import center.domain.usecase.SequentialPersonCodeGenerator
 import center.domain.usecase.SyncPendingMessagesUseCase
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers

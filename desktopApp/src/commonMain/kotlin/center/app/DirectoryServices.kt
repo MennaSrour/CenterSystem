@@ -20,9 +20,9 @@ import center.domain.usecase.GetTeacherMonthlySalaryUseCase
 import center.domain.usecase.IdGenerator
 import center.domain.usecase.PayTeacherSalaryUseCase
 import center.domain.usecase.ProcessPaymentUseCase
-import center.domain.usecase.SequentialPersonCodeGenerator
 import center.domain.usecase.QueueReminderUseCase
 import center.domain.usecase.RegisterPresenceUseCase
+import center.domain.usecase.SequentialPersonCodeGenerator
 import center.ui.localization.AppLanguage
 import center.ui.localization.LocalizedText
 import kotlinx.coroutines.CancellationException

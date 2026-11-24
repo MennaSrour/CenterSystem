@@ -35,6 +35,16 @@
     <string name="mixed_system">مشترك</string>
     <string name="private_lesson">برايفت / Private</string>
     <string name="mixed_languages_price">سعر مسار اللغات / Languages Track Price</string>
+    <string name="lesson_base_price">السعر الأساسي (ج.م) / Base Price (EGP)</string>
+    <string name="arabic_track_price">سعر العربي (ج.م) / Arabic Price (EGP)</string>
+    <string name="student_enrollment">الإضافة السريعة للطلاب / Fast Student Enrollment</string>
+    <string name="student_search">ابحث عن طالب / Search students</string>
+    <string name="show_other_grades">عرض طلاب السنوات الأخرى / Show other grades</string>
+    <string name="student_price">السعر للطالب (ج.م) / Student Price (EGP)</string>
+    <string name="step_basic">١. البيانات الأساسية والميعاد / 1. Basic Info &amp; Schedule</string>
+    <string name="step_pricing">٢. نوع الدرس والتسعير / 2. Lesson Type &amp; Pricing</string>
+    <string name="arabic_track">عربي</string>
+    <string name="languages_track">لغات</string>
     <string name="monthly_price">سعر الاشتراك الشهري / Monthly Price</string>
     <string name="commission">نسبة المدرس % / Teacher Commission</string>
     <string name="max_capacity">الحد الأقصى للطلاب / Max Capacity</string>
