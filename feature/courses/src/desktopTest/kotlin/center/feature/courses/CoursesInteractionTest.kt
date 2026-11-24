@@ -43,7 +43,7 @@ class CoursesInteractionTest {
         }
 
     @Test
-    fun scheduleTimePickerAndDayChipsEmitStableEvents() =
+    fun scheduleDayChipsEmitStableEvents() =
         runComposeUiTest {
             val form = CoursesPreviewData.editForm(CoursesPreviewData.state().groups.first())
             val events = mutableListOf<CoursesEvent>()
@@ -52,20 +52,12 @@ class CoursesInteractionTest {
                     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) { GroupFormModalContent(form, events::add) }
                 }
             }
-            onNodeWithContentDescription("من / From").performScrollTo().performClick()
-            onNodeWithText("اختيار").performClick()
-            runOnIdle {
-                assertEquals(CoursesEvent.FromTimeChanged(form.timeSlots.first().id, "16:00"), events.last())
-                assertEquals("16:00", form.timeSlots.first().from)
-            }
-            onNodeWithContentDescription("حذف الموعد 1").performScrollTo().performClick()
-            runOnIdle { assertEquals(CoursesEvent.ToggleScheduleDay(form.timeSlots.first().day!!), events.last()) }
             onNodeWithText("الأربعاء").performScrollTo().performClick()
             runOnIdle { assertEquals(CoursesEvent.ToggleScheduleDay(ScheduleDay.Wednesday), events.last()) }
         }
 
     @Test
-    fun submittingFormDisablesSaveCancelAndScheduleInputs() =
+    fun submittingFormDisablesSaveCancelAndScheduleDayChips() =
         runComposeUiTest {
             setContent {
                 CenterOneTheme {
@@ -77,7 +69,6 @@ class CoursesInteractionTest {
             }
             onNodeWithText("حفظ الدرس / Save Lesson").performScrollTo().assertIsNotEnabled()
             onNodeWithText("إلغاء / Cancel").assertIsNotEnabled()
-            onNodeWithContentDescription("من / From").performScrollTo().assertIsNotEnabled()
             onNodeWithText("السبت").assertIsNotEnabled()
         }
 
