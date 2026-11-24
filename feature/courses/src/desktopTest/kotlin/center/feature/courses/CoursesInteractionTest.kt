@@ -5,14 +5,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsNotEnabled
-import androidx.compose.ui.test.hasSetTextAction
-import androidx.compose.ui.test.hasText
-import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
-import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.runComposeUiTest
 import androidx.compose.ui.unit.LayoutDirection
 import center.ui.theme.CenterOneTheme
@@ -47,7 +43,7 @@ class CoursesInteractionTest {
         }
 
     @Test
-    fun scheduleEditsAndAddRemoveActionsEmitStableSlotIds() =
+    fun scheduleTimePickerAndDayChipsEmitStableEvents() =
         runComposeUiTest {
             val form = CoursesPreviewData.editForm(CoursesPreviewData.state().groups.first())
             val events = mutableListOf<CoursesEvent>()
@@ -56,19 +52,20 @@ class CoursesInteractionTest {
                     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) { GroupFormModalContent(form, events::add) }
                 }
             }
-            onAllNodes(hasSetTextAction() and hasText("16:00")).onFirst().performScrollTo().performTextReplacement("17:00")
+            onNodeWithText("من / From").performScrollTo().performClick()
+            onNodeWithText("اختيار").performClick()
             runOnIdle {
-                assertEquals(CoursesEvent.FromTimeChanged(form.timeSlots.first().id, "17:00"), events.last())
+                assertEquals(CoursesEvent.FromTimeChanged(form.timeSlots.first().id, "16:00"), events.last())
                 assertEquals("16:00", form.timeSlots.first().from)
             }
             onNodeWithContentDescription("حذف الموعد 1").performScrollTo().performClick()
-            runOnIdle { assertEquals(CoursesEvent.RemoveTimeSlot(form.timeSlots.first().id), events.last()) }
-            onNodeWithText("+ إضافة موعد").performScrollTo().performClick()
-            runOnIdle { assertEquals(CoursesEvent.AddTimeSlot, events.last()) }
+            runOnIdle { assertEquals(CoursesEvent.ToggleScheduleDay(form.timeSlots.first().day!!), events.last()) }
+            onNodeWithText("الأربعاء").performScrollTo().performClick()
+            runOnIdle { assertEquals(CoursesEvent.ToggleScheduleDay(ScheduleDay.Wednesday), events.last()) }
         }
 
     @Test
-    fun submittingFormDisablesSaveCancelAndAddingSlots() =
+    fun submittingFormDisablesSaveCancelAndScheduleInputs() =
         runComposeUiTest {
             setContent {
                 CenterOneTheme {
@@ -80,7 +77,8 @@ class CoursesInteractionTest {
             }
             onNodeWithText("حفظ الدرس / Save Lesson").performScrollTo().assertIsNotEnabled()
             onNodeWithText("إلغاء / Cancel").assertIsNotEnabled()
-            onNodeWithText("+ إضافة موعد").performScrollTo().assertIsNotEnabled()
+            onNodeWithText("من / From").performScrollTo().assertIsNotEnabled()
+            onNodeWithText("السبت").assertIsNotEnabled()
         }
 
     @Test
