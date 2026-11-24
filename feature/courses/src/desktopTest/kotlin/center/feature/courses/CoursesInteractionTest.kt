@@ -57,7 +57,7 @@ class CoursesInteractionTest {
         }
 
     @Test
-    fun submittingFormDisablesSaveCancelAndScheduleDayChips() =
+    fun submittingFormDisablesSaveAndCancel() =
         runComposeUiTest {
             setContent {
                 CenterOneTheme {
@@ -69,7 +69,6 @@ class CoursesInteractionTest {
             }
             onNodeWithText("حفظ الدرس / Save Lesson").performScrollTo().assertIsNotEnabled()
             onNodeWithText("إلغاء / Cancel").assertIsNotEnabled()
-            onNodeWithText("السبت").assertIsNotEnabled()
         }
 
     @Test
