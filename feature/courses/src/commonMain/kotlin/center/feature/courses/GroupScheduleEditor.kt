@@ -25,6 +25,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.dp
 import center.feature.courses.resources.Res
@@ -110,7 +112,11 @@ private fun TimePickerField(
         value.split(':').takeIf { it.size == 2 }?.let {
             (it[0].toIntOrNull() ?: 9) to (it[1].toIntOrNull() ?: 0)
         } ?: (9 to 0)
-    OutlinedButton(onClick = { showPicker = true }, enabled = enabled, modifier = modifier) {
+    OutlinedButton(
+        onClick = { showPicker = true },
+        enabled = enabled,
+        modifier = modifier.semantics { contentDescription = label },
+    ) {
         Column {
             Text(label, style = MaterialTheme.typography.labelSmall)
             Text(

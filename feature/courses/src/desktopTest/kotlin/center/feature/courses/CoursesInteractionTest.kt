@@ -52,7 +52,7 @@ class CoursesInteractionTest {
                     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) { GroupFormModalContent(form, events::add) }
                 }
             }
-            onNodeWithText("من / From", substring = true).performScrollTo().performClick()
+            onNodeWithContentDescription("من / From").performScrollTo().performClick()
             onNodeWithText("اختيار").performClick()
             runOnIdle {
                 assertEquals(CoursesEvent.FromTimeChanged(form.timeSlots.first().id, "16:00"), events.last())
@@ -77,7 +77,7 @@ class CoursesInteractionTest {
             }
             onNodeWithText("حفظ الدرس / Save Lesson").performScrollTo().assertIsNotEnabled()
             onNodeWithText("إلغاء / Cancel").assertIsNotEnabled()
-            onNodeWithText("من / From", substring = true).performScrollTo().assertIsNotEnabled()
+            onNodeWithContentDescription("من / From").performScrollTo().assertIsNotEnabled()
             onNodeWithText("السبت").assertIsNotEnabled()
         }
 
