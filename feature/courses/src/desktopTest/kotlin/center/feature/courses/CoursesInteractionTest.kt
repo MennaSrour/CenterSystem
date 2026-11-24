@@ -34,15 +34,15 @@ class CoursesInteractionTest {
                     }
                 }
             }
-            onNodeWithContentDescription("خيارات مجموعة فيزياء").performClick()
+            onNodeWithContentDescription("خيارات درس فيزياء").performClick()
             runOnIdle { assertEquals(CoursesEvent.GroupMenuChanged(group.id), events.last()) }
-            onNodeWithText("تعديل بيانات المجموعة").assertDoesNotExist()
+            onNodeWithText("تعديل بيانات الدرس").assertDoesNotExist()
             runOnIdle { expanded.value = true }
-            onNodeWithText("تعديل بيانات المجموعة").performClick()
+            onNodeWithText("تعديل بيانات الدرس").performClick()
             runOnIdle { assertEquals(CoursesEvent.EditGroup(group.id), events.last()) }
-            onNodeWithText("إيقاف المجموعة").performClick()
+            onNodeWithText("إيقاف الدرس").performClick()
             runOnIdle { assertEquals(CoursesEvent.DeactivateGroup(group.id), events.last()) }
-            onNodeWithText("حذف المجموعة").performClick()
+            onNodeWithText("حذف الدرس").performClick()
             runOnIdle { assertEquals(CoursesEvent.RequestDeleteGroup(group.id), events.last()) }
         }
 
@@ -78,7 +78,7 @@ class CoursesInteractionTest {
                     )
                 }
             }
-            onNodeWithText("حفظ المجموعة / Save Group").performScrollTo().assertIsNotEnabled()
+            onNodeWithText("حفظ الدرس / Save Lesson").performScrollTo().assertIsNotEnabled()
             onNodeWithText("إلغاء / Cancel").assertIsNotEnabled()
             onNodeWithText("+ إضافة موعد").performScrollTo().assertIsNotEnabled()
         }
@@ -89,12 +89,12 @@ class CoursesInteractionTest {
             val state = mutableStateOf(DeleteGroupState("group-1", "فيزياء"))
             val events = mutableListOf<CoursesEvent>()
             setContent { CenterOneTheme { DeleteConfirmationModalContent(state.value, events::add) } }
-            onNodeWithText("نعم، احذف المجموعة").performClick()
+            onNodeWithText("نعم، احذف الدرس").performClick()
             runOnIdle {
                 assertEquals(CoursesEvent.ConfirmDeleteGroup, events.last())
                 state.value = state.value.copy(isDeleting = true)
             }
-            onNodeWithText("نعم، احذف المجموعة").assertIsNotEnabled()
+            onNodeWithText("نعم، احذف الدرس").assertIsNotEnabled()
             onNodeWithText("إلغاء / Cancel").assertIsNotEnabled()
         }
 }
