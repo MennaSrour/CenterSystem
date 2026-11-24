@@ -17,12 +17,14 @@ import center.domain.model.ClassGroup
 import center.domain.model.EducationSystem
 import center.domain.model.GroupScheduleSlot
 import center.domain.model.GroupStatus
+import center.domain.model.LessonType
 import center.feature.courses.CourseGrade
 import center.feature.courses.CourseGroup
 import center.feature.courses.CourseRoom
 import center.feature.courses.CourseSchedule
 import center.feature.courses.CourseStage
 import center.feature.courses.CourseSystem
+import center.feature.courses.CourseLessonType
 import center.feature.courses.CourseTeacher
 import center.feature.courses.CoursesDestination
 import center.feature.courses.CoursesEvent
@@ -186,6 +188,8 @@ internal class CoursesStateHolder(
                                 )
                             },
                             group.status == GroupStatus.ACTIVE,
+                            group.lessonType.toUi(),
+                            group.languagesPriceMinor?.decimalMinor().orEmpty(),
                         )
                     }
                 directory to models
@@ -300,7 +304,15 @@ internal class CoursesStateHolder(
                     }
                 }
             is CoursesEvent.SystemSelected -> editForm { it.copy(system = event.system) }
+            is CoursesEvent.LessonTypeSelected -> editForm {
+                it.copy(
+                    lessonType = event.lessonType,
+                    system = event.lessonType.toSystem(),
+                    languagesPrice = if (event.lessonType == CourseLessonType.Mixed) it.languagesPrice else "",
+                )
+            }
             is CoursesEvent.MonthlyPriceChanged -> editForm { it.copy(monthlyPrice = event.value) }
+            is CoursesEvent.LanguagesPriceChanged -> editForm { it.copy(languagesPrice = event.value) }
             is CoursesEvent.CommissionChanged -> editForm { it.copy(teacherCommission = event.value) }
             is CoursesEvent.MaxCapacityChanged -> editForm { it.copy(maxCapacity = event.value) }
             is CoursesEvent.RoomSelected ->
@@ -395,6 +407,8 @@ internal class CoursesStateHolder(
             selectedGradeId = group?.gradeId?.takeIf { it.isNotBlank() },
             system = group?.system ?: CourseSystem.Arabic,
             monthlyPrice = group?.monthlyPrice.orEmpty(),
+            lessonType = group?.lessonType ?: CourseLessonType.Arabic,
+            languagesPrice = group?.languagesPrice.orEmpty(),
             teacherCommission = group?.teacherCommission?.takeIf { it.isNotBlank() } ?: "70",
             maxCapacity =
                 group
@@ -441,6 +455,8 @@ internal class CoursesStateHolder(
                             },
                             requireNotNull(form.selectedGradeId),
                             requireNotNull(form.maxCapacity.trim().toIntOrNull()).also { require(it > 0) },
+                            form.lessonType.toDomain(),
+                            form.languagesPrice.parseMinor(),
                         ),
                     )
                 }
@@ -466,6 +482,17 @@ private fun EducationSystem.toUi(): CourseSystem =
         EducationSystem.LANGUAGES -> CourseSystem.Languages
         EducationSystem.BOTH -> CourseSystem.Mixed
     }
+
+private fun LessonType.toUi(): CourseLessonType = CourseLessonType.valueOf(name.lowercase().replaceFirstChar(Char::uppercase))
+
+private fun CourseLessonType.toDomain(): LessonType = LessonType.valueOf(name.uppercase())
+
+private fun CourseLessonType.toSystem(): CourseSystem = when (this) {
+    CourseLessonType.Arabic -> CourseSystem.Arabic
+    CourseLessonType.Languages -> CourseSystem.Languages
+    CourseLessonType.Mixed -> CourseSystem.Mixed
+    CourseLessonType.Private -> CourseSystem.Arabic
+}
 
 private fun CourseSystem.toDomain(): EducationSystem =
     when (this) {

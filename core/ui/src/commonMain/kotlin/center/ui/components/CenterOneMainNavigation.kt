@@ -35,7 +35,7 @@ enum class MainNavigation(
     Reception(LocalizedText("الاستقبال", "Reception"), Icons.Outlined.Home),
     Students(LocalizedText("الطلاب", "Students"), Icons.Outlined.PeopleOutline),
     Teachers(LocalizedText("المدرسين", "Teachers"), Icons.Outlined.School),
-    Courses(LocalizedText("المجموعات", "Courses"), Icons.AutoMirrored.Outlined.MenuBook),
+    Courses(LocalizedText("الدروس", "Lessons"), Icons.AutoMirrored.Outlined.MenuBook),
     Treasury(LocalizedText("الخزنة", "Treasury"), Icons.Outlined.AccountBalanceWallet),
     Print(LocalizedText("الطباعة", "Print"), Icons.Outlined.Print),
     Settings(LocalizedText("الإعدادات", "Settings"), Icons.Outlined.Settings),

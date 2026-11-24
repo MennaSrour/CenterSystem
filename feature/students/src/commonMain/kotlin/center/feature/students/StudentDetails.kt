@@ -39,10 +39,10 @@ internal fun StudentDetails(
             }
             Text(LocalizedText("هاتف ولي الأمر", "Parent phone").resolve(language) + " · " + state.parentPhone.isolateLtr())
             Text(
-                LocalizedText("جدول المجموعات النشطة", "Active group schedule").resolve(language),
+                LocalizedText("جدول الدروس النشطة", "Active lesson schedule").resolve(language),
                 style = MaterialTheme.typography.titleSmall,
             )
-            if (state.groups.isEmpty()) Text(LocalizedText("لا توجد مجموعات نشطة", "No active groups").resolve(language))
+            if (state.groups.isEmpty()) Text(LocalizedText("لا توجد دروس نشطة", "No active lessons").resolve(language))
             state.groups.forEach { Text(it.resolve(language)) }
             LocalStudentPortalDetails.current(state.id, state.parentPhone)
             AttendanceHistory(state.history)

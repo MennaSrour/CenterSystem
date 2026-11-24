@@ -26,6 +26,8 @@ import center.feature.courses.resources.grade
 import center.feature.courses.resources.languages_system
 import center.feature.courses.resources.max_capacity
 import center.feature.courses.resources.mixed_system
+import center.feature.courses.resources.private_lesson
+import center.feature.courses.resources.mixed_languages_price
 import center.feature.courses.resources.monthly_price
 import center.feature.courses.resources.room
 import center.feature.courses.resources.save
@@ -118,10 +120,11 @@ internal fun GroupFormModalContent(
                                 stringResource(Res.string.arabic_system),
                                 stringResource(Res.string.languages_system),
                                 stringResource(Res.string.mixed_system),
+                                stringResource(Res.string.private_lesson),
                             ),
-                        selectedIndex = CourseSystem.entries.indexOf(state.system),
+                        selectedIndex = CourseLessonType.entries.indexOf(state.lessonType),
                         onSelected = {
-                            onEvent(CoursesEvent.SystemSelected(CourseSystem.entries[it]))
+                            onEvent(CoursesEvent.LessonTypeSelected(CourseLessonType.entries[it]))
                         },
                         enabled = !state.isSubmitting,
                         modifier = Modifier.fillMaxWidth(),
@@ -133,6 +136,11 @@ internal fun GroupFormModalContent(
                     GroupInput(state.monthlyPrice, stringResource(Res.string.monthly_price), {
                         onEvent(CoursesEvent.MonthlyPriceChanged(it))
                     }, !state.isSubmitting, state.fieldErrors[GroupField.MonthlyPrice], KeyboardType.Decimal)
+                    if (state.lessonType == CourseLessonType.Mixed) {
+                        GroupInput(state.languagesPrice, stringResource(Res.string.mixed_languages_price), {
+                            onEvent(CoursesEvent.LanguagesPriceChanged(it))
+                        }, !state.isSubmitting, state.fieldErrors[GroupField.LanguagesPrice], KeyboardType.Decimal)
+                    }
                     GroupInput(state.teacherCommission, stringResource(Res.string.commission), {
                         onEvent(CoursesEvent.CommissionChanged(it))
                     }, !state.isSubmitting, state.fieldErrors[GroupField.Commission], KeyboardType.Decimal)

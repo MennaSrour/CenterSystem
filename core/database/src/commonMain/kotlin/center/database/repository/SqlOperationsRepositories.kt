@@ -52,6 +52,8 @@ class SqlClassGroupRepository(
                     status = GroupStatus.valueOf(row.status),
                     gradeId = row.gradeId,
                     maxCapacity = row.maxCapacity?.toInt(),
+                    lessonType = center.domain.model.LessonType.valueOf(row.lessonType),
+                    languagesPriceMinor = row.languagesPriceMinor,
                     schedule =
                         slots.mapNotNull { slot ->
                             slot.day?.let { day ->
@@ -76,6 +78,8 @@ class SqlClassGroupRepository(
             require(commission in 0..10_000)
             require(room in 1..8)
             require(group.maxCapacity?.let { it > 0 } != false)
+            require(group.languagesPriceMinor?.let { it in 0L..100_000_000_000L } != false)
+            require(group.lessonType == center.domain.model.LessonType.MIXED || group.languagesPriceMinor == null)
             group.schedule.groupBy { it.day }.values.forEach { slots ->
                 require(slots.sortedBy { it.from }.zipWithNext().none { (a, b) -> a.to > b.from }) { "Group schedule slots overlap" }
             }
@@ -100,6 +104,8 @@ class SqlClassGroupRepository(
                     group.status.name,
                     group.gradeId,
                     group.maxCapacity?.toLong(),
+                    group.lessonType.name,
+                    group.languagesPriceMinor,
                     group.id,
                 )
                 queries.clearSchedule(group.id)

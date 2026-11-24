@@ -35,6 +35,7 @@ import center.domain.usecase.GetTeacherMonthlySalaryUseCase
 import center.domain.usecase.IdGenerator
 import center.domain.usecase.PayTeacherSalaryUseCase
 import center.domain.usecase.ProcessPaymentUseCase
+import center.domain.usecase.SequentialPersonCodeGenerator
 import center.domain.usecase.QueueReminderUseCase
 import center.domain.usecase.RecordAttendanceUseCase
 import center.domain.usecase.RegisterPresenceUseCase
@@ -73,6 +74,7 @@ internal fun persistenceModule(
     factory { RegisterPresenceUseCase(get(), get(), get(), get()) }
     single { clock }
     single { IdGenerator { UUID.randomUUID().toString() } }
+    single { SequentialPersonCodeGenerator() }
     factory { RegisterStudent(get()) }
     factory { ProcessPaymentUseCase(get(), get(), get(), get(), get()) }
     factory { RecordAttendanceUseCase(get(), get(), get(), get(), get()) }
@@ -100,6 +102,7 @@ internal fun persistenceModule(
             staff = get(),
             presence = get(),
             processPayment = get(),
+            personCodes = get(),
         )
     }
     factory { QueueReminderUseCase(get(), get(), get(), get()) }

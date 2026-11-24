@@ -57,9 +57,13 @@ sealed interface CoursesEvent {
         val system: CourseSystem,
     ) : CoursesEvent
 
+    data class LessonTypeSelected(val lessonType: CourseLessonType) : CoursesEvent
+
     data class MonthlyPriceChanged(
         val value: String,
     ) : CoursesEvent
+
+    data class LanguagesPriceChanged(val value: String) : CoursesEvent
 
     data class CommissionChanged(
         val value: String,

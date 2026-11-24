@@ -30,6 +30,7 @@ data class TeacherDraft(
     val phone: String = "",
     val subject: String = "",
     val notes: String = "",
+    val code: String = "",
 ) {
     val canSave: Boolean get() = name.isNotBlank() && phone.isNotBlank() && subject.isNotBlank()
 }

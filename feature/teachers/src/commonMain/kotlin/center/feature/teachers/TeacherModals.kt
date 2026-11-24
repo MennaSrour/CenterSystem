@@ -65,7 +65,7 @@ internal fun TeacherDetails(
         SalaryBox(teacher, paying, onPay = { onEvent(TeachersEvent.PaySalary(teacher.id)) })
         if (teacher.unpaidStudents.isNotEmpty()) CollectionDeficit(teacher.unpaidStudents)
         Text(
-            LocalizedText("جدول المجموعات النشطة", "Active group schedule").resolve(language),
+            LocalizedText("جدول الدروس النشطة", "Active lesson schedule").resolve(language),
             style = MaterialTheme.typography.titleMedium,
         )
         if (teacher.groups.isEmpty()) {
@@ -171,6 +171,15 @@ internal fun AddTeacherForm(
         BoxWithConstraints(Modifier.fillMaxWidth()) {
             val mainFields: @Composable (Modifier) -> Unit = { fieldModifier ->
                 Column(fieldModifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    CenterOneTextField(
+                        draft.code,
+                        {},
+                        Modifier.fillMaxWidth(),
+                        enabled = !saving,
+                        readOnly = true,
+                        label = { Text(staffLabel("كود المدرس", "Teacher ID")) },
+                        textStyle = MaterialTheme.typography.bodyLarge.copy(textDirection = TextDirection.Ltr),
+                    )
                     CenterOneTextField(
                         draft.name,
                         { onEvent(TeachersEvent.NameChanged(it)) },

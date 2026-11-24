@@ -1,0 +1,10 @@
+-- Preserve existing class_group rows and map the old combined-system value to MIXED.
+ALTER TABLE class_group ADD COLUMN lessonType TEXT NOT NULL DEFAULT 'ARABIC'
+    CHECK (lessonType IN ('ARABIC', 'LANGUAGES', 'MIXED', 'PRIVATE'));
+ALTER TABLE class_group ADD COLUMN languagesPriceMinor INTEGER
+    CHECK (languagesPriceMinor BETWEEN 0 AND 100000000000);
+UPDATE class_group SET lessonType = CASE system
+    WHEN 'LANGUAGES' THEN 'LANGUAGES'
+    WHEN 'BOTH' THEN 'MIXED'
+    ELSE 'ARABIC'
+END;

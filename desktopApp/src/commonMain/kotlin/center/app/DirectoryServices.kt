@@ -20,6 +20,7 @@ import center.domain.usecase.GetTeacherMonthlySalaryUseCase
 import center.domain.usecase.IdGenerator
 import center.domain.usecase.PayTeacherSalaryUseCase
 import center.domain.usecase.ProcessPaymentUseCase
+import center.domain.usecase.SequentialPersonCodeGenerator
 import center.domain.usecase.QueueReminderUseCase
 import center.domain.usecase.RegisterPresenceUseCase
 import center.ui.localization.AppLanguage
@@ -57,6 +58,7 @@ internal class DirectoryServices(
     val staff: StaffRepository,
     val presence: RegisterPresenceUseCase,
     val processPayment: ProcessPaymentUseCase,
+    val personCodes: SequentialPersonCodeGenerator,
 ) {
     fun today(): LocalDate = Instant.fromEpochMilliseconds(clock.nowMillis()).toLocalDateTime(Cairo).date
 

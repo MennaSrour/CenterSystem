@@ -5,6 +5,7 @@ enum class CourseStage { Primary, Prep, Secondary }
 enum class CourseStageFilter { All, Primary, Prep, Secondary }
 
 enum class CourseSystem { Arabic, Languages, Mixed }
+enum class CourseLessonType { Arabic, Languages, Mixed, Private }
 
 enum class CoursesDestination { Home, Students, Teachers, Courses, Schedule, Financials, Reports, Print, Settings }
 
@@ -48,6 +49,12 @@ data class CourseGroup(
     val maxCapacity: Int,
     val schedule: List<CourseSchedule>,
     val isActive: Boolean = true,
+    val lessonType: CourseLessonType = when (system) {
+        CourseSystem.Arabic -> CourseLessonType.Arabic
+        CourseSystem.Languages -> CourseLessonType.Languages
+        CourseSystem.Mixed -> CourseLessonType.Mixed
+    },
+    val languagesPrice: String = "",
 ) {
     val capacityProgress: Float get() = if (maxCapacity > 0) (enrolled.toFloat() / maxCapacity).coerceIn(0f, 1f) else 0f
 }
@@ -125,7 +132,9 @@ data class GroupFormState(
     val selectedTeacherId: String? = null,
     val selectedGradeId: String? = null,
     val system: CourseSystem = CourseSystem.Arabic,
+    val lessonType: CourseLessonType = CourseLessonType.Arabic,
     val monthlyPrice: String = "",
+    val languagesPrice: String = "",
     val teacherCommission: String = "70",
     val maxCapacity: String = "",
     val selectedRoomId: String? = null,
@@ -138,7 +147,7 @@ data class GroupFormState(
     val isSubmitting: Boolean = false,
 )
 
-enum class GroupField { Subject, Teacher, Grade, MonthlyPrice, Commission, MaxCapacity, Room }
+enum class GroupField { Subject, Teacher, Grade, MonthlyPrice, LanguagesPrice, Commission, MaxCapacity, Room }
 
 data class DeleteGroupState(
     val groupId: String,

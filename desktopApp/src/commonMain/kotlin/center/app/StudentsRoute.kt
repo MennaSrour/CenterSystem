@@ -146,6 +146,7 @@ internal class StudentsStateHolder(
     private var history = emptyList<AttendanceSession>()
     private var records = emptyMap<String, Student>()
     private var groups = emptyList<ClassGroup>()
+    private var directoryLoaded = false
     private val mutableState =
         MutableStateFlow(
             StudentsState(
@@ -230,6 +231,7 @@ internal class StudentsStateHolder(
                     }
                 records = students.associateBy { it.id }
                 this@StudentsStateHolder.groups = groups
+                directoryLoaded = true
                 mutableState.update {
                     it.copy(
                         students = rows,
@@ -238,7 +240,15 @@ internal class StudentsStateHolder(
                         dateLabel = today.toString(),
                         monthlyPayments = payments,
                         details = details(),
-                        addStudent = it.addStudent?.let { form -> form.copy(groupOptions = availableGroups(form.selectedGroupIds)) },
+                        addStudent = it.addStudent?.let { form ->
+                            val code = if (form.editingId == null && form.code.isBlank()) nextStudentCode() else form.code
+                            form.copy(
+                                code = code,
+                                groupOptions = availableGroups(form.selectedGroupIds, form.selectedGradeId),
+                                canSubmit = form.name.isNotBlank() && code.isNotBlank() && form.selectedGradeId != null &&
+                                    form.parentPhone.isNotBlank() && form.invalidDiscounts.isEmpty(),
+                            )
+                        },
                     )
                 }
             }.catch { mutableFeedback.emit(failure) }.collect {}
@@ -275,20 +285,24 @@ internal class StudentsStateHolder(
             else -> null
         }
 
-    private fun availableGroups(selected: Set<String>): List<StudentGroupOption> =
-        groups.filter { it.status == GroupStatus.ACTIVE || it.id in selected }.map { StudentGroupOption(it.id, it.name) }
+    private fun availableGroups(selected: Set<String>, gradeId: String? = null): List<StudentGroupOption> =
+        groups.filter {
+            (it.status == GroupStatus.ACTIVE || it.id in selected) &&
+                (if (gradeId == null) it.id in selected else it.gradeId == gradeId)
+        }
+            .map { StudentGroupOption(it.id, it.name) }
 
     private fun formFor(student: Student?): AddStudentState =
         AddStudentState(
             name = student?.fullName.orEmpty(),
-            code = student?.code.orEmpty(),
+            code = student?.code ?: if (directoryLoaded) nextStudentCode() else "",
             grades = uiGrades,
             selectedGradeId = student?.gradeId()?.takeIf { it.isNotBlank() },
             system = student?.uiSystem() ?: StudentSystem.Arabic,
             parentPhone = student?.parentPhone.orEmpty(),
             canSubmit = student != null && student.gradeId().isNotBlank() && student.parentPhone.isNotBlank(),
             editingId = student?.id,
-            groupOptions = availableGroups(student?.enrolledGroupIds.orEmpty()),
+            groupOptions = availableGroups(student?.enrolledGroupIds.orEmpty(), student?.gradeId()),
             selectedGroupIds = student?.enrolledGroupIds.orEmpty(),
             studentPhone = student?.studentPhone.orEmpty(),
             discounts =
@@ -304,6 +318,7 @@ internal class StudentsStateHolder(
         val form = state.addStudent ?: return
         if (form.isSubmitting) return
         val updated = edit(form)
+        val gradeChanged = updated.selectedGradeId != form.selectedGradeId
         val invalidDiscounts =
             updated.selectedGroupIds.filterTo(mutableSetOf()) { id ->
                 val discount = updated.discounts[id].orEmpty()
@@ -314,6 +329,8 @@ internal class StudentsStateHolder(
                 addStudent =
                     updated.copy(
                         message = null,
+                        groupOptions = if (gradeChanged) availableGroups(emptySet(), updated.selectedGradeId) else updated.groupOptions,
+                        selectedGroupIds = if (gradeChanged) emptySet() else updated.selectedGroupIds,
                         canSubmit =
                             updated.name.isNotBlank() &&
                                 updated.code.isNotBlank() &&
@@ -324,6 +341,10 @@ internal class StudentsStateHolder(
                     ),
             )
     }
+
+    private fun nextStudentCode(): String = nextSequentialCode("ST", records.values.map { it.code })
+
+    private fun nextSequentialCode(prefix: String, existing: Collection<String>): String = services.personCodes.next(prefix, existing)
 
     fun onEvent(event: StudentsEvent) {
         when (event) {

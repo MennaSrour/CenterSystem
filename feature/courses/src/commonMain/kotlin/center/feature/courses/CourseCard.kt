@@ -32,6 +32,8 @@ import center.ui.components.CenterOneCapacityMeter
 import center.ui.components.CenterOneCard
 import center.ui.components.CenterOneIconButton
 import center.ui.components.CenterOneTag
+import center.ui.localization.LocalAppLanguage
+import center.ui.localization.LocalizedText
 import center.ui.text.isolateLtr
 import center.ui.theme.Indigo
 import center.ui.theme.Rose
@@ -49,6 +51,7 @@ fun CourseCard(
     canDelete: Boolean = true,
 ) {
     val accent = if (group.isActive) Indigo else Rose
+    val language = LocalAppLanguage.current
     CenterOneCard(modifier) {
         Column(Modifier.fillMaxWidth().padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -77,6 +80,18 @@ fun CourseCard(
             }
             Text(group.subject, style = MaterialTheme.typography.titleLarge)
             Text(gradeLabel, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(group.lessonType.label(language), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.tertiary)
+            Text(
+                LocalizedText("السعر الأساسي: ${group.monthlyPrice} ج.م", "Base price: ${group.monthlyPrice} EGP").resolve(language),
+                style = MaterialTheme.typography.bodyMedium,
+            )
+            if (group.lessonType == CourseLessonType.Mixed && group.languagesPrice.isNotBlank()) {
+                Text(
+                    LocalizedText("سعر مسار اللغات: ${group.languagesPrice} ج.م", "Languages track: ${group.languagesPrice} EGP").resolve(language),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
             HorizontalDivider(color = MaterialTheme.colorScheme.outline)
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
                 CenterOneAvatar(teacherName.removePrefix("أ. ").take(1))
@@ -97,3 +112,11 @@ fun CourseCard(
         }
     }
 }
+
+private fun CourseLessonType.label(language: center.ui.localization.AppLanguage): String =
+    when (this) {
+        CourseLessonType.Arabic -> LocalizedText("عربي", "Arabic").resolve(language)
+        CourseLessonType.Languages -> LocalizedText("لغات", "Languages").resolve(language)
+        CourseLessonType.Mixed -> LocalizedText("مشترك عربي ولغات", "Arabic and Languages").resolve(language)
+        CourseLessonType.Private -> LocalizedText("برايفت", "Private").resolve(language)
+    }

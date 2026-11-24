@@ -62,7 +62,7 @@ FROM class_group LEFT JOIN schedule_slot ON class_group.id = schedule_slot.class
 ORDER BY class_group.id, schedule_slot.day, schedule_slot.fromMinute;
 
 updateGroupDetails:
-UPDATE class_group SET monthlyPriceMinor = ?, commissionBasisPoints = ?, roomNumber = ?, system = ?, status = ?, gradeId = ?, maxCapacity = ? WHERE id = ?;
+UPDATE class_group SET monthlyPriceMinor = ?, commissionBasisPoints = ?, roomNumber = ?, system = ?, status = ?, gradeId = ?, maxCapacity = ?, lessonType = ?, languagesPriceMinor = ? WHERE id = ?;
 
 archiveGroup:
 UPDATE class_group SET status = 'ARCHIVED' WHERE id = ?;

@@ -47,6 +47,7 @@ data class StaffDraft(
     val phone: String = "",
     val isActive: Boolean = true,
     val shifts: List<StaffShiftDraft> = emptyList(),
+    val code: String = "",
 ) {
     val canSave: Boolean get() = name.isNotBlank() && role.isNotBlank() && phone.isNotBlank()
 }
@@ -123,6 +124,15 @@ internal fun StaffForm(
         enabled = enabled,
         onClose = { onEvent(TeachersEvent.CloseModal) },
     ) {
+        CenterOneTextField(
+            modal.id ?: draft.code,
+            {},
+            Modifier.fillMaxWidth(),
+            enabled = enabled,
+            readOnly = true,
+            label = { Text(staffLabel("كود الموظف", "Staff ID")) },
+            textStyle = MaterialTheme.typography.bodyLarge.copy(textDirection = TextDirection.Ltr),
+        )
         CenterOneTextField(
             draft.name,
             { update(draft.copy(name = it)) },

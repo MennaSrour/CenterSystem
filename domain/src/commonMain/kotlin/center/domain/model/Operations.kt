@@ -7,6 +7,8 @@ enum class EducationStage { PRIMARY, PREP, SECONDARY }
 
 enum class EducationSystem { ARABIC, LANGUAGES, BOTH }
 
+enum class LessonType { ARABIC, LANGUAGES, MIXED, PRIVATE }
+
 enum class GroupStatus { ACTIVE, ARCHIVED }
 
 data class GroupScheduleSlot(
@@ -35,6 +37,13 @@ data class ClassGroup(
     val schedule: List<GroupScheduleSlot> = emptyList(),
     val gradeId: String? = null,
     val maxCapacity: Int? = null,
+    val lessonType: LessonType = when (system) {
+        EducationSystem.ARABIC -> LessonType.ARABIC
+        EducationSystem.LANGUAGES -> LessonType.LANGUAGES
+        EducationSystem.BOTH -> LessonType.MIXED
+    },
+    /** Languages track price in minor units, only used by mixed lessons. */
+    val languagesPriceMinor: Long? = null,
 )
 
 data class SubscriptionBalance(

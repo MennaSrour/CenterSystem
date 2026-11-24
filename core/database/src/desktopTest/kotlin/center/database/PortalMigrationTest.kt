@@ -40,6 +40,9 @@ class PortalMigrationTest {
                 val payment = db.paymentQueries.selectById("p").executeAsOne()
                 assertEquals(10.0, payment.amountPaid)
                 assertEquals("PENDING", payment.syncStatus)
+                val migratedLesson = db.classGroupQueries.selectById("g").executeAsOne()
+                assertEquals("MIXED", migratedLesson.lessonType)
+                assertEquals(null, migratedLesson.languagesPriceMinor)
                 assertEquals(
                     "",
                     db.teacherQueries

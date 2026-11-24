@@ -94,6 +94,7 @@ internal fun AddStudentModalContent(
                         label = { Text(stringResource(Res.string.student_code)) },
                         textStyle = MaterialTheme.typography.bodyLarge.copy(textDirection = TextDirection.Ltr),
                         enabled = !state.isSubmitting,
+                        readOnly = state.editingId == null,
                         isError = state.codeError != null,
                         supportingText = state.codeError?.let { error -> ({ Text(error) }) },
                         modifier = Modifier.fillMaxWidth(),
@@ -163,7 +164,7 @@ internal fun AddStudentModalContent(
             }
         }
         if (state.groupOptions.isNotEmpty()) {
-            Text(LocalizedText("المجموعات المسجل بها", "Enrolled groups").resolve(language), style = MaterialTheme.typography.titleSmall)
+            Text(LocalizedText("الدروس المسجل بها", "Enrolled lessons").resolve(language), style = MaterialTheme.typography.titleSmall)
             state.groupOptions.forEach { group ->
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Checkbox(

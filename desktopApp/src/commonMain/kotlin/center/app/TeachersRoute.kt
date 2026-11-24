@@ -200,12 +200,13 @@ internal class TeachersStateHolder(
                                 member.phone,
                                 member.isActive,
                                 member.workSchedule.map { StaffShiftDraft(it.day, it.from.hhmm(), it.to.hhmm()) },
+                                member.id,
                             ),
                             member.id,
                         ),
                     )
                 }
-            TeachersEvent.AddStaff -> setModal(TeachersModal.StaffForm())
+            TeachersEvent.AddStaff -> setModal(TeachersModal.StaffForm(draft = StaffDraft(code = nextCode("SF", staffRecords.keys))))
             is TeachersEvent.StaffDraftChanged ->
                 (current.modal as? TeachersModal.StaffForm)?.let {
                     if (!it.saving) setModal(it.copy(draft = event.draft, message = null))
@@ -220,9 +221,9 @@ internal class TeachersStateHolder(
             is TeachersEvent.OpenTeacher -> if (event.id in records) setModal(TeachersModal.Details(event.id))
             is TeachersEvent.EditTeacher ->
                 records[event.id]?.let {
-                    setModal(TeachersModal.Add(TeacherDraft(it.fullName, it.phone, it.subject, it.notes), teacherId = it.id))
+                    setModal(TeachersModal.Add(TeacherDraft(it.fullName, it.phone, it.subject, it.notes, it.id), teacherId = it.id))
                 }
-            TeachersEvent.OpenAddTeacher -> setModal(TeachersModal.Add())
+            TeachersEvent.OpenAddTeacher -> setModal(TeachersModal.Add(draft = TeacherDraft(code = nextCode("TR", records.keys))))
             TeachersEvent.CloseModal ->
                 when (val modal = current.modal) {
                     is TeachersModal.Add -> if (!modal.saving) setModal(TeachersModal.Closed)
@@ -269,7 +270,7 @@ internal class TeachersStateHolder(
                 directoryResult {
                     val draft = form.draft
                     val existing = form.teacherId?.let { requireNotNull(records[it]) }
-                    val teacher = existing ?: DomainTeacher(services.ids.newId(), draft.name.trim(), draft.subject.trim())
+                    val teacher = existing ?: DomainTeacher(draft.code, draft.name.trim(), draft.subject.trim())
                     services.teachers.save(
                         teacher.copy(
                             fullName = draft.name.trim(),
@@ -296,7 +297,7 @@ internal class TeachersStateHolder(
                             GroupScheduleSlot(it.day, LocalTime.parse(it.from.normalizeSearch()), LocalTime.parse(it.to.normalizeSearch()))
                         }
                     services.staff.save(
-                        StaffMember(form.id ?: services.ids.newId(), draft.name, draft.role, draft.phone, shifts, draft.isActive),
+                        StaffMember(form.id ?: draft.code, draft.name, draft.role, draft.phone, shifts, draft.isActive),
                     )
                 }
             setModal(
@@ -314,6 +315,9 @@ internal class TeachersStateHolder(
             )
         }
     }
+
+    private fun nextCode(prefix: String, ids: Collection<String>): String =
+        services.personCodes.next(prefix, ids)
 
     private fun pay(id: String) {
         val current = state.value

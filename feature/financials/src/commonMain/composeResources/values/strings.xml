@@ -31,7 +31,7 @@
     <string name="expense_subtitle">تسجيل حركة نقدية جديدة</string>
     <string name="student_search">بحث بكود أو اسم الطالب / Search Student</string>
     <string name="no_students">لا توجد نتائج مطابقة</string>
-    <string name="select_class">اختيار المجموعة / Select Class</string>
+    <string name="select_class">اختيار الدرس / Select Lesson</string>
     <string name="split_title">تفاصيل القسمة / Financial Split</string>
     <string name="total">الإجمالي</string>
     <string name="teacher_share">حصة المدرس</string>
