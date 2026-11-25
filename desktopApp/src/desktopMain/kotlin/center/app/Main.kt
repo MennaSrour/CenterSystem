@@ -28,6 +28,7 @@ import center.database.SqlAuthRepository
 import center.database.openDatabase
 import center.domain.usecase.AuthSession
 import center.feature.print.PrintCenter
+import center.feature.reports.DesktopMonthlyReportPlatform
 import center.ui.components.LocalCenterOneLogo
 import center.ui.components.LocalStudentPortalDetails
 import center.ui.components.LocalTeacherPortalDetails
@@ -147,7 +148,14 @@ private fun Startup(
             LocalStudentPortalDetails provides { studentId, parentPhone -> StudentPortalDetails(portalStore, studentId, parentPhone) },
             LocalTeacherPortalDetails provides { teacherId -> TeacherPortalPin(portalStore, teacherId) },
         ) {
-            App(root, ready.services, ready.auth, language, onLanguageSelected) {
+            App(
+                root,
+                ready.services,
+                ready.auth,
+                language,
+                onLanguageSelected,
+                monthlyReportPlatform = remember { DesktopMonthlyReportPlatform() },
+            ) {
                 PrintCenter(root::navigate, onLanguageSelected) { Res.readBytes("drawable/center_one_logo.webp") }
             }
         }

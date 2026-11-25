@@ -9,8 +9,11 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             implementation(project(":domain"))
+            implementation(project(":core:ui"))
             implementation(compose.material3)
+            implementation(compose.materialIconsExtended)
         }
+        getByName("desktopMain").dependencies { implementation(libs.pdfbox) }
         commonTest.dependencies { implementation(kotlin("test")) }
     }
 }

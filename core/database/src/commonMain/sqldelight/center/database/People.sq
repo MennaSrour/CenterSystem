@@ -107,5 +107,10 @@ sessionsOnDate:
 SELECT personType, personId, groupId, date, checkInTime, checkOutTime
 FROM attendance_session WHERE date = ? ORDER BY checkInTime;
 
+sessionsInPeriod:
+SELECT personType, personId, groupId, date, checkInTime, checkOutTime
+FROM attendance_session WHERE checkInTime >= :startInclusive AND checkInTime < :endExclusive
+ORDER BY checkInTime, personType, personId;
+
 hasPersonAttendance:
 SELECT EXISTS(SELECT 1 FROM attendance_session WHERE personType = ? AND personId = ?);

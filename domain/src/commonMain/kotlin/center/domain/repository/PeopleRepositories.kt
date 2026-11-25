@@ -20,6 +20,11 @@ interface StaffRepository {
 interface AttendanceSessionRepository {
     fun observeDay(date: LocalDate): Flow<List<AttendanceSession>>
 
+    fun observePeriod(
+        startInclusive: Long,
+        endExclusive: Long,
+    ): Flow<List<AttendanceSession>> = kotlinx.coroutines.flow.flowOf(emptyList())
+
     fun observeHistory(
         type: PersonType,
         personId: String,

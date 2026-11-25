@@ -88,6 +88,11 @@ class SqlAttendanceSessionRepository(
 
     override fun observeDay(date: LocalDate) = people.sessionsOnDate(date.toString(), ::session).asFlow().mapToList(dispatcher)
 
+    override fun observePeriod(
+        startInclusive: Long,
+        endExclusive: Long,
+    ) = people.sessionsInPeriod(startInclusive, endExclusive, ::session).asFlow().mapToList(dispatcher)
+
     override fun observeHistory(
         type: PersonType,
         personId: String,
