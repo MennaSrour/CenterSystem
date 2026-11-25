@@ -43,9 +43,9 @@ class StudentsInteractionTest {
                 assertEquals(StudentSystem.Arabic, form.system)
                 assertEquals("يوسف أحمد", form.name)
             }
-            onNodeWithText("حفظ الطالب / Save Student").performScrollTo().performClick()
+            onNodeWithText("حفظ الطالب").performScrollTo().performClick()
             runOnIdle { assertEquals(StudentsEvent.SubmitAddStudent, events.last()) }
-            onNodeWithText("إلغاء / Cancel").performClick()
+            onNodeWithText("إلغاء").performClick()
             runOnIdle { assertEquals(StudentsEvent.DismissAddStudent, events.last()) }
         }
 
@@ -56,8 +56,8 @@ class StudentsInteractionTest {
                 CenterOneTheme { AddStudentModalContent(StudentsPreviewData.filledForm().copy(isSubmitting = true), {}) }
             }
             onNodeWithText("يوسف أحمد").assertIsNotEnabled()
-            onNodeWithText("حفظ الطالب / Save Student").performScrollTo().assertIsNotEnabled()
-            onNodeWithText("إلغاء / Cancel").assertIsNotEnabled()
+            onNodeWithText("حفظ الطالب").performScrollTo().assertIsNotEnabled()
+            onNodeWithText("إلغاء").assertIsNotEnabled()
             onNodeWithText("إغلاق").performScrollTo().assertIsNotEnabled()
         }
 

@@ -21,33 +21,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.dp
-import center.feature.courses.resources.Res
-import center.feature.courses.resources.add_title
-import center.feature.courses.resources.arabic_system
-import center.feature.courses.resources.arabic_track
-import center.feature.courses.resources.arabic_track_price
-import center.feature.courses.resources.cancel
-import center.feature.courses.resources.close
-import center.feature.courses.resources.commission
-import center.feature.courses.resources.edit_title
-import center.feature.courses.resources.form_subtitle
-import center.feature.courses.resources.grade
-import center.feature.courses.resources.languages_system
-import center.feature.courses.resources.languages_track
-import center.feature.courses.resources.lesson_base_price
-import center.feature.courses.resources.max_capacity
-import center.feature.courses.resources.mixed_languages_price
-import center.feature.courses.resources.private_lesson
-import center.feature.courses.resources.room
-import center.feature.courses.resources.save
-import center.feature.courses.resources.show_other_grades
-import center.feature.courses.resources.step_basic
-import center.feature.courses.resources.step_pricing
-import center.feature.courses.resources.student_enrollment
-import center.feature.courses.resources.student_price
-import center.feature.courses.resources.student_search
-import center.feature.courses.resources.subject
-import center.feature.courses.resources.teacher
 import center.ui.components.CenterOneDropdown
 import center.ui.components.CenterOneDropdownOption
 import center.ui.components.CenterOneModal
@@ -57,7 +30,6 @@ import center.ui.components.CenterOneTextButton
 import center.ui.components.CenterOneTextField
 import center.ui.localization.LocalAppLanguage
 import center.ui.localization.LocalizedText
-import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun GroupFormModal(
@@ -79,20 +51,20 @@ internal fun GroupFormModalContent(
 ) {
     val language = LocalAppLanguage.current
     CenterOneModalContent(
-        title = stringResource(if (state.mode is GroupFormMode.Edit) Res.string.edit_title else Res.string.add_title),
-        subtitle = stringResource(Res.string.form_subtitle),
-        closeLabel = stringResource(Res.string.close),
+        title = appString(if (state.mode is GroupFormMode.Edit) "edit_title" else "add_title"),
+        subtitle = appString("form_subtitle"),
+        closeLabel = appString("close"),
         onClose = { onEvent(CoursesEvent.DismissModal) },
         modifier = modifier,
         enabled = !state.isSubmitting,
         maxWidth = 920.dp,
     ) {
-        Text(stringResource(Res.string.step_basic), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
+        Text(appString("step_basic"), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
         BoxWithConstraints(Modifier.fillMaxWidth()) {
             val twoColumns = maxWidth >= 600.dp
             val right: @Composable (Modifier) -> Unit = { columnModifier ->
                 Column(columnModifier, verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    GroupInput(state.subject, stringResource(Res.string.subject), {
+                    GroupInput(state.subject, appString("subject"), {
                         onEvent(CoursesEvent.SubjectChanged(it))
                     }, !state.isSubmitting, state.fieldErrors[GroupField.Subject])
                     CenterOneDropdown(
@@ -101,7 +73,7 @@ internal fun GroupFormModalContent(
                                 .firstOrNull { it.id == state.selectedTeacherId }
                                 ?.name
                                 .orEmpty(),
-                        label = stringResource(Res.string.teacher),
+                        label = appString("teacher"),
                         options = state.teachers.map { CenterOneDropdownOption(it.id, it.name) },
                         expanded =
                             state.expandedDropdown == GroupDropdown.Teacher,
@@ -119,7 +91,7 @@ internal fun GroupFormModalContent(
                                 .firstOrNull { it.id == state.selectedGradeId }
                                 ?.label
                                 .orEmpty(),
-                        label = stringResource(Res.string.grade),
+                        label = appString("grade"),
                         options = state.grades.map { CenterOneDropdownOption(it.id, it.label) },
                         expanded =
                             state.expandedDropdown == GroupDropdown.Grade,
@@ -135,7 +107,7 @@ internal fun GroupFormModalContent(
             }
             val left: @Composable (Modifier) -> Unit = { columnModifier ->
                 Column(columnModifier, verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    GroupInput(state.maxCapacity, stringResource(Res.string.max_capacity), {
+                    GroupInput(state.maxCapacity, appString("max_capacity"), {
                         onEvent(CoursesEvent.MaxCapacityChanged(it))
                     }, !state.isSubmitting, state.fieldErrors[GroupField.MaxCapacity], KeyboardType.Number)
                     CenterOneDropdown(
@@ -144,7 +116,7 @@ internal fun GroupFormModalContent(
                                 .firstOrNull { it.id == state.selectedRoomId }
                                 ?.label
                                 .orEmpty(),
-                        label = stringResource(Res.string.room),
+                        label = appString("room"),
                         options = state.rooms.map { CenterOneDropdownOption(it.id, it.label) },
                         expanded =
                             state.expandedDropdown == GroupDropdown.Room,
@@ -172,17 +144,17 @@ internal fun GroupFormModalContent(
         }
         GroupScheduleEditor(state, onEvent, Modifier.fillMaxWidth())
         Text(
-            stringResource(Res.string.step_pricing),
+            appString("step_pricing"),
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.primary,
         )
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             val lessonTypes =
                 listOf(
-                    CourseLessonType.Arabic to stringResource(Res.string.arabic_system),
-                    CourseLessonType.Languages to stringResource(Res.string.languages_system),
+                    CourseLessonType.Arabic to appString("arabic_system"),
+                    CourseLessonType.Languages to appString("languages_system"),
                     CourseLessonType.Mixed to LocalizedText("مشترك (عربي + لغات)", "Mixed (Arabic + Languages)").resolve(language),
-                    CourseLessonType.Private to stringResource(Res.string.private_lesson),
+                    CourseLessonType.Private to appString("private_lesson"),
                 )
             lessonTypes.forEach { (type, label) ->
                 FilterChip(
@@ -195,23 +167,23 @@ internal fun GroupFormModalContent(
         }
         val priceLabel =
             if (state.lessonType == CourseLessonType.Mixed) {
-                stringResource(Res.string.arabic_track_price)
+                appString("arabic_track_price")
             } else {
-                stringResource(Res.string.lesson_base_price)
+                appString("lesson_base_price")
             }
         GroupInput(state.monthlyPrice, priceLabel, {
             onEvent(CoursesEvent.MonthlyPriceChanged(it))
         }, !state.isSubmitting, state.fieldErrors[GroupField.MonthlyPrice], KeyboardType.Decimal)
         if (state.lessonType == CourseLessonType.Mixed) {
-            GroupInput(state.languagesPrice, stringResource(Res.string.mixed_languages_price), {
+            GroupInput(state.languagesPrice, appString("mixed_languages_price"), {
                 onEvent(CoursesEvent.LanguagesPriceChanged(it))
             }, !state.isSubmitting, state.fieldErrors[GroupField.LanguagesPrice], KeyboardType.Decimal)
         }
-        GroupInput(state.teacherCommission, stringResource(Res.string.commission), {
+        GroupInput(state.teacherCommission, appString("commission"), {
             onEvent(CoursesEvent.CommissionChanged(it))
         }, !state.isSubmitting, state.fieldErrors[GroupField.Commission], KeyboardType.Decimal)
         Text(
-            stringResource(Res.string.student_enrollment),
+            appString("student_enrollment"),
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.primary,
         )
@@ -220,7 +192,7 @@ internal fun GroupFormModalContent(
             { onEvent(CoursesEvent.StudentSearchChanged(it)) },
             Modifier.fillMaxWidth(),
             enabled = !state.isSubmitting,
-            label = { Text(stringResource(Res.string.student_search)) },
+            label = { Text(appString("student_search")) },
         )
         Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
             Checkbox(
@@ -228,7 +200,7 @@ internal fun GroupFormModalContent(
                 onCheckedChange = { onEvent(CoursesEvent.ShowOtherGradesChanged(it)) },
                 enabled = !state.isSubmitting,
             )
-            Text(stringResource(Res.string.show_other_grades), style = MaterialTheme.typography.bodySmall)
+            Text(appString("show_other_grades"), style = MaterialTheme.typography.bodySmall)
         }
         LazyColumn(Modifier.fillMaxWidth().heightIn(max = 280.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             items(
@@ -261,7 +233,7 @@ internal fun GroupFormModalContent(
                                         CoursesEvent.StudentTrackSelected(student.id, center.domain.model.StudentTrack.ARABIC),
                                     )
                                 },
-                                label = { Text(stringResource(Res.string.arabic_track)) },
+                                label = { Text(appString("arabic_track")) },
                                 enabled = !state.isSubmitting,
                             )
                             FilterChip(
@@ -271,14 +243,14 @@ internal fun GroupFormModalContent(
                                         CoursesEvent.StudentTrackSelected(student.id, center.domain.model.StudentTrack.LANGUAGES),
                                     )
                                 },
-                                label = { Text(stringResource(Res.string.languages_track)) },
+                                label = { Text(appString("languages_track")) },
                                 enabled = !state.isSubmitting,
                             )
                         }
                     }
                     GroupInput(
                         enrollment.price,
-                        stringResource(Res.string.student_price),
+                        appString("student_price"),
                         { onEvent(CoursesEvent.StudentPriceChanged(student.id, it)) },
                         !state.isSubmitting,
                         null,
@@ -292,11 +264,11 @@ internal fun GroupFormModalContent(
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             CenterOnePrimaryButton(onClick = {
                 onEvent(CoursesEvent.SubmitGroup)
-            }, enabled = state.canSubmit && !state.isSubmitting) { Text(stringResource(Res.string.save)) }
+            }, enabled = state.canSubmit && !state.isSubmitting) { Text(appString("save")) }
             CenterOneTextButton(
                 onClick = { onEvent(CoursesEvent.DismissModal) },
                 enabled = !state.isSubmitting,
-            ) { Text(stringResource(Res.string.cancel)) }
+            ) { Text(appString("cancel")) }
         }
     }
 }

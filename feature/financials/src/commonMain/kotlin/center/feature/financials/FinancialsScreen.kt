@@ -27,23 +27,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.dp
-import center.feature.financials.resources.Res
-import center.feature.financials.resources.expense_log
-import center.feature.financials.resources.expense_transactions
-import center.feature.financials.resources.expense_transactions_en
-import center.feature.financials.resources.financials
-import center.feature.financials.resources.financials_en
-import center.feature.financials.resources.income_log
-import center.feature.financials.resources.income_transactions
-import center.feature.financials.resources.income_transactions_en
-import center.feature.financials.resources.notifications
-import center.feature.financials.resources.receive_payment
-import center.feature.financials.resources.record_expense
-import center.feature.financials.resources.search_records
-import center.feature.financials.resources.summary
-import center.feature.financials.resources.summary_subtitle
-import center.feature.financials.resources.treasury_management
-import center.ui.components.BilingualHeading
 import center.ui.components.CenterOneCanvas
 import center.ui.components.CenterOneCard
 import center.ui.components.CenterOneIconButton
@@ -57,7 +40,6 @@ import center.ui.localization.AppLanguage
 import center.ui.localization.LocalAppLanguage
 import center.ui.theme.CenterOneSpacing
 import center.ui.theme.ModalScrim
-import org.jetbrains.compose.resources.stringResource
 
 /** Pure presentation: the owner supplies snapshots and handles every interaction. */
 @Composable
@@ -104,13 +86,13 @@ internal fun FinancialsContent(
                         item {
                             Column(Modifier.fillMaxWidth()) {
                                 Text(
-                                    stringResource(Res.string.treasury_management),
+                                    appString("treasury_management"),
                                     style = MaterialTheme.typography.labelMedium,
                                     color = MaterialTheme.colorScheme.tertiary,
                                 )
-                                Text(stringResource(Res.string.summary), style = MaterialTheme.typography.headlineLarge)
+                                Text(appString("summary"), style = MaterialTheme.typography.headlineLarge)
                                 Text(
-                                    stringResource(Res.string.summary_subtitle),
+                                    appString("summary_subtitle"),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
@@ -168,31 +150,21 @@ internal fun FinancialsContent(
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.spacedBy(16.dp),
                                 ) {
-                                    BilingualHeading(
-                                        stringResource(
-                                            if (state.selectedLog ==
-                                                FinancialLog.Income
-                                            ) {
-                                                Res.string.income_transactions
+                                    Text(
+                                        appString(
+                                            if (state.selectedLog == FinancialLog.Income) {
+                                                "income_transactions"
                                             } else {
-                                                Res.string.expense_transactions
+                                                "expense_transactions"
                                             },
                                         ),
-                                        stringResource(
-                                            if (state.selectedLog ==
-                                                FinancialLog.Income
-                                            ) {
-                                                Res.string.income_transactions_en
-                                            } else {
-                                                Res.string.expense_transactions_en
-                                            },
-                                        ),
-                                        Modifier.weight(1f),
+                                        modifier = Modifier.weight(1f),
+                                        style = MaterialTheme.typography.titleMedium,
                                     )
                                     CenterOneTextField(state.recordQuery, {
                                         onEvent(FinancialsEvent.RecordQueryChanged(it))
                                     }, Modifier.width(260.dp), placeholder = {
-                                        Text(stringResource(Res.string.search_records), style = MaterialTheme.typography.bodySmall)
+                                        Text(appString("search_records"), style = MaterialTheme.typography.bodySmall)
                                     }, leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null) })
                                 }
                                 RecentActivityTable(state.visibleRecords, state.selectedLog, Modifier.fillMaxWidth())
@@ -215,7 +187,7 @@ private fun FinancialsActionBar(
         val wide = maxWidth >= 1100.dp
         val tabs: @Composable (Modifier) -> Unit = { modifier ->
             CenterOneTabs(
-                labels = listOf(stringResource(Res.string.income_log), stringResource(Res.string.expense_log)),
+                labels = listOf(appString("income_log"), appString("expense_log")),
                 selectedIndex = FinancialLog.entries.indexOf(state.selectedLog),
                 onSelected = { onEvent(FinancialsEvent.TabSelected(FinancialLog.entries[it])) },
                 modifier = modifier,
@@ -225,10 +197,10 @@ private fun FinancialsActionBar(
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 CenterOnePrimaryButton(
                     onClick = { onEvent(FinancialsEvent.OpenReceivePayment) },
-                ) { Text(stringResource(Res.string.receive_payment)) }
+                ) { Text(appString("receive_payment")) }
                 CenterOneOutlinedButton(
                     onClick = { onEvent(FinancialsEvent.OpenRecordExpense) },
-                ) { Text(stringResource(Res.string.record_expense)) }
+                ) { Text(appString("record_expense")) }
             }
         }
         if (wide) {
@@ -251,14 +223,14 @@ private fun FinancialsHeader(
     onEvent: (FinancialsEvent) -> Unit,
 ) {
     CenterOnePageHeader(
-        stringResource(Res.string.financials),
-        stringResource(Res.string.financials_en),
+        appString("financials"),
+        appString("financials_en"),
         state.dateLabel,
     ) {
         CenterOneLanguageToggle(LocalAppLanguage.current, { onEvent(FinancialsEvent.LanguageSelected(it)) })
         CenterOneIconButton(
             Icons.Outlined.Notifications,
-            stringResource(Res.string.notifications),
+            appString("notifications"),
             { onEvent(FinancialsEvent.OpenNotifications) },
         )
         Text(state.userName, style = MaterialTheme.typography.titleSmall)

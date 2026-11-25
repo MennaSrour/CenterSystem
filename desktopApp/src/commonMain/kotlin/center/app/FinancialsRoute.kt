@@ -11,8 +11,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import center.app.resources.Res
-import center.app.resources.feature_unavailable
 import center.domain.model.ClassGroup
 import center.domain.model.LedgerDirection
 import center.domain.model.LedgerEntry
@@ -37,6 +35,8 @@ import center.feature.financials.RecordExpenseState
 import center.feature.financials.StudentOption
 import center.feature.financials.TeacherOption
 import center.ui.localization.AppLanguage
+import center.ui.localization.AppStringKey
+import center.ui.localization.AppStrings
 import center.ui.localization.LocalAppLanguage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -54,7 +54,6 @@ import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.plus
 import kotlinx.datetime.toLocalDateTime
-import org.jetbrains.compose.resources.stringResource
 
 @Composable
 internal fun FinancialsRoute(
@@ -69,7 +68,7 @@ internal fun FinancialsRoute(
     val holder = remember(services, scope, shortcut, language) { FinancialsStateHolder(services, scope, language, shortcut, canViewProfit) }
     val state by holder.uiState.collectAsState()
     val snackbar = remember { SnackbarHostState() }
-    val unavailable = stringResource(Res.string.feature_unavailable)
+    val unavailable = AppStrings.get(AppStringKey.FeatureUnavailable, language)
 
     fun notify(message: String) {
         scope.launch { snackbar.showSnackbar(message) }

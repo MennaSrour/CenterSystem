@@ -18,21 +18,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import center.feature.financials.resources.Res
-import center.feature.financials.resources.cancel
-import center.feature.financials.resources.center_share
-import center.feature.financials.resources.close
-import center.feature.financials.resources.confirm_payment
-import center.feature.financials.resources.currency
-import center.feature.financials.resources.no_students
-import center.feature.financials.resources.payment_amount
-import center.feature.financials.resources.receive_subtitle
-import center.feature.financials.resources.receive_title
-import center.feature.financials.resources.select_class
-import center.feature.financials.resources.split_title
-import center.feature.financials.resources.student_search
-import center.feature.financials.resources.teacher_share
-import center.feature.financials.resources.total
 import center.ui.components.CenterOneDropdown
 import center.ui.components.CenterOneDropdownOption
 import center.ui.components.CenterOneInfoPanel
@@ -42,7 +27,6 @@ import center.ui.components.CenterOnePrimaryButton
 import center.ui.components.CenterOneSelectionRow
 import center.ui.components.CenterOneTextButton
 import center.ui.components.CenterOneTextField
-import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun ReceivePaymentModal(
@@ -62,9 +46,9 @@ internal fun ReceivePaymentModalContent(
     modifier: Modifier = Modifier,
 ) {
     CenterOneModalContent(
-        title = stringResource(Res.string.receive_title),
-        subtitle = stringResource(Res.string.receive_subtitle),
-        closeLabel = stringResource(Res.string.close),
+        title = appString("receive_title"),
+        subtitle = appString("receive_subtitle"),
+        closeLabel = appString("close"),
         onClose = { onEvent(FinancialsEvent.DismissModal) },
         enabled = !state.isSubmitting,
         modifier = modifier,
@@ -72,7 +56,7 @@ internal fun ReceivePaymentModalContent(
         CenterOneTextField(
             value = state.studentQuery,
             onValueChange = { onEvent(FinancialsEvent.StudentQueryChanged(it)) },
-            label = { Text(stringResource(Res.string.student_search)) },
+            label = { Text(appString("student_search")) },
             leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null) },
             enabled = !state.isSubmitting,
             isError = state.studentError != null,
@@ -80,7 +64,7 @@ internal fun ReceivePaymentModalContent(
             modifier = Modifier.fillMaxWidth(),
         )
         if (state.studentResults.isEmpty()) {
-            Text(stringResource(Res.string.no_students), style = MaterialTheme.typography.bodySmall)
+            Text(appString("no_students"), style = MaterialTheme.typography.bodySmall)
         } else {
             LazyColumn(Modifier.fillMaxWidth().heightIn(max = 160.dp)) {
                 items(state.studentResults, key = { it.id }) { student ->
@@ -100,7 +84,7 @@ internal fun ReceivePaymentModalContent(
                     .firstOrNull { it.id == state.selectedClassId }
                     ?.label
                     .orEmpty(),
-            label = stringResource(Res.string.select_class),
+            label = appString("select_class"),
             options = state.classes.map { CenterOneDropdownOption(it.id, it.label) },
             expanded = state.classMenuExpanded,
             onExpandedChange = { onEvent(FinancialsEvent.ClassMenuChanged(it)) },
@@ -113,8 +97,8 @@ internal fun ReceivePaymentModalContent(
         CenterOneTextField(
             value = state.amount,
             onValueChange = { onEvent(FinancialsEvent.PaymentAmountChanged(it)) },
-            label = { Text(stringResource(Res.string.payment_amount)) },
-            trailingIcon = { Text(stringResource(Res.string.currency)) },
+            label = { Text(appString("payment_amount")) },
+            trailingIcon = { Text(appString("currency")) },
             enabled = !state.isSubmitting,
             isError = state.amountError != null,
             supportingText = state.amountError?.let { error -> ({ Text(error) }) },
@@ -129,12 +113,12 @@ internal fun ReceivePaymentModalContent(
                 enabled =
                     state.canConfirm && !state.isSubmitting,
             ) {
-                Text(stringResource(Res.string.confirm_payment))
+                Text(appString("confirm_payment"))
             }
             CenterOneTextButton(
                 onClick = { onEvent(FinancialsEvent.DismissModal) },
                 enabled = !state.isSubmitting,
-            ) { Text(stringResource(Res.string.cancel)) }
+            ) { Text(appString("cancel")) }
         }
     }
 }
@@ -144,14 +128,14 @@ private fun FinancialSplitInfo(
     split: FinancialSplit,
     modifier: Modifier = Modifier,
 ) {
-    CenterOneInfoPanel(stringResource(Res.string.split_title), modifier) {
+    CenterOneInfoPanel(appString("split_title"), modifier) {
         Text(split.ratio, style = MaterialTheme.typography.labelSmall)
         HorizontalDivider(color = MaterialTheme.colorScheme.outline)
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             listOf(
-                stringResource(Res.string.total) to split.total,
-                stringResource(Res.string.teacher_share) to split.teacherShare,
-                stringResource(Res.string.center_share) to split.centerShare,
+                appString("total") to split.total,
+                appString("teacher_share") to split.teacherShare,
+                appString("center_share") to split.centerShare,
             ).forEach { (title, value) ->
                 Column {
                     Text(title, style = MaterialTheme.typography.labelSmall)

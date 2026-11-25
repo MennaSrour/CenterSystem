@@ -11,8 +11,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import center.app.resources.Res
-import center.app.resources.feature_unavailable
 import center.domain.model.ClassGroup
 import center.domain.model.EducationSystem
 import center.domain.model.GroupScheduleSlot
@@ -41,6 +39,8 @@ import center.feature.courses.GroupFormState
 import center.feature.courses.GroupTimeSlotState
 import center.feature.courses.ScheduleDay
 import center.ui.localization.AppLanguage
+import center.ui.localization.AppStringKey
+import center.ui.localization.AppStrings
 import center.ui.localization.LocalAppLanguage
 import center.ui.localization.LocalizedText
 import kotlinx.coroutines.CoroutineScope
@@ -54,7 +54,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.LocalTime
-import org.jetbrains.compose.resources.stringResource
 
 @Composable
 internal fun CoursesRoute(
@@ -68,7 +67,7 @@ internal fun CoursesRoute(
     val holder = remember(services, scope, language) { CoursesStateHolder(services, scope, language, canDelete) }
     val state by holder.uiState.collectAsState()
     val snackbar = remember { SnackbarHostState() }
-    val unavailable = stringResource(Res.string.feature_unavailable)
+    val unavailable = AppStrings.get(AppStringKey.FeatureUnavailable, language)
 
     fun notify(message: String) {
         scope.launch { snackbar.showSnackbar(message) }

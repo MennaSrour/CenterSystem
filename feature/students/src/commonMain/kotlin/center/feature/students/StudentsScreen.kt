@@ -28,22 +28,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
-import center.feature.students.resources.Res
-import center.feature.students.resources.add_student
-import center.feature.students.resources.all_grades
-import center.feature.students.resources.directory
-import center.feature.students.resources.directory_subtitle
-import center.feature.students.resources.displayed_count
-import center.feature.students.resources.filter_all
-import center.feature.students.resources.filter_prep
-import center.feature.students.resources.filter_primary
-import center.feature.students.resources.filter_secondary
-import center.feature.students.resources.grade_filter
-import center.feature.students.resources.notifications
-import center.feature.students.resources.search
-import center.feature.students.resources.student_affairs
-import center.feature.students.resources.students_title
-import center.feature.students.resources.students_title_en
 import center.ui.components.CenterOneCanvas
 import center.ui.components.CenterOneCard
 import center.ui.components.CenterOneConfirmationContent
@@ -64,7 +48,6 @@ import center.ui.localization.LocalizedText
 import center.ui.theme.CenterOneSpacing
 import center.ui.theme.ModalScrim
 import center.ui.theme.Rose
-import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun StudentsScreen(
@@ -136,13 +119,13 @@ internal fun StudentsContent(
                         item {
                             Column {
                                 Text(
-                                    stringResource(Res.string.student_affairs),
+                                    appString("student_affairs"),
                                     style = MaterialTheme.typography.labelMedium,
                                     color = MaterialTheme.colorScheme.tertiary,
                                 )
-                                Text(stringResource(Res.string.directory), style = MaterialTheme.typography.headlineLarge)
+                                Text(appString("directory"), style = MaterialTheme.typography.headlineLarge)
                                 Text(
-                                    stringResource(Res.string.directory_subtitle),
+                                    appString("directory_subtitle"),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
@@ -176,7 +159,7 @@ internal fun StudentsContent(
                                     StudentsDataGrid(visible, state.grades, onEvent, Modifier.fillMaxWidth(), canDelete = state.canDelete)
                                     HorizontalDivider(color = MaterialTheme.colorScheme.outline)
                                     Text(
-                                        stringResource(Res.string.displayed_count, visible.size.toString()),
+                                        appString("displayed_count", visible.size.toString()),
                                         Modifier.padding(CenterOneSpacing.Medium),
                                         style = MaterialTheme.typography.labelSmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -202,10 +185,10 @@ private fun StudentsFilters(
     val stageLabels =
         if (language == AppLanguage.Arabic) {
             listOf(
-                stringResource(Res.string.filter_all, summary.total),
-                stringResource(Res.string.filter_primary, summary.primary),
-                stringResource(Res.string.filter_prep, summary.prep),
-                stringResource(Res.string.filter_secondary, summary.secondary),
+                appString("filter_all", summary.total),
+                appString("filter_primary", summary.primary),
+                appString("filter_prep", summary.prep),
+                appString("filter_secondary", summary.secondary),
             )
         } else {
             listOf("All (${summary.total})", "Primary (${summary.primary})", "Prep (${summary.prep})", "Secondary (${summary.secondary})")
@@ -237,15 +220,15 @@ private fun StudentsActionBar(
                 state.searchQuery,
                 { onEvent(StudentsEvent.SearchChanged(it)) },
                 modifier,
-                placeholder = { Text(stringResource(Res.string.search), style = MaterialTheme.typography.bodySmall) },
+                placeholder = { Text(appString("search"), style = MaterialTheme.typography.bodySmall) },
                 leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null) },
             )
         }
         val filters: @Composable (Modifier) -> Unit = { modifier ->
             Row(modifier, horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
                 CenterOneDropdown(
-                    value = state.grades.firstOrNull { it.id == state.selectedGradeId }?.label ?: stringResource(Res.string.all_grades),
-                    label = stringResource(Res.string.grade_filter),
+                    value = state.grades.firstOrNull { it.id == state.selectedGradeId }?.label ?: appString("all_grades"),
+                    label = appString("grade_filter"),
                     options = state.availableGrades.map { CenterOneDropdownOption(it.id, it.label) },
                     expanded = state.gradeMenuExpanded,
                     onExpandedChange = { onEvent(StudentsEvent.GradeFilterMenuChanged(it)) },
@@ -256,11 +239,11 @@ private fun StudentsActionBar(
                 if (state.selectedGradeId != null) {
                     CenterOneIconButton(
                         Icons.Outlined.Close,
-                        stringResource(Res.string.all_grades),
+                        appString("all_grades"),
                         { onEvent(StudentsEvent.GradeFilterSelected(null)) },
                     )
                 }
-                CenterOnePrimaryButton(onClick = { onEvent(StudentsEvent.OpenAddStudent) }) { Text(stringResource(Res.string.add_student)) }
+                CenterOnePrimaryButton(onClick = { onEvent(StudentsEvent.OpenAddStudent) }) { Text(appString("add_student")) }
             }
         }
         if (wide) {
@@ -282,11 +265,11 @@ private fun StudentsHeader(
     state: StudentsState,
     onEvent: (StudentsEvent) -> Unit,
 ) {
-    CenterOnePageHeader(stringResource(Res.string.students_title), stringResource(Res.string.students_title_en), state.dateLabel) {
+    CenterOnePageHeader(appString("students_title"), appString("students_title_en"), state.dateLabel) {
         CenterOneLanguageToggle(LocalAppLanguage.current, { onEvent(StudentsEvent.LanguageSelected(it)) })
         CenterOneIconButton(
             Icons.Outlined.Notifications,
-            stringResource(Res.string.notifications),
+            appString("notifications"),
             { onEvent(StudentsEvent.OpenNotifications) },
         )
         Text(state.userName, Modifier.padding(start = 12.dp), style = MaterialTheme.typography.titleSmall)

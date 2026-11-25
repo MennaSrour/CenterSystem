@@ -67,8 +67,8 @@ class CoursesInteractionTest {
                     )
                 }
             }
-            onNodeWithText("حفظ الدرس / Save Lesson").performScrollTo().assertIsNotEnabled()
-            onNodeWithText("إلغاء / Cancel").assertIsNotEnabled()
+            onNodeWithText("حفظ الدرس").performScrollTo().assertIsNotEnabled()
+            onNodeWithText("إلغاء").assertIsNotEnabled()
         }
 
     @Test
@@ -83,6 +83,6 @@ class CoursesInteractionTest {
                 state.value = state.value.copy(isDeleting = true)
             }
             onNodeWithText("نعم، احذف الدرس").assertIsNotEnabled()
-            onNodeWithText("إلغاء / Cancel").assertIsNotEnabled()
+            onNodeWithText("إلغاء").assertIsNotEnabled()
         }
 }

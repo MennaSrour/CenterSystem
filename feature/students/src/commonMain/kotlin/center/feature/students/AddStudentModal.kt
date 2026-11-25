@@ -16,19 +16,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.dp
-import center.feature.students.resources.Res
-import center.feature.students.resources.add_subtitle
-import center.feature.students.resources.add_title
-import center.feature.students.resources.arabic_system
-import center.feature.students.resources.cancel
-import center.feature.students.resources.close
-import center.feature.students.resources.languages_system
-import center.feature.students.resources.phone_label
-import center.feature.students.resources.save_student
-import center.feature.students.resources.select_grade
-import center.feature.students.resources.select_system
-import center.feature.students.resources.student_code
-import center.feature.students.resources.student_name
 import center.ui.components.CenterOneChoiceGroup
 import center.ui.components.CenterOneDropdown
 import center.ui.components.CenterOneDropdownOption
@@ -39,7 +26,6 @@ import center.ui.components.CenterOneTextButton
 import center.ui.components.CenterOneTextField
 import center.ui.localization.LocalAppLanguage
 import center.ui.localization.LocalizedText
-import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun AddStudentModal(
@@ -64,12 +50,12 @@ internal fun AddStudentModalContent(
             if (state.editingId ==
                 null
             ) {
-                stringResource(Res.string.add_title)
+                appString("add_title")
             } else {
                 LocalizedText("تعديل الطالب", "Edit student").resolve(language)
             },
-        subtitle = stringResource(Res.string.add_subtitle),
-        closeLabel = stringResource(Res.string.close),
+        subtitle = appString("add_subtitle"),
+        closeLabel = appString("close"),
         onClose = { onEvent(StudentsEvent.DismissAddStudent) },
         modifier = modifier,
         enabled = !state.isSubmitting,
@@ -82,7 +68,7 @@ internal fun AddStudentModalContent(
                     CenterOneTextField(
                         value = state.name,
                         onValueChange = { onEvent(StudentsEvent.NameChanged(it)) },
-                        label = { Text(stringResource(Res.string.student_name)) },
+                        label = { Text(appString("student_name")) },
                         enabled = !state.isSubmitting,
                         isError = state.nameError != null,
                         supportingText = state.nameError?.let { error -> ({ Text(error) }) },
@@ -91,7 +77,7 @@ internal fun AddStudentModalContent(
                     CenterOneTextField(
                         value = state.code,
                         onValueChange = { onEvent(StudentsEvent.CodeChanged(it)) },
-                        label = { Text(stringResource(Res.string.student_code)) },
+                        label = { Text(appString("student_code")) },
                         textStyle = MaterialTheme.typography.bodyLarge.copy(textDirection = TextDirection.Ltr),
                         enabled = !state.isSubmitting,
                         readOnly = state.editingId == null,
@@ -109,7 +95,7 @@ internal fun AddStudentModalContent(
                                 .firstOrNull { it.id == state.selectedGradeId }
                                 ?.label
                                 .orEmpty(),
-                        label = stringResource(Res.string.select_grade),
+                        label = appString("select_grade"),
                         options = state.grades.map { CenterOneDropdownOption(it.id, it.label) },
                         expanded = state.gradeMenuExpanded,
                         onExpandedChange = { onEvent(StudentsEvent.AddGradeMenuChanged(it)) },
@@ -119,9 +105,9 @@ internal fun AddStudentModalContent(
                         modifier = Modifier.fillMaxWidth(),
                     )
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(stringResource(Res.string.select_system), style = MaterialTheme.typography.labelSmall)
+                        Text(appString("select_system"), style = MaterialTheme.typography.labelSmall)
                         CenterOneChoiceGroup(
-                            labels = listOf(stringResource(Res.string.arabic_system), stringResource(Res.string.languages_system)),
+                            labels = listOf(appString("arabic_system"), appString("languages_system")),
                             selectedIndex = StudentSystem.entries.indexOf(state.system),
                             onSelected = { onEvent(StudentsEvent.SystemSelected(StudentSystem.entries[it])) },
                             enabled = !state.isSubmitting,
@@ -140,7 +126,7 @@ internal fun AddStudentModalContent(
                     CenterOneTextField(
                         value = state.parentPhone,
                         onValueChange = { onEvent(StudentsEvent.ParentPhoneChanged(it)) },
-                        label = { Text(stringResource(Res.string.phone_label)) },
+                        label = { Text(appString("phone_label")) },
                         enabled = !state.isSubmitting,
                         isError = state.phoneError != null,
                         supportingText = state.phoneError?.let { error -> ({ Text(error) }) },
@@ -221,10 +207,10 @@ internal fun AddStudentModalContent(
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             CenterOnePrimaryButton(onClick = {
                 onEvent(StudentsEvent.SubmitAddStudent)
-            }, enabled = state.canSubmit && !state.isSubmitting) { Text(stringResource(Res.string.save_student)) }
+            }, enabled = state.canSubmit && !state.isSubmitting) { Text(appString("save_student")) }
             CenterOneTextButton(onClick = {
                 onEvent(StudentsEvent.DismissAddStudent)
-            }, enabled = !state.isSubmitting) { Text(stringResource(Res.string.cancel)) }
+            }, enabled = !state.isSubmitting) { Text(appString("cancel")) }
         }
     }
 }
