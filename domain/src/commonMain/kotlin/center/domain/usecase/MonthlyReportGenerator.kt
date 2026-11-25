@@ -108,8 +108,11 @@ class MonthlyReportGenerator {
                 )
             }
 
-        val teacherPayouts = input.ledger.filter { it.kind == LedgerKind.TEACHER_PAYOUT && it.direction == LedgerDirection.EXPENSE }
-            .groupBy { it.teacherId.orEmpty() }.mapValues { (_, rows) -> rows.sumOf { it.amountMinor } }
+        val teacherPayouts =
+            input.ledger
+                .filter { it.kind == LedgerKind.TEACHER_PAYOUT && it.direction == LedgerDirection.EXPENSE }
+                .groupBy { it.teacherId.orEmpty() }
+                .mapValues { (_, rows) -> rows.sumOf { it.amountMinor } }
         val teacherRows =
             input.teachers.sortedBy { it.fullName.lowercase() }.map { teacher ->
                 val analytics = teacher.lessonAnalytics(activeGroups, activeStudents)
@@ -141,8 +144,16 @@ class MonthlyReportGenerator {
                 )
             }
 
-        val collections = input.ledger.filter { it.kind == LedgerKind.STUDENT_PAYMENT && it.direction == LedgerDirection.INCOME }.sumOf { it.amountMinor }
-        val expenses = input.ledger.filter { it.kind == LedgerKind.OPERATIONAL && it.direction == LedgerDirection.EXPENSE }.sumOf { it.amountMinor }
+        val collections =
+            input.ledger
+                .filter {
+                    it.kind == LedgerKind.STUDENT_PAYMENT && it.direction == LedgerDirection.INCOME
+                }.sumOf { it.amountMinor }
+        val expenses =
+            input.ledger
+                .filter {
+                    it.kind == LedgerKind.OPERATIONAL && it.direction == LedgerDirection.EXPENSE
+                }.sumOf { it.amountMinor }
         val payouts = teacherPayouts.values.sum()
         // Include all active payroll records, even if a staff member has no attendance that month.
         val staffSalaries = input.staff.filter { it.isActive }.sumOf { it.monthlySalaryMinor ?: 0L }
@@ -157,7 +168,8 @@ class MonthlyReportGenerator {
             )
 
         // The operational-expense total excludes teacher payouts, which have their own line item.
-        val treasury = ReportTreasurySummary(collections, expenses, payouts, staffSalaries, collections - expenses - payouts - staffSalaries, overdue)
+        val treasury =
+            ReportTreasurySummary(collections, expenses, payouts, staffSalaries, collections - expenses - payouts - staffSalaries, overdue)
         return MonthlyCenterReport(input.month, treasury, studentsSummary, teacherRows, studentRows, staffRows)
     }
 

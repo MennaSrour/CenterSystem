@@ -1,6 +1,5 @@
 package center.feature.reports
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -24,7 +23,6 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import center.domain.usecase.MonthlyCenterReport
 import center.ui.components.CenterOneCanvas
@@ -68,7 +66,9 @@ interface MonthlyReportPlatform {
 }
 
 sealed interface MonthlyReportEvent {
-    data class MonthChanged(val month: LocalDate) : MonthlyReportEvent
+    data class MonthChanged(
+        val month: LocalDate,
+    ) : MonthlyReportEvent
 
     data object ExportPdf : MonthlyReportEvent
 
@@ -110,7 +110,13 @@ fun ReportsScreen(
                         onEvent(MonthlyReportEvent.MonthChanged(state.month.nextMonth()))
                     })
                 }
-                state.error?.let { Text(it, Modifier.padding(horizontal = CenterOneSpacing.Section), color = MaterialTheme.colorScheme.error) }
+                state.error?.let {
+                    Text(
+                        it,
+                        Modifier.padding(horizontal = CenterOneSpacing.Section),
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
                 when {
                     state.loading -> CircularProgressIndicator(Modifier.align(Alignment.CenterHorizontally).padding(32.dp))
                     state.report != null -> {
@@ -133,9 +139,21 @@ fun ReportsScreen(
                                     row.name,
                                     listOf(
                                         LocalizedText("الدروس ${row.lessonCount}", "Lessons ${row.lessonCount}"),
-                                        LocalizedText("عربي ${row.arabicStudentCount} · لغات ${row.languagesStudentCount} · برايفت ${row.privateStudentCount}", "Arabic ${row.arabicStudentCount} · Languages ${row.languagesStudentCount} · Private ${row.privateStudentCount}"),
-                                        LocalizedText("الحضور ${row.attendanceDays} يوم · ${hours(row.workedMinutes)} ساعة", "Attendance ${row.attendanceDays} days · ${hours(row.workedMinutes)} hours"),
-                                        LocalizedText("المستحق ${money(row.expectedSalaryMinor, language)} · المصروف ${money(row.paidMinor, language)}", "Expected ${money(row.expectedSalaryMinor, language)} · Paid ${money(row.paidMinor, language)}"),
+                                        LocalizedText(
+                                            "عربي ${row.arabicStudentCount} · لغات ${row.languagesStudentCount} · برايفت ${row.privateStudentCount}",
+                                            "Arabic ${row.arabicStudentCount} · Languages ${row.languagesStudentCount} · Private ${row.privateStudentCount}",
+                                        ),
+                                        LocalizedText(
+                                            "الحضور ${row.attendanceDays} يوم · ${hours(row.workedMinutes)} ساعة",
+                                            "Attendance ${row.attendanceDays} days · ${hours(row.workedMinutes)} hours",
+                                        ),
+                                        LocalizedText(
+                                            "المستحق ${money(
+                                                row.expectedSalaryMinor,
+                                                language,
+                                            )} · المصروف ${money(row.paidMinor, language)}",
+                                            "Expected ${money(row.expectedSalaryMinor, language)} · Paid ${money(row.paidMinor, language)}",
+                                        ),
                                     ).map { it.resolve(language) },
                                 )
                             }
@@ -150,8 +168,23 @@ fun ReportsScreen(
                                     row.code,
                                     row.name,
                                     listOf(
-                                        LocalizedText("الصف ${row.grade} · الدروس ${row.lessonCount}", "Grade ${row.grade} · Lessons ${row.lessonCount}"),
-                                        LocalizedText("المستحق ${money(row.monthlyDueMinor, language)} · المدفوع ${money(row.paidMinor, language)} · المتبقي ${money(row.remainingMinor, language)}", "Due ${money(row.monthlyDueMinor, language)} · Paid ${money(row.paidMinor, language)} · Remaining ${money(row.remainingMinor, language)}"),
+                                        LocalizedText(
+                                            "الصف ${row.grade} · الدروس ${row.lessonCount}",
+                                            "Grade ${row.grade} · Lessons ${row.lessonCount}",
+                                        ),
+                                        LocalizedText(
+                                            "المستحق ${money(
+                                                row.monthlyDueMinor,
+                                                language,
+                                            )} · المدفوع ${money(
+                                                row.paidMinor,
+                                                language,
+                                            )} · المتبقي ${money(row.remainingMinor, language)}",
+                                            "Due ${money(
+                                                row.monthlyDueMinor,
+                                                language,
+                                            )} · Paid ${money(row.paidMinor, language)} · Remaining ${money(row.remainingMinor, language)}",
+                                        ),
                                     ).map { it.resolve(language) },
                                 )
                             }
@@ -167,8 +200,14 @@ fun ReportsScreen(
                                     row.name,
                                     listOf(
                                         LocalizedText("الوظيفة: ${row.role}", "Role: ${row.role}"),
-                                        LocalizedText("الحضور ${row.attendanceDays} يوم · ${hours(row.workedMinutes)} ساعة", "Attendance ${row.attendanceDays} days · ${hours(row.workedMinutes)} hours"),
-                                        LocalizedText("الراتب الشهري ${money(row.monthlySalaryMinor, language)}", "Monthly salary ${money(row.monthlySalaryMinor, language)}"),
+                                        LocalizedText(
+                                            "الحضور ${row.attendanceDays} يوم · ${hours(row.workedMinutes)} ساعة",
+                                            "Attendance ${row.attendanceDays} days · ${hours(row.workedMinutes)} hours",
+                                        ),
+                                        LocalizedText(
+                                            "الراتب الشهري ${money(row.monthlySalaryMinor, language)}",
+                                            "Monthly salary ${money(row.monthlySalaryMinor, language)}",
+                                        ),
                                     ).map { it.resolve(language) },
                                 )
                             }
@@ -208,11 +247,22 @@ private fun TreasurySummaryCard(
 ) {
     CenterOneCard(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(CenterOneSpacing.Large), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(LocalizedText("ملخص الخزنة والسنتر", "Center and treasury summary").resolve(language), style = MaterialTheme.typography.titleLarge)
+            Text(
+                LocalizedText("ملخص الخزنة والسنتر", "Center and treasury summary").resolve(language),
+                style = MaterialTheme.typography.titleLarge,
+            )
             Metric(LocalizedText("إجمالي التحصيل", "Collections").resolve(language), report.treasury.collectionsMinor, language)
             Metric(LocalizedText("المصروفات التشغيلية", "Operating expenses").resolve(language), report.treasury.expensesMinor, language)
-            Metric(LocalizedText("مستحقات المدرسين المصروفة", "Teacher payouts").resolve(language), report.treasury.teacherPayoutsMinor, language)
-            Metric(LocalizedText("رواتب الموظفين الشهرية", "Monthly staff salaries").resolve(language), report.treasury.staffSalariesMinor, language)
+            Metric(
+                LocalizedText("مستحقات المدرسين المصروفة", "Teacher payouts").resolve(language),
+                report.treasury.teacherPayoutsMinor,
+                language,
+            )
+            Metric(
+                LocalizedText("رواتب الموظفين الشهرية", "Monthly staff salaries").resolve(language),
+                report.treasury.staffSalariesMinor,
+                language,
+            )
             Metric(LocalizedText("صافي الربح", "Net profit").resolve(language), report.treasury.netProfitMinor, language, highlight = true)
             Metric(LocalizedText("المتأخرات", "Overdue balance").resolve(language), report.treasury.overdueMinor, language)
         }
@@ -227,10 +277,30 @@ private fun StudentSummaryCard(
     CenterOneCard(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(CenterOneSpacing.Large), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(LocalizedText("ملخص الطلاب", "Students summary").resolve(language), style = MaterialTheme.typography.titleLarge)
-            Text(LocalizedText("الطلاب النشطون: ${report.studentsSummary.activeCount}", "Active students: ${report.studentsSummary.activeCount}").resolve(language))
-            Text(LocalizedText("سجلات الحضور: ${report.studentsSummary.attendanceCount}", "Attendance records: ${report.studentsSummary.attendanceCount}").resolve(language))
-            Text(LocalizedText("المدفوع بالكامل: ${report.studentsSummary.paidCount}", "Fully paid: ${report.studentsSummary.paidCount}").resolve(language))
-            Text(LocalizedText("عليهم متأخرات: ${report.studentsSummary.unpaidCount}", "With outstanding balance: ${report.studentsSummary.unpaidCount}").resolve(language))
+            Text(
+                LocalizedText(
+                    "الطلاب النشطون: ${report.studentsSummary.activeCount}",
+                    "Active students: ${report.studentsSummary.activeCount}",
+                ).resolve(language),
+            )
+            Text(
+                LocalizedText(
+                    "سجلات الحضور: ${report.studentsSummary.attendanceCount}",
+                    "Attendance records: ${report.studentsSummary.attendanceCount}",
+                ).resolve(language),
+            )
+            Text(
+                LocalizedText(
+                    "المدفوع بالكامل: ${report.studentsSummary.paidCount}",
+                    "Fully paid: ${report.studentsSummary.paidCount}",
+                ).resolve(language),
+            )
+            Text(
+                LocalizedText(
+                    "عليهم متأخرات: ${report.studentsSummary.unpaidCount}",
+                    "With outstanding balance: ${report.studentsSummary.unpaidCount}",
+                ).resolve(language),
+            )
         }
     }
 }
@@ -276,8 +346,10 @@ private fun Metric(
     }
 }
 
-private fun money(minor: Long, language: AppLanguage): String =
-    "${minor.formatMinor()} ${if (language == AppLanguage.Arabic) "ج.م" else "EGP"}"
+private fun money(
+    minor: Long,
+    language: AppLanguage,
+): String = "${minor.formatMinor()} ${if (language == AppLanguage.Arabic) "ج.م" else "EGP"}"
 
 private fun Long.formatMinor(): String {
     val absolute = kotlin.math.abs(this)
@@ -288,14 +360,13 @@ private fun Long.formatMinor(): String {
 
 private fun hours(minutes: Long): String = "${minutes / 60}.${((minutes % 60) * 10 / 60)}"
 
-private fun LocalDate.previousMonth(): LocalDate =
-    if (monthNumber == 1) LocalDate(year - 1, 12, 1) else LocalDate(year, monthNumber - 1, 1)
+private fun LocalDate.previousMonth(): LocalDate = if (monthNumber == 1) LocalDate(year - 1, 12, 1) else LocalDate(year, monthNumber - 1, 1)
 
-private fun LocalDate.nextMonth(): LocalDate =
-    if (monthNumber == 12) LocalDate(year + 1, 1, 1) else LocalDate(year, monthNumber + 1, 1)
+private fun LocalDate.nextMonth(): LocalDate = if (monthNumber == 12) LocalDate(year + 1, 1, 1) else LocalDate(year, monthNumber + 1, 1)
 
 private fun LocalDate.localizedMonth(language: AppLanguage): String {
     val arabic = listOf("يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر")
-    val english = listOf("January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December")
+    val english =
+        listOf("January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December")
     return if (language == AppLanguage.Arabic) "${arabic[monthNumber - 1]} $year" else "${english[monthNumber - 1]} $year"
 }

@@ -30,7 +30,16 @@ class ReportPdfActions {
                 dialog.file = fileName
                 dialog.isVisible = true
                 val selected = dialog.files.firstOrNull()?.toPath() ?: return@onAwt null
-                val output = if (selected.fileName.toString().endsWith(".pdf", ignoreCase = true)) selected else selected.resolveSibling("${selected.fileName}.pdf")
+                val output =
+                    if (selected.fileName.toString().endsWith(
+                            ".pdf",
+                            ignoreCase = true,
+                        )
+                    ) {
+                        selected
+                    } else {
+                        selected.resolveSibling("${selected.fileName}.pdf")
+                    }
                 if (Files.exists(output) &&
                     JOptionPane.showConfirmDialog(activeFrame(), overwrite, title, JOptionPane.YES_NO_OPTION) != JOptionPane.YES_OPTION
                 ) {
@@ -52,15 +61,17 @@ class ReportPdfActions {
         if (PrinterJob.lookupPrintServices().isEmpty()) throw IllegalStateException("No printer is available")
         return Loader.loadPDF(bytes).use { document ->
             check(document.currentAccessPermission.canPrint())
-            val job = PrinterJob.getPrinterJob().apply {
-                jobName = title
-                setPageable(PDFPageable(document))
-            }
-            val attributes = HashPrintRequestAttributeSet().apply {
-                add(DialogTypeSelection.NATIVE)
-                add(JobName(title, null))
-                add(PageRanges(1, document.numberOfPages))
-            }
+            val job =
+                PrinterJob.getPrinterJob().apply {
+                    jobName = title
+                    setPageable(PDFPageable(document))
+                }
+            val attributes =
+                HashPrintRequestAttributeSet().apply {
+                    add(DialogTypeSelection.NATIVE)
+                    add(JobName(title, null))
+                    add(PageRanges(1, document.numberOfPages))
+                }
             if (onAwt { job.printDialog(attributes) }) {
                 job.print(attributes)
                 true

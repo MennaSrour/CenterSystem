@@ -127,17 +127,33 @@ internal fun FinancialsContent(
                                     ) {
                                         Column(Modifier.weight(1f)) {
                                             Text(
-                                                center.ui.localization.LocalizedText("التقرير الشهري الشامل", "Monthly Center Report").resolve(LocalAppLanguage.current),
+                                                center.ui.localization
+                                                    .LocalizedText(
+                                                        "التقرير الشهري الشامل",
+                                                        "Monthly Center Report",
+                                                    ).resolve(LocalAppLanguage.current),
                                                 style = MaterialTheme.typography.titleMedium,
                                             )
                                             Text(
-                                                center.ui.localization.LocalizedText("عرض وتصدير التقرير المالي والتشغيلي", "Preview and export the financial and operational report").resolve(LocalAppLanguage.current),
+                                                center.ui.localization
+                                                    .LocalizedText(
+                                                        "عرض وتصدير التقرير المالي والتشغيلي",
+                                                        "Preview and export the financial and operational report",
+                                                    ).resolve(LocalAppLanguage.current),
                                                 style = MaterialTheme.typography.bodySmall,
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                             )
                                         }
-                                        CenterOneOutlinedButton(onClick = { onEvent(FinancialsEvent.Navigate(FinancialsDestination.Reports)) }) {
-                                            Text(center.ui.localization.LocalizedText("فتح التقرير", "Open report").resolve(LocalAppLanguage.current))
+                                        CenterOneOutlinedButton(
+                                            onClick = { onEvent(FinancialsEvent.Navigate(FinancialsDestination.Reports)) },
+                                        ) {
+                                            Text(
+                                                center.ui.localization
+                                                    .LocalizedText(
+                                                        "فتح التقرير",
+                                                        "Open report",
+                                                    ).resolve(LocalAppLanguage.current),
+                                            )
                                         }
                                     }
                                 }

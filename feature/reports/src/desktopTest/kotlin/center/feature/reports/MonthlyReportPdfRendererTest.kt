@@ -29,7 +29,13 @@ class MonthlyReportPdfRendererTest {
             assertTrue(bytes.size > 1_000)
             Loader.loadPDF(bytes).use { document ->
                 assertTrue(document.numberOfPages >= 1)
-                assertTrue(document.pages.first().resources.fontNames.toList().isNotEmpty())
+                assertTrue(
+                    document.pages
+                        .first()
+                        .resources.fontNames
+                        .toList()
+                        .isNotEmpty(),
+                )
             }
         }
     }

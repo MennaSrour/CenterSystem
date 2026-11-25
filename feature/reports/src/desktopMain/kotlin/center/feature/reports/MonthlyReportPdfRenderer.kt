@@ -9,7 +9,6 @@ import org.apache.pdfbox.pdmodel.PDPageContentStream
 import org.apache.pdfbox.pdmodel.common.PDRectangle
 import org.apache.pdfbox.pdmodel.font.PDType0Font
 import org.apache.pdfbox.pdmodel.graphics.image.LosslessFactory
-import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject
 import org.apache.pdfbox.pdmodel.graphics.state.RenderingMode
 import java.awt.Color
 import java.awt.Font
@@ -29,9 +28,10 @@ class MonthlyReportPdfRenderer {
     ): ByteArray {
         val reportFont = bundledFont()
         PDDocument().use { document ->
-            val embeddedFont = MonthlyReportPdfRenderer::class.java.getResourceAsStream("/fonts/almarai_regular.ttf")!!.use {
-                PDType0Font.load(document, it, true)
-            }
+            val embeddedFont =
+                MonthlyReportPdfRenderer::class.java.getResourceAsStream("/fonts/almarai_regular.ttf")!!.use {
+                    PDType0Font.load(document, it, true)
+                }
             val pages = PageWriter(document, reportFont, embeddedFont, report, language, generatedAt)
             pages.write()
             pages.finish()
@@ -97,7 +97,12 @@ class MonthlyReportPdfRenderer {
                 ensureTableRow()
                 addLine(
                     "${student.code} · ${student.name} · ${text("gradeLessons", student.grade, student.lessonCount)} · " +
-                        "${text("studentBalances", student.monthlyDueMinor.money(), student.paidMinor.money(), student.remainingMinor.money())}",
+                        "${text(
+                            "studentBalances",
+                            student.monthlyDueMinor.money(),
+                            student.paidMinor.money(),
+                            student.remainingMinor.money(),
+                        )}",
                     size = 8f,
                 )
             }
@@ -107,7 +112,11 @@ class MonthlyReportPdfRenderer {
             report.staff.forEach { member ->
                 ensureTableRow()
                 addLine(
-                    "${member.id} · ${member.name} · ${member.role} · ${text("attendanceHours", member.attendanceDays, member.workedMinutes.hours())} · " +
+                    "${member.id} · ${member.name} · ${member.role} · ${text(
+                        "attendanceHours",
+                        member.attendanceDays,
+                        member.workedMinutes.hours(),
+                    )} · " +
                         text("salary", member.monthlySalaryMinor.money()),
                     size = 8f,
                 )
@@ -226,7 +235,15 @@ class MonthlyReportPdfRenderer {
                 drawText(stream, text("reportTitle"), margin + 38f, pageHeight - 72f, 9f, Color(0x68758A), false)
                 val monthTitle = text("month", report.month.year, report.month.monthNumber)
                 drawText(stream, monthTitle, pageWidth - margin - 140f, pageHeight - 55f, 11f, Color(0x25354C), true)
-                drawText(stream, text("generated", generatedAt.toString()), pageWidth - margin - 140f, pageHeight - 72f, 8f, Color(0x68758A), false)
+                drawText(
+                    stream,
+                    text("generated", generatedAt.toString()),
+                    pageWidth - margin - 140f,
+                    pageHeight - 72f,
+                    8f,
+                    Color(0x68758A),
+                    false,
+                )
                 stream.setStrokingColor(Color(0xD8DFE9))
                 stream.moveTo(margin, pageHeight - 90f)
                 stream.lineTo(pageWidth - margin, pageHeight - 90f)
@@ -242,7 +259,12 @@ class MonthlyReportPdfRenderer {
             val arabic = language == AppLanguage.Arabic
             return when (key) {
                 "reportTitle" -> if (arabic) "التقرير الشهري الشامل" else "Monthly Center Report"
-                "month" -> if (arabic) "${args[1]} / ${args[0]}" else "${monthName(args[1] as Int)} ${args[0]}"
+                "month" ->
+                    if (arabic) {
+                        "${args[1]} / ${args[0]}"
+                    } else {
+                        "${monthName(args[1] as Int)} ${args[0]}"
+                    }
                 "generated" -> if (arabic) "تاريخ الإنشاء ${args[0]}" else "Generated ${args[0]}"
                 "treasury" -> if (arabic) "ملخص الخزنة والسنتر" else "Center and Treasury Summary"
                 "collections" -> if (arabic) "إجمالي التحصيل: ${args[0]}" else "Student collections: ${args[0]}"
@@ -252,21 +274,61 @@ class MonthlyReportPdfRenderer {
                 "netProfit" -> if (arabic) "صافي الربح: ${args[0]}" else "Net profit: ${args[0]}"
                 "overdue" -> if (arabic) "المتأخرات: ${args[0]}" else "Overdue balance: ${args[0]}"
                 "teachers" -> if (arabic) "تقرير المدرسين" else "Teachers breakdown"
-                "teacherColumns" -> if (arabic) "كود المدرس · الاسم · الدروس · الطلاب حسب المسار · الحضور · المرتب" else "Teacher ID · Name · Lessons · Students by track · Attendance · Salary"
+                "teacherColumns" ->
+                    if (arabic) {
+                        "كود المدرس · الاسم · الدروس · الطلاب حسب المسار · الحضور · المرتب"
+                    } else {
+                        "Teacher ID · Name · Lessons · Students by track · Attendance · Salary"
+                    }
                 "lessons" -> if (arabic) "الدروس ${args[0]}" else "Lessons ${args[0]}"
-                "tracks" -> if (arabic) "عربي ${args[0]} · لغات ${args[1]} · برايفت ${args[2]}" else "Arabic ${args[0]} · Languages ${args[1]} · Private ${args[2]}"
-                "attendanceHours" -> if (arabic) "الحضور ${args[0]} يوم · ${args[1]} ساعة" else "Attendance ${args[0]} days · ${args[1]} hours"
-                "salaryPaid" -> if (arabic) "الراتب ${args[0]} · المصروف ${args[1]}" else "Expected ${args[0]} · Paid ${args[1]}"
+                "tracks" ->
+                    if (arabic) {
+                        "عربي ${args[0]} · لغات ${args[1]} · برايفت ${args[2]}"
+                    } else {
+                        "Arabic ${args[0]} · Languages ${args[1]} · Private ${args[2]}"
+                    }
+                "attendanceHours" ->
+                    if (arabic) {
+                        "الحضور ${args[0]} يوم · ${args[1]} ساعة"
+                    } else {
+                        "Attendance ${args[0]} days · ${args[1]} hours"
+                    }
+                "salaryPaid" ->
+                    if (arabic) {
+                        "الراتب ${args[0]} · المصروف ${args[1]}"
+                    } else {
+                        "Expected ${args[0]} · Paid ${args[1]}"
+                    }
                 "studentSummary" -> if (arabic) "ملخص الطلاب" else "Student Summary"
                 "activeStudents" -> if (arabic) "الطلاب النشطون: ${args[0]}" else "Active students: ${args[0]}"
                 "attendanceCount" -> if (arabic) "سجلات الحضور: ${args[0]}" else "Attendance records: ${args[0]}"
-                "paidUnpaid" -> if (arabic) "المدفوع بالكامل ${args[0]} · عليهم متأخرات ${args[1]}" else "Fully paid ${args[0]} · outstanding ${args[1]}"
+                "paidUnpaid" ->
+                    if (arabic) {
+                        "المدفوع بالكامل ${args[0]} · عليهم متأخرات ${args[1]}"
+                    } else {
+                        "Fully paid ${args[0]} · outstanding ${args[1]}"
+                    }
                 "students" -> if (arabic) "تقرير الطلاب" else "Students breakdown"
-                "studentColumns" -> if (arabic) "كود الطالب · الاسم · الصف · الدروس · المستحق · المدفوع · المتبقي" else "Student ID · Name · Grade · Lessons · Due · Paid · Remaining"
+                "studentColumns" ->
+                    if (arabic) {
+                        "كود الطالب · الاسم · الصف · الدروس · المستحق · المدفوع · المتبقي"
+                    } else {
+                        "Student ID · Name · Grade · Lessons · Due · Paid · Remaining"
+                    }
                 "gradeLessons" -> if (arabic) "الصف ${args[0]} · الدروس ${args[1]}" else "Grade ${args[0]} · Lessons ${args[1]}"
-                "studentBalances" -> if (arabic) "المستحق ${args[0]} · المدفوع ${args[1]} · المتبقي ${args[2]}" else "Due ${args[0]} · Paid ${args[1]} · Remaining ${args[2]}"
+                "studentBalances" ->
+                    if (arabic) {
+                        "المستحق ${args[0]} · المدفوع ${args[1]} · المتبقي ${args[2]}"
+                    } else {
+                        "Due ${args[0]} · Paid ${args[1]} · Remaining ${args[2]}"
+                    }
                 "staff" -> if (arabic) "تقرير الموظفين" else "Staff breakdown"
-                "staffColumns" -> if (arabic) "كود الموظف · الاسم · الوظيفة · الحضور · الراتب" else "Staff ID · Name · Role · Attendance · Salary"
+                "staffColumns" ->
+                    if (arabic) {
+                        "كود الموظف · الاسم · الوظيفة · الحضور · الراتب"
+                    } else {
+                        "Staff ID · Name · Role · Attendance · Salary"
+                    }
                 "salary" -> if (arabic) "الراتب ${args[0]}" else "Salary ${args[0]}"
                 "page" -> if (arabic) "صفحة ${args[0]} من ${args[1]}" else "Page ${args[0]} of ${args[1]}"
                 else -> key
@@ -284,6 +346,22 @@ class MonthlyReportPdfRenderer {
         private fun Long.hours(): String = "${this / 60}.${(this % 60) * 10 / 60}"
 
         private fun monthName(month: Int): String =
-            listOf("January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December")[month - 1]
+            listOf(
+                "January",
+                "February",
+                "March",
+                "April",
+                "May",
+                "June",
+                "July",
+                "August",
+                "September",
+                "October",
+                "November",
+                "December",
+            )[
+                month -
+                    1,
+            ]
     }
 }
