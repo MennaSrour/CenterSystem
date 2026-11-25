@@ -84,6 +84,20 @@ fun TeachersScreen(
                     error = modal.message,
                 )
             }
+        is TeachersModal.DeleteStaff ->
+            CenterOneModal(onDismissRequest = close) {
+                CenterOneConfirmationContent(
+                    title = staffLabel("حذف الموظف", "Delete staff member"),
+                    message = staffLabel("هل تريد حذف ${modal.name}؟", "Delete ${modal.name}?"),
+                    confirmLabel = staffLabel("حذف", "Delete"),
+                    cancelLabel = staffLabel("إلغاء", "Cancel"),
+                    onConfirm = { onEvent(TeachersEvent.ConfirmDeleteStaff) },
+                    onCancel = close,
+                    icon = {},
+                    enabled = !modal.deleting,
+                    error = modal.message,
+                )
+            }
         is TeachersModal.StaffDetails ->
             state.staff.firstOrNull { it.id == modal.id }?.let { member ->
                 CenterOneModal(onDismissRequest = close) { StaffDetails(member, state.history, onEvent) }

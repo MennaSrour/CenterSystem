@@ -18,6 +18,11 @@ sealed interface StudentsEvent {
         val value: String,
     ) : StudentsEvent
 
+    data class CustomPriceChanged(
+        val groupId: String,
+        val value: String,
+    ) : StudentsEvent
+
     data class StageSelected(
         val filter: StudentStageFilter,
     ) : StudentsEvent
@@ -66,6 +71,16 @@ sealed interface StudentsEvent {
 
     data class EditStudent(
         val id: String,
+    ) : StudentsEvent
+
+    data class EditEnrollmentPrice(
+        val studentId: String,
+        val groupId: String,
+    ) : StudentsEvent
+
+    data class RemoveEnrollment(
+        val studentId: String,
+        val groupId: String,
     ) : StudentsEvent
 
     data class DeleteStudent(

@@ -2,6 +2,7 @@ package center.domain.repository
 
 import center.domain.model.AttendancePerson
 import center.domain.model.AttendanceSession
+import center.domain.model.LessonAttendance
 import center.domain.model.PersonType
 import center.domain.model.QueuedMessage
 import center.domain.model.StaffMember
@@ -12,6 +13,8 @@ interface StaffRepository {
     fun observeStaff(): Flow<List<StaffMember>>
 
     suspend fun save(member: StaffMember)
+
+    suspend fun delete(id: String): Unit = throw UnsupportedOperationException("Staff deletion is unavailable")
 }
 
 interface AttendanceSessionRepository {
@@ -25,6 +28,7 @@ interface AttendanceSessionRepository {
     suspend fun checkIn(
         session: AttendanceSession,
         notification: QueuedMessage?,
+        lessonAttendance: List<LessonAttendance> = emptyList(),
     )
 
     suspend fun checkOut(
@@ -32,4 +36,14 @@ interface AttendanceSessionRepository {
         date: LocalDate,
         timestamp: Long,
     )
+
+    fun observeLessonHistory(studentId: String): Flow<List<LessonAttendance>> = kotlinx.coroutines.flow.flowOf(emptyList())
+
+    suspend fun saveLessonAttendance(records: List<LessonAttendance>) = Unit
+
+    suspend fun markFutureLessonsMissed(
+        studentId: String,
+        date: LocalDate,
+        timestamp: Long,
+    ) = Unit
 }

@@ -21,6 +21,7 @@ import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.dp
 import center.ui.components.AttendanceHistory
 import center.ui.components.CenterOneCard
+import center.ui.components.CenterOneDestructiveButton
 import center.ui.components.CenterOneDropdown
 import center.ui.components.CenterOneDropdownOption
 import center.ui.components.CenterOneModalContent
@@ -39,6 +40,8 @@ data class StaffCardModel(
     val phone: String,
     val isActive: Boolean,
     val schedule: LocalizedText,
+    val monthlySalaryMinor: Long? = null,
+    val canDelete: Boolean = false,
 )
 
 data class StaffDraft(
@@ -48,8 +51,13 @@ data class StaffDraft(
     val isActive: Boolean = true,
     val shifts: List<StaffShiftDraft> = emptyList(),
     val code: String = "",
+    val monthlySalary: String = "",
 ) {
-    val canSave: Boolean get() = name.isNotBlank() && role.isNotBlank() && phone.isNotBlank()
+    val canSave: Boolean get() =
+        name.isNotBlank() &&
+            role.isNotBlank() &&
+            phone.isNotBlank() &&
+            (monthlySalary.isBlank() || monthlySalary.toLongOrNull() != null)
 }
 
 data class StaffShiftDraft(
@@ -78,6 +86,11 @@ internal fun StaffList(
                     Text(member.name, style = MaterialTheme.typography.titleLarge)
                     Text(member.role)
                     Text(member.phone.isolateLtr(), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    member.monthlySalaryMinor?.let {
+                        Text(
+                            staffLabel("الراتب الشهري: ${formatEgp(it)} ج.م", "Monthly salary: ${formatEgp(it)} EGP"),
+                        )
+                    }
                     if (!member.isActive) Text(staffLabel("غير نشط", "Inactive"))
                 }
             }
@@ -97,13 +110,20 @@ internal fun StaffDetails(
         closeLabel = staffLabel("إغلاق", "Close"),
         onClose = { onEvent(TeachersEvent.CloseModal) },
     ) {
+        Text(staffLabel("كود الموظف", "Staff ID") + " · " + member.id.isolateLtr())
         Text(staffLabel("الهاتف", "Phone") + " · " + member.phone.isolateLtr())
         Text(if (member.isActive) staffLabel("نشط", "Active") else staffLabel("غير نشط", "Inactive"))
         Text(staffLabel("جدول العمل", "Work schedule"), style = MaterialTheme.typography.titleSmall)
         Text(member.schedule.resolve(LocalAppLanguage.current).ifBlank { staffLabel("لم تحدد ورديات", "No shifts set") })
+        member.monthlySalaryMinor?.let { Text(staffLabel("الراتب الشهري", "Monthly salary") + " · ${formatEgp(it)} EGP") }
         AttendanceHistory(history)
         CenterOnePrimaryButton(onClick = { onEvent(TeachersEvent.EditStaff(member.id)) }) {
             Text(staffLabel("تعديل", "Edit"))
+        }
+        if (member.canDelete) {
+            CenterOneDestructiveButton(onClick = { onEvent(TeachersEvent.RequestDeleteStaff(member.id)) }) {
+                Text(staffLabel("حذف الموظف", "Delete staff member"))
+            }
         }
     }
 }
@@ -154,6 +174,17 @@ internal fun StaffForm(
             label = { Text(staffLabel("الهاتف", "Phone")) },
             enabled = enabled,
             textStyle = MaterialTheme.typography.bodyLarge.copy(textDirection = TextDirection.Ltr),
+        )
+        CenterOneTextField(
+            draft.monthlySalary,
+            { update(draft.copy(monthlySalary = it.filter(Char::isDigit))) },
+            Modifier.fillMaxWidth(),
+            label = { Text(staffLabel("الراتب الشهري بالجنيه", "Monthly salary in EGP")) },
+            enabled = enabled,
+            keyboardOptions =
+                androidx.compose.foundation.text.KeyboardOptions(
+                    keyboardType = androidx.compose.ui.text.input.KeyboardType.Number,
+                ),
         )
         Row(verticalAlignment = Alignment.CenterVertically) {
             Checkbox(draft.isActive, { update(draft.copy(isActive = it)) }, enabled = enabled)

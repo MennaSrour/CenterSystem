@@ -6,6 +6,7 @@ import center.database.CenterDatabase
 import center.domain.model.AttendancePerson
 import center.domain.model.AttendanceSession
 import center.domain.model.GroupScheduleSlot
+import center.domain.model.LessonAttendance
 import center.domain.model.PersonType
 import center.domain.model.QueuedMessage
 import center.domain.model.StaffMember
@@ -48,6 +49,7 @@ class SqlStaffRepository(
                         }
                     },
                     row.isActive,
+                    row.monthlySalaryMinor,
                 )
             }
         }
@@ -55,19 +57,25 @@ class SqlStaffRepository(
     override suspend fun save(member: StaffMember): Unit =
         withContext(dispatcher) {
             require(listOf(member.id, member.name, member.role, member.phone).all { it.isNotBlank() })
+            require(member.monthlySalaryMinor == null || member.monthlySalaryMinor in 0L..100_000_000_000L)
             member.workSchedule.groupBy { it.day }.values.forEach { shifts ->
                 require(shifts.sortedBy { it.from }.zipWithNext().none { (a, b) -> a.to > b.from }) { "Staff shifts overlap" }
             }
             database.transaction {
-                val (id, name, role, phone, schedule, active) = member
+                val (id, name, role, phone, schedule, active, monthlySalary) = member
                 if (people.selectStaffById(id).executeAsOneOrNull() == null) {
-                    people.saveStaff(id, name.trim(), role.trim(), phone.trim(), active)
+                    people.saveStaff(id, name.trim(), role.trim(), phone.trim(), active, monthlySalary)
                 } else {
-                    people.updateStaff(name.trim(), role.trim(), phone.trim(), active, id)
+                    people.updateStaff(name.trim(), role.trim(), phone.trim(), active, monthlySalary, id)
                 }
                 people.clearShifts(id)
                 schedule.forEach { people.insertShift(id, it.day.isoDayNumber.toLong(), it.from.minuteOfDay(), it.to.minuteOfDay()) }
             }
+        }
+
+    override suspend fun delete(id: String): Unit =
+        withContext(dispatcher) {
+            database.transaction { people.deleteStaff(id) }
         }
 }
 
@@ -88,6 +96,7 @@ class SqlAttendanceSessionRepository(
     override suspend fun checkIn(
         session: AttendanceSession,
         notification: QueuedMessage?,
+        lessonAttendance: List<LessonAttendance>,
     ): Unit =
         withContext(dispatcher) {
             val (person, date, timestamp) = session
@@ -118,6 +127,18 @@ class SqlAttendanceSessionRepository(
                 }
                 check(people.selectSession(type.name, id, group, date.toString()).executeAsOneOrNull() == null)
                 people.insertCheckIn(type.name, id, group, date.toString(), timestamp)
+                lessonAttendance.forEach { item ->
+                    require(type == PersonType.STUDENT && item.studentId == id && item.date == date)
+                    require(database.operationsQueries.hasEnrollment(id, item.lessonId).executeAsOne())
+                    people.upsertLessonAttendance(
+                        item.studentId,
+                        item.lessonId,
+                        item.date.toString(),
+                        item.attended,
+                        item.recordedAt,
+                        item.checkOutAt,
+                    )
+                }
                 notification?.let { database.insertMessage(it.toEntity()) }
             }
         }
@@ -134,6 +155,46 @@ class SqlAttendanceSessionRepository(
                 check(existing.checkOutTime == null && timestamp >= existing.checkInTime)
                 people.setCheckOut(timestamp, type.name, id, group, date.toString())
             }
+        }
+
+    override fun observeLessonHistory(studentId: String) =
+        people
+            .lessonAttendanceForStudent(studentId) { id, classId, date, attended, recordedAt, checkOutAt ->
+                LessonAttendance(id, classId, LocalDate.parse(date), attended, recordedAt, checkOutAt)
+            }.asFlow()
+            .mapToList(dispatcher)
+
+    override suspend fun saveLessonAttendance(records: List<LessonAttendance>): Unit =
+        withContext(dispatcher) {
+            database.transaction {
+                records.forEach { item ->
+                    require(database.operationsQueries.hasEnrollment(item.studentId, item.lessonId).executeAsOne())
+                    people.upsertLessonAttendance(
+                        item.studentId,
+                        item.lessonId,
+                        item.date.toString(),
+                        item.attended,
+                        item.recordedAt,
+                        item.checkOutAt,
+                    )
+                }
+            }
+        }
+
+    override suspend fun markFutureLessonsMissed(
+        studentId: String,
+        date: LocalDate,
+        timestamp: Long,
+    ): Unit =
+        withContext(dispatcher) {
+            val local = Instant.fromEpochMilliseconds(timestamp).toLocalDateTime(zone)
+            people.markFutureLessonsMissed(
+                timestamp,
+                studentId,
+                date.toString(),
+                local.dayOfWeek.isoDayNumber.toLong(),
+                (local.hour * 60 + local.minute).toLong(),
+            )
         }
 
     private fun session(

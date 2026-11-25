@@ -17,15 +17,19 @@ import center.domain.model.AttendanceSession
 import center.domain.model.ClassGroup
 import center.domain.model.EducationSystem
 import center.domain.model.GroupStatus
+import center.domain.model.LessonAttendance
+import center.domain.model.Payment
 import center.domain.model.PersonType
 import center.domain.model.Student
 import center.domain.model.activeSchedule
+import center.domain.model.effectiveMonthlyPriceMinor
 import center.feature.financials.ClassOption
 import center.feature.financials.StudentOption
 import center.feature.students.AddStudentState
 import center.feature.students.DeleteStudentState
 import center.feature.students.EducationStage
 import center.feature.students.StudentDetailsState
+import center.feature.students.StudentEnrolledLesson
 import center.feature.students.StudentGrade
 import center.feature.students.StudentGroupOption
 import center.feature.students.StudentMonthlyPayment
@@ -52,7 +56,10 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.datetime.Instant
+import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.compose.resources.stringResource
+import kotlin.math.roundToLong
 
 @Composable
 internal fun StudentsRoute(
@@ -144,8 +151,13 @@ internal class StudentsStateHolder(
         }
     private val detailId = MutableStateFlow<String?>(null)
     private var history = emptyList<AttendanceSession>()
+    private var lessonHistory = emptyList<LessonAttendance>()
+    private var paymentHistory = emptyList<Payment>()
     private var records = emptyMap<String, Student>()
     private var groups = emptyList<ClassGroup>()
+    private var teachers = emptyMap<String, center.domain.model.Teacher>()
+    private var monthlyDueByStudent = emptyMap<String, Long>()
+    private var remainingByStudent = emptyMap<String, Long>()
     private var directoryLoaded = false
     private val mutableState =
         MutableStateFlow(
@@ -185,14 +197,37 @@ internal class StudentsStateHolder(
                 }
         }
         scope.launch {
+            detailId
+                .flatMapLatest { id ->
+                    if (id == null) flowOf(emptyList()) else services.sessions.observeLessonHistory(id)
+                }.catch { mutableFeedback.emit(failure) }
+                .collect {
+                    lessonHistory = it
+                    mutableState.update { current -> current.copy(details = details()) }
+                }
+        }
+        scope.launch {
+            detailId
+                .flatMapLatest { id ->
+                    if (id == null) flowOf(emptyList()) else services.payments.getPaymentsForStudent(id)
+                }.catch { mutableFeedback.emit(failure) }
+                .collect {
+                    paymentHistory = it
+                    mutableState.update { current -> current.copy(details = details()) }
+                }
+        }
+        scope.launch {
             combine(
                 services.students.observeStudents(),
                 services.groups.observeGroups(),
+                services.teachers.observeTeachers(),
                 services.billing.observeChanges(),
                 services.dates(),
-            ) { students, groups, _, today ->
+            ) { students, groups, teachers, _, today ->
                 val balances = services.overdue().getOrThrow()
                 val monthlyDue = services.billing.monthlyDueTotals(today.monthStart()).associate { it.studentId to it.totalMinor }
+                monthlyDueByStudent = monthlyDue
+                remainingByStudent = balances.groupBy { it.studentId }.mapValues { (_, rows) -> rows.sumOf { it.remainingMinor } }
                 val rows =
                     students.map { student ->
                         StudentRow(
@@ -233,6 +268,7 @@ internal class StudentsStateHolder(
                     }
                 records = students.associateBy { it.id }
                 this@StudentsStateHolder.groups = groups
+                this@StudentsStateHolder.teachers = teachers.associateBy { it.id }
                 directoryLoaded = true
                 mutableState.update {
                     it.copy(
@@ -253,7 +289,8 @@ internal class StudentsStateHolder(
                                             code.isNotBlank() &&
                                             form.selectedGradeId != null &&
                                             form.parentPhone.isNotBlank() &&
-                                            form.invalidDiscounts.isEmpty(),
+                                            form.invalidDiscounts.isEmpty() &&
+                                            form.invalidCustomPrices.isEmpty(),
                                 )
                             },
                     )
@@ -265,13 +302,30 @@ internal class StudentsStateHolder(
     private fun details(): StudentDetailsState? {
         val student = records[detailId.value] ?: return null
         val groupLabels = groups.associate { it.id to it.name }
+        val enrolled = student.activeSchedule(groups)
+        val month = services.today().monthStart()
+        val due = monthlyDueByStudent[student.id] ?: enrolled.sumOf { it.effectiveMonthlyPriceMinor(student) }
+        val remaining = remainingByStudent[student.id] ?: 0L
+        val paid = (due - remaining).coerceAtLeast(0L)
+        val monthlyPayments =
+            paymentHistory.filter { payment ->
+                (
+                    payment.billingMonth ?: Instant
+                        .fromEpochMilliseconds(payment.paymentDate)
+                        .toLocalDateTime(Cairo)
+                        .date
+                        .monthStart()
+                ) ==
+                    month
+            }
+        val totalPaid = monthlyPayments.sumOf { (it.amountPaid * 100).roundToLong() }
         return StudentDetailsState(
             student.id,
             student.fullName,
             student.code,
             student.studentPhone,
             student.parentPhone,
-            student.activeSchedule(groups).map { group ->
+            enrolled.map { group ->
                 val ar = group.schedule.scheduleText(AppLanguage.Arabic)
                 val en = group.schedule.scheduleText(AppLanguage.English)
                 LocalizedText(
@@ -280,6 +334,53 @@ internal class StudentsStateHolder(
                 )
             },
             history.filter { it.person.id == student.id }.map { it.summary(groupLabels[it.person.groupId]) },
+            student.gradeLevel,
+            enrolled.map { group ->
+                val teacherName = teachers[group.teacherId]?.fullName ?: group.teacherId
+                val track =
+                    student.groupTracks[group.id] ?: when (group.lessonType) {
+                        center.domain.model.LessonType.LANGUAGES -> center.domain.model.StudentTrack.LANGUAGES
+                        center.domain.model.LessonType.PRIVATE -> center.domain.model.StudentTrack.PRIVATE
+                        else -> center.domain.model.StudentTrack.ARABIC
+                    }
+                val trackLabel =
+                    when (track) {
+                        center.domain.model.StudentTrack.ARABIC -> "عربي" to "Arabic"
+                        center.domain.model.StudentTrack.LANGUAGES -> "لغات" to "Languages"
+                        center.domain.model.StudentTrack.PRIVATE -> "برايفت" to "Private"
+                    }
+                val price = group.effectiveMonthlyPriceMinor(student)
+                val scheduleArabic = group.schedule.scheduleText(AppLanguage.Arabic)
+                val scheduleEnglish = group.schedule.scheduleText(AppLanguage.English)
+                StudentEnrolledLesson(
+                    group.id,
+                    LocalizedText(
+                        "${group.name} · المدرس $teacherName · ${trackLabel.first} · ${price.decimalMinor()} ج.م · $scheduleArabic",
+                        "${group.name} · Teacher $teacherName · ${trackLabel.second} · ${price.decimalMinor()} EGP · $scheduleEnglish",
+                    ),
+                )
+            },
+            listOf(
+                LocalizedText("إجمالي المستحق الشهري: ${due.decimalMinor()} ج.م", "Total monthly due: ${due.decimalMinor()} EGP"),
+                LocalizedText(
+                    "مدفوع هذا الشهر: ${(if (monthlyPayments.isEmpty()) paid else totalPaid).decimalMinor()} ج.م",
+                    "Paid this month: ${(if (monthlyPayments.isEmpty()) paid else totalPaid).decimalMinor()} EGP",
+                ),
+                LocalizedText("المتبقي: ${remaining.decimalMinor()} ج.م", "Remaining: ${remaining.decimalMinor()} EGP"),
+            ),
+            monthlyPayments.sortedByDescending { it.paymentDate }.map { payment ->
+                val amount = (payment.amountPaid * 100).roundToLong().decimalMinor()
+                LocalizedText("${payment.billingMonth ?: month}: $amount ج.م", "${payment.billingMonth ?: month}: $amount EGP")
+            },
+            lessonHistory.filter { it.studentId == student.id }.map { lesson ->
+                val label = groupLabels[lesson.lessonId] ?: lesson.lessonId
+                val checkIn = lesson.recordedAt.localTimeLabel()
+                val checkOut = lesson.checkOutAt?.localTimeLabel() ?: "—"
+                LocalizedText(
+                    "${lesson.date} · $label · ${if (lesson.attended) "حضر" else "غاب"} · حضور $checkIn · انصراف $checkOut",
+                    "${lesson.date} · $label · ${if (lesson.attended) "Attended" else "Missed"} · In $checkIn · Out $checkOut",
+                )
+            },
         )
     }
 
@@ -322,6 +423,10 @@ internal class StudentsStateHolder(
                         .toLong()
                         .decimalMinor()
                 },
+            customPrices =
+                student?.groupCustomPricesMinor.orEmpty().mapValues { (_, price) ->
+                    price.decimalMinor()
+                },
         )
 
     private fun editForm(edit: (AddStudentState) -> AddStudentState) {
@@ -333,6 +438,11 @@ internal class StudentsStateHolder(
             updated.selectedGroupIds.filterTo(mutableSetOf()) { id ->
                 val discount = updated.discounts[id].orEmpty()
                 discount.isNotBlank() && discount.parseMinor() == null
+            }
+        val invalidCustomPrices =
+            updated.selectedGroupIds.filterTo(mutableSetOf()) { id ->
+                val price = updated.customPrices[id].orEmpty()
+                price.isNotBlank() && price.parseMinor() == null
             }
         state =
             state.copy(
@@ -346,8 +456,10 @@ internal class StudentsStateHolder(
                                 updated.code.isNotBlank() &&
                                 updated.selectedGradeId != null &&
                                 updated.parentPhone.isNotBlank() &&
-                                invalidDiscounts.isEmpty(),
+                                invalidDiscounts.isEmpty() &&
+                                invalidCustomPrices.isEmpty(),
                         invalidDiscounts = invalidDiscounts,
+                        invalidCustomPrices = invalidCustomPrices,
                     ),
             )
     }
@@ -393,6 +505,7 @@ internal class StudentsStateHolder(
             is StudentsEvent.ParentPhoneChanged -> editForm { it.copy(parentPhone = event.value) }
             is StudentsEvent.StudentPhoneChanged -> editForm { it.copy(studentPhone = event.value) }
             is StudentsEvent.DiscountChanged -> editForm { it.copy(discounts = it.discounts + (event.groupId to event.value)) }
+            is StudentsEvent.CustomPriceChanged -> editForm { it.copy(customPrices = it.customPrices + (event.groupId to event.value)) }
             is StudentsEvent.OpenDetails ->
                 if (event.id in records) {
                     detailId.value = event.id
@@ -404,7 +517,23 @@ internal class StudentsStateHolder(
             }
             StudentsEvent.SubmitAddStudent -> save()
             is StudentsEvent.EditStudent ->
-                records[event.id]?.let { state = state.copy(addStudent = formFor(it)) }
+                records[event.id]?.let { state = state.copy(details = null, addStudent = formFor(it)) }
+            is StudentsEvent.EditEnrollmentPrice ->
+                records[event.studentId]?.let { state = state.copy(details = null, addStudent = formFor(it)) }
+            is StudentsEvent.RemoveEnrollment ->
+                records[event.studentId]?.let { student ->
+                    val form = formFor(student)
+                    state =
+                        state.copy(
+                            details = null,
+                            addStudent =
+                                form.copy(
+                                    selectedGroupIds = form.selectedGroupIds - event.groupId,
+                                    customPrices = form.customPrices - event.groupId,
+                                    discounts = form.discounts - event.groupId,
+                                ),
+                        )
+                }
             is StudentsEvent.DeleteStudent ->
                 if (canDelete()) records[event.id]?.let { state = state.copy(deleteStudent = DeleteStudentState(it.id, it.fullName)) }
             StudentsEvent.DismissDelete -> if (state.deleteStudent?.busy != true) state = state.copy(deleteStudent = null)
@@ -458,6 +587,11 @@ internal class StudentsStateHolder(
                             enrolledGroupIds = form.selectedGroupIds,
                             studentPhone = form.studentPhone.trim().ifEmpty { null },
                             groupDiscounts = form.selectedGroupIds.associateWith { (form.discounts[it]?.parseMinor() ?: 0L) / 100.0 },
+                            groupCustomPricesMinor =
+                                form.selectedGroupIds
+                                    .mapNotNull { id ->
+                                        form.customPrices[id]?.parseMinor()?.let { id to it }
+                                    }.toMap(),
                         ),
                     )
                 }

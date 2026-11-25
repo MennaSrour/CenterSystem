@@ -8,6 +8,46 @@ import kotlin.test.assertTrue
 
 class PortalMigrationTest {
     @Test
+    fun versionNineAddsStaffSalaryAndPreservesLessonAttendanceHistory() {
+        val path = Files.createTempDirectory("center-people-migration")
+        try {
+            JdbcSqliteDriver("jdbc:sqlite:${path.resolve("center.db")}").use { driver ->
+                driver.execute(null, "CREATE TABLE student (id TEXT NOT NULL PRIMARY KEY, name TEXT NOT NULL)", 0)
+                CenterDatabase.Schema.migrate(driver, 1, 8)
+                driver.execute(null, "INSERT INTO student (id, name) VALUES ('s', 'Student')", 0)
+                driver.execute(null, "INSERT INTO teacher (id, fullName, subject) VALUES ('t', 'Teacher', 'Math')", 0)
+                driver.execute(null, "INSERT INTO class_group (id, name, teacherId, sessionPrice) VALUES ('g', 'Group', 't', 10)", 0)
+                driver.execute(
+                    null,
+                    "INSERT INTO attendance (id, studentId, classId, timestamp, status) VALUES ('a', 's', 'g', 1772362800000, 'PRESENT')",
+                    0,
+                )
+                driver.execute(
+                    null,
+                    "INSERT INTO staff_member (id, name, role, phone, isActive) VALUES ('SF-1001', 'Staff', 'Reception', '010', 1)",
+                    0,
+                )
+                driver.execute(null, "PRAGMA user_version = 8", 0)
+            }
+
+            openDatabase(path).use { driver ->
+                val database = CenterDatabase(driver)
+                val staff = database.peopleQueries.selectStaffById("SF-1001").executeAsOne()
+                assertEquals(null, staff.monthlySalaryMinor)
+                val attendance =
+                    database.peopleQueries
+                        .lessonAttendanceForStudent("s")
+                        .executeAsList()
+                        .single()
+                assertEquals("g", attendance.classId)
+                assertEquals(true, attendance.attended)
+            }
+        } finally {
+            path.toFile().deleteRecursively()
+        }
+    }
+
+    @Test
     fun versionSixMigratesExistingStudentsPaymentsAndAttendance() {
         val path = Files.createTempDirectory("center-portal-migration")
         try {

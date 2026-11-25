@@ -176,6 +176,21 @@ internal fun AddStudentModalContent(
                 }
                 if (group.id in state.selectedGroupIds) {
                     CenterOneTextField(
+                        value = state.customPrices[group.id].orEmpty(),
+                        onValueChange = { onEvent(StudentsEvent.CustomPriceChanged(group.id, it)) },
+                        label = { Text(LocalizedText("السعر الشهري للطالب (ج.م)", "Student monthly price (EGP)").resolve(language)) },
+                        enabled = !state.isSubmitting,
+                        isError = group.id in state.invalidCustomPrices,
+                        supportingText =
+                            if (group.id in state.invalidCustomPrices) {
+                                { Text(LocalizedText("أدخل سعرًا صالحًا", "Enter a valid price").resolve(language)) }
+                            } else {
+                                null
+                            },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    CenterOneTextField(
                         value = state.discounts[group.id].orEmpty(),
                         onValueChange = { onEvent(StudentsEvent.DiscountChanged(group.id, it)) },
                         label = { Text(LocalizedText("الخصم الشهري (ج.م)", "Monthly discount (EGP)").resolve(language)) },

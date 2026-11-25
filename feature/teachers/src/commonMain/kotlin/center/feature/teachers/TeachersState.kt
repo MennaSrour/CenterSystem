@@ -12,6 +12,12 @@ data class Teacher(
     val unpaidStudents: List<UnpaidStudent> = emptyList(),
     val notes: String = "",
     val salaryPaid: Boolean = false,
+    val assignedLessonCount: Int = groups.size,
+    val arabicStudentCount: Int = 0,
+    val languagesStudentCount: Int = 0,
+    val privateStudentCount: Int = 0,
+    val expectedSchedule: LocalizedText = LocalizedText("", ""),
+    val payoutHistory: List<LocalizedText> = emptyList(),
 )
 
 data class TeacherGroup(
@@ -45,6 +51,13 @@ sealed interface TeachersModal {
 
     data class StaffDetails(
         val id: String,
+    ) : TeachersModal
+
+    data class DeleteStaff(
+        val id: String,
+        val name: String,
+        val deleting: Boolean = false,
+        val message: String? = null,
     ) : TeachersModal
 
     data class StaffForm(

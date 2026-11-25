@@ -157,5 +157,7 @@ data class AddStudentState(
     val selectedGroupIds: Set<String> = emptySet(),
     val studentPhone: String = "",
     val discounts: Map<String, String> = emptyMap(),
+    val customPrices: Map<String, String> = emptyMap(),
     val invalidDiscounts: Set<String> = emptySet(),
+    val invalidCustomPrices: Set<String> = emptySet(),
 )

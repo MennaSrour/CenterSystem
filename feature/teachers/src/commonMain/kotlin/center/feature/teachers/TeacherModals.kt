@@ -59,10 +59,32 @@ internal fun TeacherDetails(
         }
         LocalTeacherPortalDetails.current(teacher.id)
         if (teacher.notes.isNotBlank()) Text(teacher.notes, style = MaterialTheme.typography.bodyMedium)
+        Text(
+            teacherString(TeacherText.Details) + " · ${teacher.assignedLessonCount} " +
+                LocalizedText("درس", "lessons").resolve(language),
+            style = MaterialTheme.typography.titleSmall,
+        )
+        Text(
+            LocalizedText(
+                "عربي ${teacher.arabicStudentCount} · لغات ${teacher.languagesStudentCount} · برايفت ${teacher.privateStudentCount}",
+                "Arabic ${teacher.arabicStudentCount} · Languages ${teacher.languagesStudentCount} · Private ${teacher.privateStudentCount}",
+            ).resolve(language),
+        )
+        Text(
+            LocalizedText("الأيام والساعات المتوقعة", "Expected center days and hours").resolve(language),
+            style = MaterialTheme.typography.titleSmall,
+        )
+        Text(teacher.expectedSchedule.resolve(language).ifBlank { LocalizedText("لا يوجد جدول محدد", "No schedule set").resolve(language) })
         CenterOnePrimaryButton(onClick = {
             onEvent(TeachersEvent.EditTeacher(teacher.id))
         }, enabled = !paying) { Text(teacherString(TeacherText.Edit)) }
         SalaryBox(teacher, paying, onPay = { onEvent(TeachersEvent.PaySalary(teacher.id)) })
+        Text(LocalizedText("سجل صرف المرتبات", "Salary payout history").resolve(language), style = MaterialTheme.typography.titleSmall)
+        if (teacher.payoutHistory.isEmpty()) {
+            Text(LocalizedText("لا توجد عمليات صرف مسجلة", "No salary payouts recorded").resolve(language))
+        } else {
+            teacher.payoutHistory.forEach { Text(it.resolve(language), style = MaterialTheme.typography.bodySmall) }
+        }
         if (teacher.unpaidStudents.isNotEmpty()) CollectionDeficit(teacher.unpaidStudents)
         Text(
             LocalizedText("جدول الدروس النشطة", "Active lesson schedule").resolve(language),

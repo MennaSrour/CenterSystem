@@ -89,6 +89,7 @@ internal fun persistenceModule(
             teachers = get(),
             groups = get(),
             billing = get(),
+            payments = get(),
             treasury = get(),
             registerStudent = get(),
             overdue = get(),

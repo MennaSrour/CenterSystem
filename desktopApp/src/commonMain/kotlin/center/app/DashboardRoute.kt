@@ -19,6 +19,7 @@ import center.domain.model.PersonType
 import center.domain.model.StaffMember
 import center.domain.model.Student
 import center.domain.model.Teacher
+import center.domain.usecase.scheduledLessonsForCheckIn
 import center.feature.dashboard.AttendanceGroup
 import center.feature.dashboard.DashboardEvent
 import center.feature.dashboard.DashboardScreen
@@ -190,7 +191,16 @@ internal class DashboardStateHolder(
                     state.update { it.copy(attendanceGroupId = event.id, groupMenuExpanded = false) }
                 }
             is DashboardEvent.AttendanceGroupMenuChanged -> state.update { it.copy(groupMenuExpanded = event.expanded) }
-            is DashboardEvent.RegisterAttendance -> record(event.studentCode, event.groupId, checkout = false)
+            is DashboardEvent.ToggleLessonAttendance ->
+                state.update { current ->
+                    current.copy(
+                        lessonAttendanceOptions =
+                            current.lessonAttendanceOptions.map { lesson ->
+                                if (lesson.lessonId == event.lessonId) lesson.copy(attended = !lesson.attended) else lesson
+                            },
+                    )
+                }
+            is DashboardEvent.RegisterAttendance -> record(event.studentCode, event.groupId, checkout = false, event.attendedLessonIds)
             is DashboardEvent.CheckOut -> record(event.code, event.groupId, checkout = true)
             is DashboardEvent.LanguageSelected ->
                 state.update {
@@ -235,6 +245,7 @@ internal class DashboardStateHolder(
                                 .resolve(snapshot.language)
                         StudentCandidate(it.selectionKey, it.name, if (it.student == null) type else "$type · ${it.code}")
                     },
+                lessonAttendanceOptions = emptyList(),
             )
         }
         val today = sessions.filter { it.person.type == selected.person.type && it.person.id == selected.person.id }
@@ -293,7 +304,16 @@ internal class DashboardStateHolder(
                         QuickAttendance(it.person.groupId, it.checkInTime.localTimeLabel(), it.checkOutTime?.localTimeLabel())
                     },
             )
-        return snapshot.copy(student = detail, candidates = emptyList())
+        return snapshot.copy(
+            student = detail,
+            candidates = emptyList(),
+            lessonAttendanceOptions =
+                if (student == null || today.isNotEmpty()) {
+                    emptyList()
+                } else {
+                    scheduledLessonsForCheckIn(enrolled, services.today(), services.clock.nowMillis())
+                },
+        )
     }
 
     private val ReceptionPerson.selectionKey: String get() = "${person.type.name}:${person.id}"
@@ -302,6 +322,7 @@ internal class DashboardStateHolder(
         code: String,
         groupId: String?,
         checkout: Boolean,
+        attendedLessonIds: Set<String> = emptySet(),
     ) {
         val snapshot = state.value
         val detail = snapshot.student ?: return
@@ -313,7 +334,13 @@ internal class DashboardStateHolder(
         state.update { it.copy(checkingIn = true) }
         scope.launch {
             try {
-                val result = if (checkout) services.presence.checkOut(person) else services.presence.checkIn(person)
+                val lessonChoices = snapshot.lessonAttendanceOptions.map { it.copy(attended = it.lessonId in attendedLessonIds) }
+                val result =
+                    if (checkout) {
+                        services.presence.checkOut(person)
+                    } else {
+                        services.presence.checkIn(person, lessonChoices)
+                    }
                 val success = if (checkout) checkOutSaved else checkInSaved
                 messages.emit((if (result.isSuccess) success else failure).resolve(state.value.language))
             } finally {

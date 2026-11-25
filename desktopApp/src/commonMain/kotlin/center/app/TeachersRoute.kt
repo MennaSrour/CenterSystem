@@ -12,9 +12,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import center.domain.model.GroupScheduleSlot
+import center.domain.model.LedgerKind
 import center.domain.model.PersonType
 import center.domain.model.StaffMember
 import center.domain.model.activeSchedule
+import center.domain.model.lessonAnalytics
 import center.domain.usecase.salaryPayoutId
 import center.feature.teachers.StaffCardModel
 import center.feature.teachers.StaffDraft
@@ -45,8 +47,10 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.DatePeriod
+import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalTime
 import kotlinx.datetime.plus
+import kotlinx.datetime.toLocalDateTime
 import center.domain.model.Teacher as DomainTeacher
 
 @Composable
@@ -111,6 +115,8 @@ internal class TeachersStateHolder(
                                         it.workSchedule.scheduleText(AppLanguage.Arabic),
                                         it.workSchedule.scheduleText(AppLanguage.English),
                                     ),
+                                    it.monthlySalaryMinor,
+                                    canDelete(),
                                 )
                             },
                     )
@@ -134,6 +140,31 @@ internal class TeachersStateHolder(
                 }
         }
         scope.launch {
+            services.treasury.observeLedger(Long.MIN_VALUE, Long.MAX_VALUE).catch { mutableFeedback.emit(failure) }.collect { ledger ->
+                val histories =
+                    ledger
+                        .filter { it.kind == LedgerKind.TEACHER_PAYOUT && it.teacherId != null }
+                        .groupBy { it.teacherId }
+                        .mapValues { (_, entries) ->
+                            entries.sortedByDescending { it.recordedAt }.map { entry ->
+                                val date = Instant.fromEpochMilliseconds(entry.recordedAt).toLocalDateTime(Cairo).date
+                                LocalizedText(
+                                    "$date · ${entry.amountMinor.decimalMinor()} ج.م",
+                                    "$date · ${entry.amountMinor.decimalMinor()} EGP",
+                                )
+                            }
+                        }
+                mutableState.update { current ->
+                    current.copy(
+                        teachers =
+                            current.teachers.map { teacher ->
+                                teacher.copy(payoutHistory = histories[teacher.id].orEmpty())
+                            },
+                    )
+                }
+            }
+        }
+        scope.launch {
             val monthUpdates =
                 services.dates().flatMapLatest { date ->
                     val month = date.monthStart()
@@ -145,20 +176,23 @@ internal class TeachersStateHolder(
             combine(
                 services.teachers.observeTeachers(),
                 services.groups.observeGroups(),
+                services.students.observeStudents(),
                 monthUpdates,
-            ) { teachers, groups, (month, ledger) ->
+            ) { teachers, groups, students, (month, ledger) ->
                 val balances = services.billing.remainingBalances(month).groupBy { it.teacherId }
                 val paid = ledger.associateBy { it.id }
                 val models =
                     teachers.map { teacher ->
                         val payout = paid[salaryPayoutId(teacher.id, month)]
+                        val assignedGroups = teacher.activeSchedule(groups)
+                        val analytics = teacher.lessonAnalytics(groups, students)
                         Teacher(
                             teacher.id,
                             teacher.fullName.localizedValue(),
                             teacher.phone,
                             teacher.subject.localizedValue(),
                             payout?.amountMinor ?: services.salary(teacher.id).getOrThrow(),
-                            teacher.activeSchedule(groups).map { group ->
+                            assignedGroups.map { group ->
                                 TeacherGroup(
                                     group.name.localizedValue(),
                                     LocalizedText(
@@ -172,6 +206,14 @@ internal class TeachersStateHolder(
                             },
                             teacher.notes,
                             payout != null,
+                            analytics.assignedLessonCount,
+                            analytics.arabicStudentCount,
+                            analytics.languagesStudentCount,
+                            analytics.privateStudentCount,
+                            LocalizedText(
+                                analytics.expectedSchedule.scheduleText(AppLanguage.Arabic),
+                                analytics.expectedSchedule.scheduleText(AppLanguage.English),
+                            ),
                         )
                     }
                 teachers.associateBy { it.id } to models
@@ -201,6 +243,10 @@ internal class TeachersStateHolder(
                                 member.isActive,
                                 member.workSchedule.map { StaffShiftDraft(it.day, it.from.hhmm(), it.to.hhmm()) },
                                 member.id,
+                                member.monthlySalaryMinor
+                                    ?.div(100)
+                                    ?.toString()
+                                    .orEmpty(),
                             ),
                             member.id,
                         ),
@@ -212,6 +258,11 @@ internal class TeachersStateHolder(
                     if (!it.saving) setModal(it.copy(draft = event.draft, message = null))
                 }
             TeachersEvent.SaveStaff -> saveStaff()
+            is TeachersEvent.RequestDeleteStaff ->
+                if (canDelete() && current.modal is TeachersModal.StaffDetails) {
+                    staffRecords[event.id]?.let { setModal(TeachersModal.DeleteStaff(it.id, it.name)) }
+                }
+            TeachersEvent.ConfirmDeleteStaff -> deleteStaff()
             is TeachersEvent.RequestDeleteTeacher ->
                 if (canDelete() && (current.modal as? TeachersModal.Details)?.teacherId == event.id && current.payingTeacherId == null) {
                     records[event.id]?.let { setModal(TeachersModal.Delete(it.id, it.fullName)) }
@@ -229,6 +280,7 @@ internal class TeachersStateHolder(
                     is TeachersModal.Add -> if (!modal.saving) setModal(TeachersModal.Closed)
                     is TeachersModal.StaffForm -> if (!modal.saving) setModal(TeachersModal.Closed)
                     is TeachersModal.Delete -> if (!modal.deleting) setModal(TeachersModal.Details(modal.id))
+                    is TeachersModal.DeleteStaff -> if (!modal.deleting) setModal(TeachersModal.StaffDetails(modal.id))
                     else -> setModal(TeachersModal.Closed)
                 }
             is TeachersEvent.NameChanged -> edit { it.copy(name = event.value) }
@@ -248,6 +300,17 @@ internal class TeachersStateHolder(
         setModal(modal.copy(deleting = true, message = null))
         scope.launch {
             val result = directoryResult { services.teachers.deleteTeacher(modal.id) }
+            setModal(if (result.isSuccess) TeachersModal.Closed else modal.copy(deleting = false, message = failure))
+        }
+    }
+
+    private fun deleteStaff() {
+        if (!canDelete()) return
+        val modal = state.value.modal as? TeachersModal.DeleteStaff ?: return
+        if (modal.deleting) return
+        setModal(modal.copy(deleting = true, message = null))
+        scope.launch {
+            val result = directoryResult { services.staff.delete(modal.id) }
             setModal(if (result.isSuccess) TeachersModal.Closed else modal.copy(deleting = false, message = failure))
         }
     }
@@ -296,8 +359,14 @@ internal class TeachersStateHolder(
                         draft.shifts.map {
                             GroupScheduleSlot(it.day, LocalTime.parse(it.from.normalizeSearch()), LocalTime.parse(it.to.normalizeSearch()))
                         }
+                    val monthlySalaryMinor =
+                        draft.monthlySalary
+                            .takeIf { it.isNotBlank() }
+                            ?.toLongOrNull()
+                            ?.times(100)
+                    require(draft.monthlySalary.isBlank() || monthlySalaryMinor != null)
                     services.staff.save(
-                        StaffMember(form.id ?: draft.code, draft.name, draft.role, draft.phone, shifts, draft.isActive),
+                        StaffMember(form.id ?: draft.code, draft.name, draft.role, draft.phone, shifts, draft.isActive, monthlySalaryMinor),
                     )
                 }
             setModal(

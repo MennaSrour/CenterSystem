@@ -10,6 +10,7 @@ import center.domain.repository.AttendanceRepository
 import center.domain.repository.AttendanceSessionRepository
 import center.domain.repository.ClassGroupRepository
 import center.domain.repository.MonthlyBillingRepository
+import center.domain.repository.PaymentRepository
 import center.domain.repository.StaffRepository
 import center.domain.repository.StudentRepository
 import center.domain.repository.TeacherRepository
@@ -45,6 +46,7 @@ internal class DirectoryServices(
     val teachers: TeacherRepository,
     val groups: ClassGroupRepository,
     val billing: MonthlyBillingRepository,
+    val payments: PaymentRepository,
     val treasury: TreasuryRepository,
     val registerStudent: RegisterStudent,
     val overdue: GetOverdueStudentsUseCase,
