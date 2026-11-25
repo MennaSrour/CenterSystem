@@ -31,6 +31,7 @@ data class StudentDetailsState(
     val financialSummary: List<LocalizedText> = emptyList(),
     val paymentHistory: List<LocalizedText> = emptyList(),
     val lessonAttendance: List<LocalizedText> = emptyList(),
+    val canDeleteEnrollments: Boolean = false,
 )
 
 data class StudentEnrolledLesson(
@@ -76,8 +77,10 @@ internal fun StudentDetails(
                     CenterOneTextButton(onClick = { onEditEnrollment(lesson.id) }) {
                         Text(LocalizedText("تعديل السعر", "Edit price").resolve(language))
                     }
-                    CenterOneDestructiveButton(onClick = { onRemoveEnrollment(lesson.id) }) {
-                        Text(LocalizedText("إزالة من الدرس", "Remove from lesson").resolve(language))
+                    if (state.canDeleteEnrollments) {
+                        CenterOneDestructiveButton(onClick = { onRemoveEnrollment(lesson.id) }) {
+                            Text(LocalizedText("إزالة من الدرس", "Remove from lesson").resolve(language))
+                        }
                     }
                 }
             }

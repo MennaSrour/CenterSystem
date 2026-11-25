@@ -381,6 +381,7 @@ internal class StudentsStateHolder(
                     "${lesson.date} · $label · ${if (lesson.attended) "Attended" else "Missed"} · In $checkIn · Out $checkOut",
                 )
             },
+            canDeleteEnrollments = canDelete(),
         )
     }
 
@@ -521,18 +522,20 @@ internal class StudentsStateHolder(
             is StudentsEvent.EditEnrollmentPrice ->
                 records[event.studentId]?.let { state = state.copy(details = null, addStudent = formFor(it)) }
             is StudentsEvent.RemoveEnrollment ->
-                records[event.studentId]?.let { student ->
-                    val form = formFor(student)
-                    state =
-                        state.copy(
-                            details = null,
-                            addStudent =
-                                form.copy(
-                                    selectedGroupIds = form.selectedGroupIds - event.groupId,
-                                    customPrices = form.customPrices - event.groupId,
-                                    discounts = form.discounts - event.groupId,
-                                ),
-                        )
+                if (canDelete()) {
+                    records[event.studentId]?.let { student ->
+                        val form = formFor(student)
+                        state =
+                            state.copy(
+                                details = null,
+                                addStudent =
+                                    form.copy(
+                                        selectedGroupIds = form.selectedGroupIds - event.groupId,
+                                        customPrices = form.customPrices - event.groupId,
+                                        discounts = form.discounts - event.groupId,
+                                    ),
+                            )
+                    }
                 }
             is StudentsEvent.DeleteStudent ->
                 if (canDelete()) records[event.id]?.let { state = state.copy(deleteStudent = DeleteStudentState(it.id, it.fullName)) }
