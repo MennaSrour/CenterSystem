@@ -29,18 +29,11 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.dp
-import center.feature.courses.resources.Res
-import center.feature.courses.resources.cancel
-import center.feature.courses.resources.from_time
-import center.feature.courses.resources.remove_slot
-import center.feature.courses.resources.schedule
-import center.feature.courses.resources.to_time
 import center.ui.components.CenterOneIconButton
 import center.ui.components.CenterOneInfoPanel
 import center.ui.localization.AppLanguage
 import center.ui.localization.LocalAppLanguage
 import center.ui.localization.LocalizedText
-import org.jetbrains.compose.resources.stringResource
 
 @Composable
 internal fun GroupScheduleEditor(
@@ -49,7 +42,7 @@ internal fun GroupScheduleEditor(
     modifier: Modifier = Modifier,
 ) {
     val language = LocalAppLanguage.current
-    CenterOneInfoPanel(stringResource(Res.string.schedule), modifier) {
+    CenterOneInfoPanel(appString("schedule"), modifier) {
         Text(LocalizedText("أيام الدرس", "Lesson days").resolve(language), style = MaterialTheme.typography.labelMedium)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             ScheduleDay.entries.forEach { day ->
@@ -71,21 +64,21 @@ internal fun GroupScheduleEditor(
                     Text(slot.day?.label().orEmpty(), Modifier.weight(0.7f), style = MaterialTheme.typography.labelLarge)
                     TimePickerField(
                         slot.from,
-                        stringResource(Res.string.from_time),
+                        appString("from_time"),
                         enabled = !state.isSubmitting,
                         modifier = Modifier.weight(1f),
                         onSelected = { onEvent(CoursesEvent.FromTimeChanged(slot.id, it)) },
                     )
                     TimePickerField(
                         slot.to,
-                        stringResource(Res.string.to_time),
+                        appString("to_time"),
                         enabled = !state.isSubmitting,
                         modifier = Modifier.weight(1f),
                         onSelected = { onEvent(CoursesEvent.ToTimeChanged(slot.id, it)) },
                     )
                     CenterOneIconButton(
                         Icons.Outlined.Close,
-                        stringResource(Res.string.remove_slot, (index + 1).toString()),
+                        appString("remove_slot", (index + 1).toString()),
                         { slot.day?.let { onEvent(CoursesEvent.ToggleScheduleDay(it)) } },
                         enabled = !state.isSubmitting,
                         color = MaterialTheme.colorScheme.tertiary,
@@ -138,7 +131,7 @@ private fun TimePickerField(
                 }) { Text(LocalizedText("اختيار", "Select").resolve(language)) }
             },
             dismissButton = {
-                TextButton(onClick = { showPicker = false }) { Text(stringResource(Res.string.cancel)) }
+                TextButton(onClick = { showPicker = false }) { Text(appString("cancel")) }
             },
         )
     }

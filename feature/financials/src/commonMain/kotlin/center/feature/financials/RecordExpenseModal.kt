@@ -14,22 +14,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import center.feature.financials.resources.Res
-import center.feature.financials.resources.attach_receipt
-import center.feature.financials.resources.attachment_hint
-import center.feature.financials.resources.cancel
-import center.feature.financials.resources.close
-import center.feature.financials.resources.confirm_expense
-import center.feature.financials.resources.currency
-import center.feature.financials.resources.current_dues
-import center.feature.financials.resources.expense_amount
-import center.feature.financials.resources.expense_subtitle
-import center.feature.financials.resources.expense_title
-import center.feature.financials.resources.notes
-import center.feature.financials.resources.operational
-import center.feature.financials.resources.remove_attachment
-import center.feature.financials.resources.select_teacher
-import center.feature.financials.resources.teacher_payout
 import center.ui.components.CenterOneChoiceGroup
 import center.ui.components.CenterOneDropdown
 import center.ui.components.CenterOneDropdownOption
@@ -40,7 +24,6 @@ import center.ui.components.CenterOneOutlinedButton
 import center.ui.components.CenterOnePrimaryButton
 import center.ui.components.CenterOneTextButton
 import center.ui.components.CenterOneTextField
-import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun RecordExpenseModal(
@@ -60,15 +43,15 @@ internal fun RecordExpenseModalContent(
     modifier: Modifier = Modifier,
 ) {
     CenterOneModalContent(
-        title = stringResource(Res.string.expense_title),
-        subtitle = stringResource(Res.string.expense_subtitle),
-        closeLabel = stringResource(Res.string.close),
+        title = appString("expense_title"),
+        subtitle = appString("expense_subtitle"),
+        closeLabel = appString("close"),
         onClose = { onEvent(FinancialsEvent.DismissModal) },
         modifier = modifier,
         enabled = !state.isSubmitting,
     ) {
         CenterOneChoiceGroup(
-            labels = listOf(stringResource(Res.string.teacher_payout), stringResource(Res.string.operational)),
+            labels = listOf(appString("teacher_payout"), appString("operational")),
             selectedIndex = ExpenseType.entries.indexOf(state.type),
             onSelected = { onEvent(FinancialsEvent.ExpenseTypeSelected(ExpenseType.entries[it])) },
             enabled = !state.isSubmitting,
@@ -81,7 +64,7 @@ internal fun RecordExpenseModalContent(
                         .firstOrNull { it.id == state.selectedTeacherId }
                         ?.name
                         .orEmpty(),
-                label = stringResource(Res.string.select_teacher),
+                label = appString("select_teacher"),
                 options = state.teachers.map { CenterOneDropdownOption(it.id, it.name) },
                 expanded = state.teacherMenuExpanded,
                 onExpandedChange = { onEvent(FinancialsEvent.TeacherMenuChanged(it)) },
@@ -91,7 +74,7 @@ internal fun RecordExpenseModalContent(
                 modifier = Modifier.fillMaxWidth(),
             )
             state.teachers.firstOrNull { it.id == state.selectedTeacherId }?.let { teacher ->
-                CenterOneInfoPanel(stringResource(Res.string.current_dues), Modifier.fillMaxWidth()) {
+                CenterOneInfoPanel(appString("current_dues"), Modifier.fillMaxWidth()) {
                     Text(teacher.formattedDues, style = MaterialTheme.typography.titleLarge)
                 }
             }
@@ -99,8 +82,8 @@ internal fun RecordExpenseModalContent(
         CenterOneTextField(
             value = state.amount,
             onValueChange = { onEvent(FinancialsEvent.ExpenseAmountChanged(it)) },
-            label = { Text(stringResource(Res.string.expense_amount)) },
-            trailingIcon = { Text(stringResource(Res.string.currency)) },
+            label = { Text(appString("expense_amount")) },
+            trailingIcon = { Text(appString("currency")) },
             enabled = !state.isSubmitting,
             readOnly = state.type == ExpenseType.TeacherPayout,
             isError = state.amountError != null,
@@ -111,7 +94,7 @@ internal fun RecordExpenseModalContent(
         CenterOneTextField(
             value = state.notes,
             onValueChange = { onEvent(FinancialsEvent.ExpenseNotesChanged(it)) },
-            label = { Text(stringResource(Res.string.notes)) },
+            label = { Text(appString("notes")) },
             enabled = !state.isSubmitting,
             singleLine = false,
             minLines = 3,
@@ -125,14 +108,14 @@ internal fun RecordExpenseModalContent(
             color = MaterialTheme.colorScheme.secondary,
         ) {
             Icon(Icons.Outlined.AttachFile, contentDescription = null)
-            Text(state.attachmentName ?: stringResource(Res.string.attach_receipt))
+            Text(state.attachmentName ?: appString("attach_receipt"))
         }
         if (state.attachmentName != null) {
             CenterOneTextButton(onClick = {
                 onEvent(FinancialsEvent.RemoveAttachment)
-            }, enabled = !state.isSubmitting) { Text(stringResource(Res.string.remove_attachment)) }
+            }, enabled = !state.isSubmitting) { Text(appString("remove_attachment")) }
         } else {
-            Text(stringResource(Res.string.attachment_hint), style = MaterialTheme.typography.labelSmall)
+            Text(appString("attachment_hint"), style = MaterialTheme.typography.labelSmall)
         }
         state.message?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error) }
         HorizontalDivider(color = MaterialTheme.colorScheme.outline)
@@ -141,12 +124,12 @@ internal fun RecordExpenseModalContent(
                 onClick = { onEvent(FinancialsEvent.ConfirmExpense) },
                 enabled = state.canConfirm && !state.isSubmitting,
             ) {
-                Text(stringResource(Res.string.confirm_expense))
+                Text(appString("confirm_expense"))
             }
             CenterOneTextButton(
                 onClick = { onEvent(FinancialsEvent.DismissModal) },
                 enabled = !state.isSubmitting,
-            ) { Text(stringResource(Res.string.cancel)) }
+            ) { Text(appString("cancel")) }
         }
     }
 }

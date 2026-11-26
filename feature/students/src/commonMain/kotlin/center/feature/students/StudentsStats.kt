@@ -13,23 +13,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
-import center.feature.students.resources.Res
-import center.feature.students.resources.stat_prep
-import center.feature.students.resources.stat_primary
-import center.feature.students.resources.stat_secondary
-import center.feature.students.resources.stat_total
-import center.feature.students.resources.student_unit
 import center.ui.components.CenterOneMetricCard
 import center.ui.theme.CenterOneBrushes
 import center.ui.theme.CenterOneSpacing
 import center.ui.theme.Indigo
 import center.ui.theme.Pending
 import center.ui.theme.Success
-import org.jetbrains.compose.resources.StringResource
-import org.jetbrains.compose.resources.stringResource
 
 private data class StudentMetric(
-    val title: StringResource,
+    val title: String,
     val value: String,
     val accent: Color,
     val icon: ImageVector,
@@ -42,10 +34,10 @@ internal fun StudentsStats(
 ) {
     val metrics =
         listOf(
-            StudentMetric(Res.string.stat_total, summary.total, Indigo, Icons.Outlined.PeopleOutline),
-            StudentMetric(Res.string.stat_secondary, summary.secondary, Pending, Icons.AutoMirrored.Outlined.MenuBook),
-            StudentMetric(Res.string.stat_prep, summary.prep, Indigo, Icons.AutoMirrored.Outlined.MenuBook),
-            StudentMetric(Res.string.stat_primary, summary.primary, Success, Icons.AutoMirrored.Outlined.MenuBook),
+            StudentMetric("stat_total", summary.total, Indigo, Icons.Outlined.PeopleOutline),
+            StudentMetric("stat_secondary", summary.secondary, Pending, Icons.AutoMirrored.Outlined.MenuBook),
+            StudentMetric("stat_prep", summary.prep, Indigo, Icons.AutoMirrored.Outlined.MenuBook),
+            StudentMetric("stat_primary", summary.primary, Success, Icons.AutoMirrored.Outlined.MenuBook),
         )
     BoxWithConstraints(modifier) {
         val columns = if (maxWidth >= 1000.dp) 4 else 2
@@ -54,12 +46,12 @@ internal fun StudentsStats(
                 Row(horizontalArrangement = Arrangement.spacedBy(CenterOneSpacing.Medium)) {
                     group.forEach { metric ->
                         CenterOneMetricCard(
-                            title = stringResource(metric.title),
+                            title = appString(metric.title),
                             value = metric.value,
-                            caption = stringResource(Res.string.student_unit),
+                            caption = appString("student_unit"),
                             icon = { Icon(metric.icon, contentDescription = null) },
                             accent = metric.accent,
-                            gradient = CenterOneBrushes.Treasury.takeIf { metric.title == Res.string.stat_total },
+                            gradient = CenterOneBrushes.Treasury.takeIf { metric.title == "stat_total" },
                             modifier = Modifier.weight(1f),
                         )
                     }

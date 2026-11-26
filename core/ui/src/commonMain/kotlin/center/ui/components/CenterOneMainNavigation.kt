@@ -20,28 +20,29 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import center.ui.localization.AppLanguage
+import center.ui.localization.AppStringKey
+import center.ui.localization.AppStrings
 import center.ui.localization.CenterOneLocalization
 import center.ui.localization.LocalAppLanguage
-import center.ui.localization.LocalizedText
 import center.ui.theme.ACCENT_TINT_ALPHA
 import center.ui.theme.CenterOneSize
 import center.ui.theme.SidebarInk
 import center.ui.theme.White
 
 enum class MainNavigation(
-    private val label: LocalizedText,
+    private val labelKey: AppStringKey,
     internal val icon: ImageVector,
 ) {
-    Reception(LocalizedText("الاستقبال", "Reception"), Icons.Outlined.Home),
-    Students(LocalizedText("الطلاب", "Students"), Icons.Outlined.PeopleOutline),
-    Teachers(LocalizedText("المدرسين", "Teachers"), Icons.Outlined.School),
-    Courses(LocalizedText("الدروس", "Lessons"), Icons.AutoMirrored.Outlined.MenuBook),
-    Treasury(LocalizedText("الخزنة", "Treasury"), Icons.Outlined.AccountBalanceWallet),
-    Print(LocalizedText("الطباعة", "Print"), Icons.Outlined.Print),
-    Settings(LocalizedText("الإعدادات", "Settings"), Icons.Outlined.Settings),
+    Reception(AppStringKey.Reception, Icons.Outlined.Home),
+    Students(AppStringKey.Students, Icons.Outlined.PeopleOutline),
+    Teachers(AppStringKey.Teachers, Icons.Outlined.School),
+    Courses(AppStringKey.Lessons, Icons.AutoMirrored.Outlined.MenuBook),
+    Treasury(AppStringKey.Treasury, Icons.Outlined.AccountBalanceWallet),
+    Print(AppStringKey.Print, Icons.Outlined.Print),
+    Settings(AppStringKey.Settings, Icons.Outlined.Settings),
     ;
 
-    fun label(language: AppLanguage): String = label.resolve(language)
+    fun label(language: AppLanguage): String = AppStrings.get(labelKey, language)
 }
 
 val LocalCenterOneLogout = staticCompositionLocalOf<(() -> Unit)?> { null }
@@ -75,7 +76,7 @@ fun CenterOneMainNavigation(
                         IconButton(onClick = logout, modifier = Modifier.size(CenterOneSize.ButtonHeight)) {
                             Icon(
                                 Icons.AutoMirrored.Outlined.Logout,
-                                contentDescription = LocalizedText("تسجيل الخروج", "Log out").resolve(language),
+                                contentDescription = AppStrings.get(AppStringKey.Logout, language),
                                 modifier = Modifier.size(20.dp),
                                 tint = White,
                             )

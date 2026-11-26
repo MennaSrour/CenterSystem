@@ -33,21 +33,23 @@ class DashboardLocalizationTest {
         runComposeUiTest {
             val state = mutableStateOf(DashboardPreviewData.state())
             setContent {
-                CenterOneTheme {
-                    DashboardScreen(state.value, { event ->
-                        when (event) {
-                            is DashboardEvent.LanguageSelected -> state.value = state.value.copy(language = event.language)
-                            is DashboardEvent.QueryChanged -> state.value = state.value.copy(query = event.value)
-                            else -> Unit
-                        }
-                    })
+                CenterOneLocalization(state.value.language) {
+                    CenterOneTheme {
+                        DashboardScreen(state.value, { event ->
+                            when (event) {
+                                is DashboardEvent.LanguageSelected -> state.value = state.value.copy(language = event.language)
+                                is DashboardEvent.QueryChanged -> state.value = state.value.copy(query = event.value)
+                                else -> Unit
+                            }
+                        })
+                    }
                 }
             }
             onNode(hasSetTextAction()).performTextReplacement("10234")
             val attendance = onNodeWithText("حضور اليوم")
             assertEquals(LayoutDirection.Rtl, attendance.fetchSemanticsNode().layoutInfo.layoutDirection)
-            onNodeWithText("عربي").assertIsDisplayed().assertIsSelected()
-            onNodeWithText("English").assertIsDisplayed().performClick()
+            onNodeWithText("العربية").assertIsDisplayed().assertIsSelected()
+            onNodeWithText("الإنجليزية").assertIsDisplayed().performClick()
             onNodeWithText("English").assertIsDisplayed().assertIsSelected()
             assertEquals(LayoutDirection.Ltr, onNodeWithText("Today's Attendance").fetchSemanticsNode().layoutInfo.layoutDirection)
             onNodeWithText("Today's Treasury").assertExists()
@@ -57,8 +59,8 @@ class DashboardLocalizationTest {
             onNodeWithText("حضور اليوم").assertDoesNotExist()
             onNodeWithText("Recent activity").assertDoesNotExist()
             onNode(hasSetTextAction() and hasText("10234")).assertExists()
-            onNodeWithText("عربي").assertIsDisplayed().performClick()
-            onNodeWithText("عربي").assertIsDisplayed().assertIsSelected()
+            onNodeWithText("Arabic").assertIsDisplayed().performClick()
+            onNodeWithText("العربية").assertIsDisplayed().assertIsSelected()
             assertEquals(LayoutDirection.Rtl, attendance.fetchSemanticsNode().layoutInfo.layoutDirection)
         }
 

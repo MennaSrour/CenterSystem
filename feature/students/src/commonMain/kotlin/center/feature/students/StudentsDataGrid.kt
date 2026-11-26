@@ -14,30 +14,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.dp
-import center.feature.students.resources.Res
-import center.feature.students.resources.actions
-import center.feature.students.resources.arabic_system
-import center.feature.students.resources.delete_student
-import center.feature.students.resources.edit_student
-import center.feature.students.resources.grade
-import center.feature.students.resources.id
-import center.feature.students.resources.languages_system
-import center.feature.students.resources.monthly_due
-import center.feature.students.resources.name
-import center.feature.students.resources.no_students
-import center.feature.students.resources.parent_phone
-import center.feature.students.resources.system
-import center.feature.students.resources.unknown_grade
 import center.ui.components.CenterOneAvatar
 import center.ui.components.CenterOneIconButton
 import center.ui.components.CenterOneTable
 import center.ui.components.CenterOneTableColumn
 import center.ui.components.CenterOneTag
+import center.ui.localization.AppLanguage
 import center.ui.localization.LocalAppLanguage
 import center.ui.localization.LocalizedText
 import center.ui.theme.Indigo
 import center.ui.theme.Pending
-import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun StudentsDataGrid(
@@ -51,17 +37,17 @@ fun StudentsDataGrid(
     val gradeById = grades.associateBy { it.id }
     val columns =
         listOf(
-            CenterOneTableColumn(stringResource(Res.string.id), 1f),
-            CenterOneTableColumn(stringResource(Res.string.name), 1.8f),
-            CenterOneTableColumn(stringResource(Res.string.grade), 1.3f),
-            CenterOneTableColumn(stringResource(Res.string.system), 0.8f),
-            CenterOneTableColumn(stringResource(Res.string.parent_phone), 1.5f),
-            CenterOneTableColumn(stringResource(Res.string.monthly_due), 1.2f),
-            CenterOneTableColumn(stringResource(Res.string.actions), 1.5f),
+            CenterOneTableColumn(appString("id"), 1f),
+            CenterOneTableColumn(appString("name"), 1.8f),
+            CenterOneTableColumn(appString("grade"), 1.3f),
+            CenterOneTableColumn(appString("system"), 0.8f),
+            CenterOneTableColumn(appString("parent_phone"), 1.5f),
+            CenterOneTableColumn(appString("monthly_due"), 1.2f),
+            CenterOneTableColumn(appString("actions"), 1.5f),
         )
     CenterOneTable(columns, students, rowKey = {
         it.id
-    }, emptyLabel = stringResource(Res.string.no_students), modifier = modifier) { student, column ->
+    }, emptyLabel = appString("no_students"), modifier = modifier) { student, column ->
         when (column) {
             0 -> Text(student.code, style = MaterialTheme.typography.bodySmall.copy(textDirection = TextDirection.Ltr))
             1 ->
@@ -80,25 +66,25 @@ fun StudentsDataGrid(
                 }
             2 ->
                 Text(
-                    gradeById[student.gradeId]?.label ?: student.gradeLabel ?: stringResource(Res.string.unknown_grade),
+                    gradeById[student.gradeId]?.label ?: student.gradeLabel ?: appString("unknown_grade"),
                     style = MaterialTheme.typography.bodySmall,
                 )
             3 ->
                 when (student.system) {
-                    StudentSystem.Arabic -> CenterOneTag(stringResource(Res.string.arabic_system), color = Pending)
-                    StudentSystem.Languages -> CenterOneTag(stringResource(Res.string.languages_system), color = Indigo)
+                    StudentSystem.Arabic -> CenterOneTag(appString("arabic_system"), color = Pending)
+                    StudentSystem.Languages -> CenterOneTag(appString("languages_system"), color = Indigo)
                     null -> Text("—", style = MaterialTheme.typography.bodySmall)
                 }
             4 -> Text(student.parentPhone, style = MaterialTheme.typography.bodySmall.copy(textDirection = TextDirection.Ltr))
-            5 -> Text(student.monthlyDueMinor.asEgp(), style = MaterialTheme.typography.bodySmall)
+            5 -> Text(student.monthlyDueMinor.asEgp(LocalAppLanguage.current), style = MaterialTheme.typography.bodySmall)
             6 ->
                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                     CenterOneIconButton(Icons.Outlined.Info, details, { onEvent(StudentsEvent.OpenDetails(student.id)) })
-                    CenterOneIconButton(Icons.Outlined.Edit, stringResource(Res.string.edit_student, student.name), {
+                    CenterOneIconButton(Icons.Outlined.Edit, appString("edit_student", student.name), {
                         onEvent(StudentsEvent.EditStudent(student.id))
                     })
                     if (canDelete) {
-                        CenterOneIconButton(Icons.Outlined.DeleteOutline, stringResource(Res.string.delete_student, student.name), {
+                        CenterOneIconButton(Icons.Outlined.DeleteOutline, appString("delete_student", student.name), {
                             onEvent(StudentsEvent.DeleteStudent(student.id))
                         }, color = MaterialTheme.colorScheme.error)
                     }
@@ -107,5 +93,8 @@ fun StudentsDataGrid(
     }
 }
 
-private fun Long.asEgp(): String =
-    if (this % 100L == 0L) "${this / 100} EGP" else "${this / 100}.${(this % 100).toString().padStart(2, '0')} EGP"
+private fun Long.asEgp(language: AppLanguage): String {
+    val amount = if (this % 100L == 0L) (this / 100).toString() else "${this / 100}.${(this % 100).toString().padStart(2, '0')}"
+    val currency = if (language == AppLanguage.Arabic) "ج.م" else "EGP"
+    return "$amount $currency"
+}

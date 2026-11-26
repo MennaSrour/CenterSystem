@@ -20,13 +20,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import center.feature.courses.resources.Res
-import center.feature.courses.resources.capacity
-import center.feature.courses.resources.deactivate_group
-import center.feature.courses.resources.delete_group
-import center.feature.courses.resources.edit_group
-import center.feature.courses.resources.inactive
-import center.feature.courses.resources.menu_for
 import center.ui.components.CenterOneAvatar
 import center.ui.components.CenterOneCapacityMeter
 import center.ui.components.CenterOneCard
@@ -37,7 +30,6 @@ import center.ui.localization.LocalizedText
 import center.ui.text.isolateLtr
 import center.ui.theme.Indigo
 import center.ui.theme.Rose
-import org.jetbrains.compose.resources.stringResource
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -57,26 +49,26 @@ fun CourseCard(
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 // The first item is physically right in RTL, as required for the kebab anchor.
                 Box {
-                    CenterOneIconButton(Icons.Outlined.MoreVert, stringResource(Res.string.menu_for, group.subject), {
+                    CenterOneIconButton(Icons.Outlined.MoreVert, appString("menu_for", group.subject), {
                         onEvent(CoursesEvent.GroupMenuChanged(if (menuExpanded) null else group.id))
                     })
                     DropdownMenu(expanded = menuExpanded, onDismissRequest = { onEvent(CoursesEvent.GroupMenuChanged(null)) }) {
                         DropdownMenuItem(
-                            text = { Text(stringResource(Res.string.edit_group)) },
+                            text = { Text(appString("edit_group")) },
                             onClick = { onEvent(CoursesEvent.EditGroup(group.id)) },
                         )
                         DropdownMenuItem(text = {
-                            Text(stringResource(Res.string.deactivate_group))
+                            Text(appString("deactivate_group"))
                         }, onClick = { onEvent(CoursesEvent.DeactivateGroup(group.id)) }, enabled = group.isActive)
                         if (canDelete) {
                             DropdownMenuItem(text = {
-                                Text(stringResource(Res.string.delete_group), color = MaterialTheme.colorScheme.error)
+                                Text(appString("delete_group"), color = MaterialTheme.colorScheme.error)
                             }, onClick = { onEvent(CoursesEvent.RequestDeleteGroup(group.id)) })
                         }
                     }
                 }
                 Spacer(Modifier.weight(1f))
-                if (!group.isActive) CenterOneTag(stringResource(Res.string.inactive), color = accent)
+                if (!group.isActive) CenterOneTag(appString("inactive"), color = accent)
             }
             Text(group.subject, style = MaterialTheme.typography.titleLarge)
             Text(gradeLabel, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -107,7 +99,7 @@ fun CourseCard(
                 }
             }
             CenterOneCapacityMeter(
-                stringResource(Res.string.capacity, "${group.enrolled} / ${group.maxCapacity}".isolateLtr()),
+                appString("capacity", "${group.enrolled} / ${group.maxCapacity}".isolateLtr()),
                 group.capacityProgress,
                 Modifier.fillMaxWidth(),
                 accent,
