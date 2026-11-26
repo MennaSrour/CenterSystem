@@ -32,6 +32,7 @@ data class FinancialsState(
     val selectedLog: FinancialLog = FinancialLog.Income,
     val recordQuery: String = "",
     val modal: FinancialsModal = FinancialsModal.Closed,
+    val canViewMonthlyReport: Boolean = false,
 ) {
     val visibleRecords: List<FinancialRecord>
         get() {

@@ -1,0 +1,14 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+@layer base {
+  body { @apply min-h-screen bg-ivory text-slateRoyal; font-family: system-ui, sans-serif; }
+  button { @apply rounded-xl bg-slateRoyal px-4 py-2 font-semibold text-white transition hover:bg-slate-700 disabled:opacity-50; min-height: 44px; }
+  button:focus-visible, input:focus-visible, select:focus-visible { @apply outline outline-2 outline-offset-2 outline-warmGold; }
+  input, select { @apply mt-1 block w-full rounded-xl border border-stone-300 bg-white p-2 text-slateRoyal; min-height: 44px; }
+  label { @apply font-medium; }
+}
+@layer components {
+  .panel { @apply rounded-2xl border border-stone-200 bg-[#fffdf9] p-4 shadow-sm sm:p-6; }
+  .secondary { @apply bg-amber-50 text-slateRoyal ring-1 ring-inset ring-amber-200 hover:bg-amber-100; }
+}

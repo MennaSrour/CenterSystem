@@ -10,6 +10,12 @@ sealed interface TeachersEvent {
 
     data object ConfirmDeleteTeacher : TeachersEvent
 
+    data class RequestDeleteStaff(
+        val id: String,
+    ) : TeachersEvent
+
+    data object ConfirmDeleteStaff : TeachersEvent
+
     data class StaffTabSelected(
         val selected: Boolean,
     ) : TeachersEvent

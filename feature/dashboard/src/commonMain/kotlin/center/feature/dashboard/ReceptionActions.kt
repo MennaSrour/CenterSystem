@@ -19,6 +19,7 @@ import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.QrCodeScanner
 import androidx.compose.material.icons.outlined.Remove
 import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -34,6 +35,7 @@ import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
+import center.domain.usecase.LessonAttendanceOption
 import center.ui.components.CenterOneAccentIcon
 import center.ui.components.CenterOneAvatar
 import center.ui.components.CenterOneButtonTone
@@ -111,6 +113,7 @@ internal fun StudentActionCard(
     attendanceGroupId: String? = null,
     groupMenuExpanded: Boolean = false,
     checkingIn: Boolean = false,
+    lessonAttendanceOptions: List<LessonAttendanceOption> = emptyList(),
 ) {
     val name = student.name.resolve(language)
     val groups = student.attendanceGroups
@@ -154,9 +157,35 @@ internal fun StudentActionCard(
                 val exit = session.checkOut?.isolateLtr() ?: "—"
                 Text(LocalizedText("حضور $enter · انصراف $exit", "Check-in $enter · Check-out $exit").resolve(language))
             }
+            if (student.isStudent && session == null && lessonAttendanceOptions.isNotEmpty()) {
+                Text(LocalizedText("دروس اليوم", "Today's lessons").resolve(language), style = MaterialTheme.typography.titleSmall)
+                lessonAttendanceOptions.forEach { lesson ->
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(
+                            checked = lesson.attended,
+                            onCheckedChange = { onEvent(DashboardEvent.ToggleLessonAttendance(lesson.lessonId)) },
+                            enabled = !checkingIn,
+                        )
+                        Text(
+                            "${lesson.lessonName} · ${lesson.startMinute.toClockLabel(
+                                language,
+                            )}–${lesson.endMinute.toClockLabel(language)}",
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                    }
+                }
+            }
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 CenterOnePrimaryButton(
-                    onClick = { onEvent(DashboardEvent.RegisterAttendance(student.code, groupId)) },
+                    onClick = {
+                        onEvent(
+                            DashboardEvent.RegisterAttendance(
+                                student.code,
+                                groupId,
+                                lessonAttendanceOptions.filter { it.attended }.map { it.lessonId }.toSet(),
+                            ),
+                        )
+                    },
                     enabled = !checkingIn && canSelectGroup && session == null,
                     tone = CenterOneButtonTone.Success,
                 ) {
@@ -178,6 +207,18 @@ internal fun StudentActionCard(
             }
         }
     }
+}
+
+private fun Int.toClockLabel(language: AppLanguage): String {
+    val hour = this / 60
+    val minute = this % 60
+    val twelveHour = (hour % 12).let { if (it == 0) 12 else it }
+    val suffix =
+        when (language) {
+            AppLanguage.Arabic -> if (hour >= 12) "م" else "ص"
+            AppLanguage.English -> if (hour >= 12) "PM" else "AM"
+        }
+    return "${twelveHour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')} $suffix"
 }
 
 @Composable

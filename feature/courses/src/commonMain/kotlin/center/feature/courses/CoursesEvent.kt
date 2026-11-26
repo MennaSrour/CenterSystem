@@ -57,7 +57,38 @@ sealed interface CoursesEvent {
         val system: CourseSystem,
     ) : CoursesEvent
 
+    data class LessonTypeSelected(
+        val lessonType: CourseLessonType,
+    ) : CoursesEvent
+
     data class MonthlyPriceChanged(
+        val value: String,
+    ) : CoursesEvent
+
+    data class LanguagesPriceChanged(
+        val value: String,
+    ) : CoursesEvent
+
+    data class StudentSearchChanged(
+        val value: String,
+    ) : CoursesEvent
+
+    data class ShowOtherGradesChanged(
+        val show: Boolean,
+    ) : CoursesEvent
+
+    data class StudentEnrollmentToggled(
+        val studentId: String,
+        val selected: Boolean,
+    ) : CoursesEvent
+
+    data class StudentTrackSelected(
+        val studentId: String,
+        val track: center.domain.model.StudentTrack,
+    ) : CoursesEvent
+
+    data class StudentPriceChanged(
+        val studentId: String,
         val value: String,
     ) : CoursesEvent
 
@@ -74,6 +105,10 @@ sealed interface CoursesEvent {
     ) : CoursesEvent
 
     data object AddTimeSlot : CoursesEvent
+
+    data class ToggleScheduleDay(
+        val day: ScheduleDay,
+    ) : CoursesEvent
 
     data class RemoveTimeSlot(
         val id: String,

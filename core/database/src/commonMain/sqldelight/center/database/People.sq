@@ -3,7 +3,8 @@ CREATE TABLE staff_member (
     name TEXT NOT NULL,
     role TEXT NOT NULL,
     phone TEXT NOT NULL,
-    isActive INTEGER AS kotlin.Boolean NOT NULL CHECK (isActive IN (0, 1))
+    isActive INTEGER AS kotlin.Boolean NOT NULL CHECK (isActive IN (0, 1)),
+    monthlySalaryMinor INTEGER CHECK (monthlySalaryMinor BETWEEN 0 AND 100000000000)
 );
 
 CREATE TABLE staff_shift (
@@ -21,9 +22,24 @@ CREATE TABLE attendance_session (
     date TEXT NOT NULL,
     checkInTime INTEGER NOT NULL,
     checkOutTime INTEGER CHECK (checkOutTime >= checkInTime),
+    syncStatus TEXT NOT NULL DEFAULT 'PENDING',
+    updatedAt INTEGER NOT NULL DEFAULT 0,
     PRIMARY KEY (personType, personId, date, groupId)
 );
 CREATE INDEX attendance_session_date ON attendance_session(date);
+
+CREATE TABLE lesson_attendance (
+    studentId TEXT NOT NULL REFERENCES student(id) ON DELETE CASCADE,
+    classId TEXT NOT NULL REFERENCES class_group(id) ON DELETE CASCADE,
+    date TEXT NOT NULL,
+    attended INTEGER AS kotlin.Boolean NOT NULL CHECK (attended IN (0, 1)),
+    recordedAt INTEGER NOT NULL,
+    checkOutAt INTEGER,
+    PRIMARY KEY (studentId, classId, date, recordedAt),
+    CHECK (checkOutAt IS NULL OR checkOutAt >= recordedAt)
+);
+CREATE INDEX lesson_attendance_student_date ON lesson_attendance(studentId, date, recordedAt);
+CREATE INDEX lesson_attendance_class_date ON lesson_attendance(classId, date, recordedAt);
 
 selectStaff:
 SELECT staff_member.*, staff_shift.day, staff_shift.fromMinute, staff_shift.toMinute
@@ -34,10 +50,13 @@ selectStaffById:
 SELECT * FROM staff_member WHERE id = ?;
 
 saveStaff:
-INSERT INTO staff_member(id, name, role, phone, isActive) VALUES (?, ?, ?, ?, ?);
+INSERT INTO staff_member(id, name, role, phone, isActive, monthlySalaryMinor) VALUES (?, ?, ?, ?, ?, ?);
 
 updateStaff:
-UPDATE staff_member SET name = ?, role = ?, phone = ?, isActive = ? WHERE id = ?;
+UPDATE staff_member SET name = ?, role = ?, phone = ?, isActive = ?, monthlySalaryMinor = ? WHERE id = ?;
+
+deleteStaff:
+DELETE FROM staff_member WHERE id = ?;
 
 clearShifts:
 DELETE FROM staff_shift WHERE staffId = ?;
@@ -55,6 +74,27 @@ setCheckOut:
 UPDATE attendance_session SET checkOutTime = :at
 WHERE personType = :personType AND personId = :personId AND groupId = :groupId AND date = :date AND checkOutTime IS NULL;
 
+upsertLessonAttendance:
+INSERT OR REPLACE INTO lesson_attendance(studentId, classId, date, attended, recordedAt, checkOutAt)
+VALUES (?, ?, ?, ?, ?, ?);
+
+markFutureLessonsMissed:
+UPDATE lesson_attendance SET attended = 0, checkOutAt = :at
+WHERE studentId = :studentId AND date = :date AND attended = 1 AND classId IN (
+    SELECT classId FROM schedule_slot
+    WHERE day = :day AND fromMinute >= :minute
+);
+
+lessonAttendanceForStudent:
+SELECT studentId, classId, date, attended, recordedAt, checkOutAt
+FROM lesson_attendance
+WHERE lesson_attendance.studentId = ?
+ORDER BY lesson_attendance.date DESC, lesson_attendance.recordedAt DESC;
+
+lessonAttendanceForDay:
+SELECT studentId, classId, date, attended, recordedAt, checkOutAt
+FROM lesson_attendance WHERE studentId = ? AND date = ? ORDER BY recordedAt, classId;
+
 sessionHistory:
 SELECT personType, personId, groupId, date, checkInTime, checkOutTime
 FROM attendance_session WHERE personType = :personType AND personId = :personId
@@ -64,7 +104,13 @@ FROM attendance WHERE :personType = 'STUDENT' AND studentId = :personId AND stat
 ORDER BY checkInTime DESC LIMIT 10;
 
 sessionsOnDate:
-SELECT * FROM attendance_session WHERE date = ? ORDER BY checkInTime;
+SELECT personType, personId, groupId, date, checkInTime, checkOutTime
+FROM attendance_session WHERE date = ? ORDER BY checkInTime;
+
+sessionsInPeriod:
+SELECT personType, personId, groupId, date, checkInTime, checkOutTime
+FROM attendance_session WHERE checkInTime >= :startInclusive AND checkInTime < :endExclusive
+ORDER BY checkInTime, personType, personId;
 
 hasPersonAttendance:
 SELECT EXISTS(SELECT 1 FROM attendance_session WHERE personType = ? AND personId = ?);

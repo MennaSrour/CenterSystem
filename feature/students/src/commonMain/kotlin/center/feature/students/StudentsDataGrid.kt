@@ -22,6 +22,7 @@ import center.feature.students.resources.edit_student
 import center.feature.students.resources.grade
 import center.feature.students.resources.id
 import center.feature.students.resources.languages_system
+import center.feature.students.resources.monthly_due
 import center.feature.students.resources.name
 import center.feature.students.resources.no_students
 import center.feature.students.resources.parent_phone
@@ -55,6 +56,7 @@ fun StudentsDataGrid(
             CenterOneTableColumn(stringResource(Res.string.grade), 1.3f),
             CenterOneTableColumn(stringResource(Res.string.system), 0.8f),
             CenterOneTableColumn(stringResource(Res.string.parent_phone), 1.5f),
+            CenterOneTableColumn(stringResource(Res.string.monthly_due), 1.2f),
             CenterOneTableColumn(stringResource(Res.string.actions), 1.5f),
         )
     CenterOneTable(columns, students, rowKey = {
@@ -88,7 +90,8 @@ fun StudentsDataGrid(
                     null -> Text("—", style = MaterialTheme.typography.bodySmall)
                 }
             4 -> Text(student.parentPhone, style = MaterialTheme.typography.bodySmall.copy(textDirection = TextDirection.Ltr))
-            5 ->
+            5 -> Text(student.monthlyDueMinor.asEgp(), style = MaterialTheme.typography.bodySmall)
+            6 ->
                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                     CenterOneIconButton(Icons.Outlined.Info, details, { onEvent(StudentsEvent.OpenDetails(student.id)) })
                     CenterOneIconButton(Icons.Outlined.Edit, stringResource(Res.string.edit_student, student.name), {
@@ -103,3 +106,6 @@ fun StudentsDataGrid(
         }
     }
 }
+
+private fun Long.asEgp(): String =
+    if (this % 100L == 0L) "${this / 100} EGP" else "${this / 100}.${(this % 100).toString().padStart(2, '0')} EGP"

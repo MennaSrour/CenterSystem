@@ -22,9 +22,14 @@ sealed interface DashboardEvent {
         val expanded: Boolean,
     ) : DashboardEvent
 
+    data class ToggleLessonAttendance(
+        val lessonId: String,
+    ) : DashboardEvent
+
     data class RegisterAttendance(
         val studentCode: String,
         val groupId: String? = null,
+        val attendedLessonIds: Set<String> = emptySet(),
     ) : DashboardEvent
 
     data class CheckOut(

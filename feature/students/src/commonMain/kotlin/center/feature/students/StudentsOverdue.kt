@@ -32,9 +32,9 @@ internal enum class OverdueText(
     private val text: LocalizedText,
 ) {
     Tab(LocalizedText("المتأخرات", "Overdue")),
-    Search(LocalizedText("ابحث بالاسم أو الكود أو المجموعة أو المدرس", "Search by student, code, group, or teacher")),
+    Search(LocalizedText("ابحث بالاسم أو الكود أو الدرس أو المدرس", "Search by student, code, lesson, or teacher")),
     Student(LocalizedText("الطالب والكود", "Student & code")),
-    Group(LocalizedText("المجموعة والمدرس", "Group & teacher")),
+    Group(LocalizedText("الدرس والمدرس", "Lesson & teacher")),
     Phone(LocalizedText("هاتف ولي الأمر", "Parent phone")),
     Amount(LocalizedText("المبلغ المستحق", "Amount due")),
     Actions(LocalizedText("الإجراءات", "Actions")),

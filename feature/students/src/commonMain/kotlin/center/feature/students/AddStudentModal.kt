@@ -94,6 +94,7 @@ internal fun AddStudentModalContent(
                         label = { Text(stringResource(Res.string.student_code)) },
                         textStyle = MaterialTheme.typography.bodyLarge.copy(textDirection = TextDirection.Ltr),
                         enabled = !state.isSubmitting,
+                        readOnly = state.editingId == null,
                         isError = state.codeError != null,
                         supportingText = state.codeError?.let { error -> ({ Text(error) }) },
                         modifier = Modifier.fillMaxWidth(),
@@ -163,7 +164,7 @@ internal fun AddStudentModalContent(
             }
         }
         if (state.groupOptions.isNotEmpty()) {
-            Text(LocalizedText("المجموعات المسجل بها", "Enrolled groups").resolve(language), style = MaterialTheme.typography.titleSmall)
+            Text(LocalizedText("الدروس المسجل بها", "Enrolled lessons").resolve(language), style = MaterialTheme.typography.titleSmall)
             state.groupOptions.forEach { group ->
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Checkbox(
@@ -174,6 +175,21 @@ internal fun AddStudentModalContent(
                     Text(group.label)
                 }
                 if (group.id in state.selectedGroupIds) {
+                    CenterOneTextField(
+                        value = state.customPrices[group.id].orEmpty(),
+                        onValueChange = { onEvent(StudentsEvent.CustomPriceChanged(group.id, it)) },
+                        label = { Text(LocalizedText("السعر الشهري للطالب (ج.م)", "Student monthly price (EGP)").resolve(language)) },
+                        enabled = !state.isSubmitting,
+                        isError = group.id in state.invalidCustomPrices,
+                        supportingText =
+                            if (group.id in state.invalidCustomPrices) {
+                                { Text(LocalizedText("أدخل سعرًا صالحًا", "Enter a valid price").resolve(language)) }
+                            } else {
+                                null
+                            },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        modifier = Modifier.fillMaxWidth(),
+                    )
                     CenterOneTextField(
                         value = state.discounts[group.id].orEmpty(),
                         onValueChange = { onEvent(StudentsEvent.DiscountChanged(group.id, it)) },

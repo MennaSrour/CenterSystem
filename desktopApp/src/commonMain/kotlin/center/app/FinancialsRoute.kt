@@ -110,7 +110,14 @@ internal class FinancialsStateHolder(
 ) {
     private val state =
         MutableStateFlow(
-            FinancialsState(FinancialSummary("0", "0", "0", if (canViewProfit) "0" else null), emptyList(), emptyList(), "", ""),
+            FinancialsState(
+                FinancialSummary("0", "0", "0", if (canViewProfit) "0" else null),
+                emptyList(),
+                emptyList(),
+                "",
+                "",
+                canViewMonthlyReport = canViewProfit,
+            ),
         )
     val uiState = state.asStateFlow()
     private val messages = MutableSharedFlow<String>(extraBufferCapacity = 4)

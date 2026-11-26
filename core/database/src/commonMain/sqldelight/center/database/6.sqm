@@ -1,0 +1,165 @@
+ALTER TABLE student ADD COLUMN syncStatus TEXT NOT NULL DEFAULT 'PENDING';
+ALTER TABLE student ADD COLUMN updatedAt INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE attendance ADD COLUMN syncStatus TEXT NOT NULL DEFAULT 'PENDING';
+ALTER TABLE attendance ADD COLUMN updatedAt INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE payment ADD COLUMN syncStatus TEXT NOT NULL DEFAULT 'PENDING';
+ALTER TABLE payment ADD COLUMN updatedAt INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE message_queue ADD COLUMN syncStatus TEXT NOT NULL DEFAULT 'PENDING';
+ALTER TABLE message_queue ADD COLUMN updatedAt INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE message_queue ADD COLUMN reminderStudentId TEXT;
+ALTER TABLE attendance_session ADD COLUMN syncStatus TEXT NOT NULL DEFAULT 'PENDING';
+ALTER TABLE attendance_session ADD COLUMN updatedAt INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE treasury_expense ADD COLUMN syncStatus TEXT NOT NULL DEFAULT 'PENDING';
+ALTER TABLE treasury_expense ADD COLUMN updatedAt INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE teacher ADD COLUMN portalPin TEXT NOT NULL DEFAULT '';
+
+CREATE TABLE portal_installation (
+    singleton INTEGER PRIMARY KEY NOT NULL CHECK (singleton = 1),
+    id TEXT NOT NULL
+);
+
+CREATE TABLE parent_account (
+    normalizedParentPhone TEXT NOT NULL PRIMARY KEY,
+    accessPin TEXT NOT NULL CHECK (length(accessPin) = 6 AND accessPin NOT GLOB '*[^0-9]*')
+);
+
+CREATE TABLE exam_grade (
+    id TEXT NOT NULL PRIMARY KEY,
+    studentId TEXT NOT NULL,
+    groupId TEXT NOT NULL,
+    examTitle TEXT NOT NULL CHECK (length(trim(examTitle)) BETWEEN 1 AND 160),
+    score REAL NOT NULL CHECK (score >= 0 AND score <= maxScore),
+    maxScore REAL NOT NULL CHECK (maxScore > 0),
+    date INTEGER NOT NULL,
+    notes TEXT NOT NULL DEFAULT '',
+    syncStatus TEXT NOT NULL DEFAULT 'PENDING',
+    updatedAt INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE INDEX exam_grade_student ON exam_grade(studentId, date);
+
+CREATE TRIGGER student_sync_insert
+AFTER INSERT ON student
+BEGIN
+    UPDATE student
+    SET syncStatus = 'PENDING',
+        updatedAt = max(new.updatedAt + 1, CAST(strftime('%s', 'now') AS INTEGER) * 1000)
+    WHERE id = new.id;
+END;
+
+CREATE TRIGGER student_sync_update
+AFTER UPDATE OF name, gradeLevel, studentPhone, parentPhone, isActive, code, stage, system ON student
+BEGIN
+    UPDATE student
+    SET syncStatus = 'PENDING',
+        updatedAt = max(new.updatedAt + 1, CAST(strftime('%s', 'now') AS INTEGER) * 1000)
+    WHERE id = new.id;
+END;
+
+CREATE TRIGGER attendance_sync_insert
+AFTER INSERT ON attendance
+BEGIN
+    UPDATE attendance
+    SET syncStatus = 'PENDING',
+        updatedAt = max(new.updatedAt + 1, CAST(strftime('%s', 'now') AS INTEGER) * 1000)
+    WHERE id = new.id;
+END;
+
+CREATE TRIGGER attendance_sync_update
+AFTER UPDATE OF studentId, classId, timestamp, status ON attendance
+BEGIN
+    UPDATE attendance
+    SET syncStatus = 'PENDING',
+        updatedAt = max(new.updatedAt + 1, CAST(strftime('%s', 'now') AS INTEGER) * 1000)
+    WHERE id = new.id;
+END;
+
+CREATE TRIGGER attendance_session_sync_insert
+AFTER INSERT ON attendance_session
+BEGIN
+    UPDATE attendance_session
+    SET syncStatus = 'PENDING',
+        updatedAt = max(new.updatedAt + 1, CAST(strftime('%s', 'now') AS INTEGER) * 1000)
+    WHERE personType = new.personType AND personId = new.personId AND date = new.date AND groupId = new.groupId;
+END;
+
+CREATE TRIGGER attendance_session_sync_update
+AFTER UPDATE OF checkInTime, checkOutTime ON attendance_session
+BEGIN
+    UPDATE attendance_session
+    SET syncStatus = 'PENDING',
+        updatedAt = max(new.updatedAt + 1, CAST(strftime('%s', 'now') AS INTEGER) * 1000)
+    WHERE personType = new.personType AND personId = new.personId AND date = new.date AND groupId = new.groupId;
+END;
+
+CREATE TRIGGER payment_sync_insert
+AFTER INSERT ON payment
+BEGIN
+    UPDATE payment
+    SET syncStatus = 'PENDING',
+        updatedAt = max(new.updatedAt + 1, CAST(strftime('%s', 'now') AS INTEGER) * 1000)
+    WHERE id = new.id;
+END;
+
+CREATE TRIGGER payment_sync_update
+AFTER UPDATE OF studentId, classId, amountPaid, paymentDate, billingMonth ON payment
+BEGIN
+    UPDATE payment
+    SET syncStatus = 'PENDING',
+        updatedAt = max(new.updatedAt + 1, CAST(strftime('%s', 'now') AS INTEGER) * 1000)
+    WHERE id = new.id;
+END;
+
+CREATE TRIGGER treasury_expense_sync_insert
+AFTER INSERT ON treasury_expense
+BEGIN
+    UPDATE treasury_expense
+    SET syncStatus = 'PENDING',
+        updatedAt = max(new.updatedAt + 1, CAST(strftime('%s', 'now') AS INTEGER) * 1000)
+    WHERE id = new.id;
+END;
+
+CREATE TRIGGER treasury_expense_sync_update
+AFTER UPDATE OF kind, amountMinor, recordedAt, description, teacherId ON treasury_expense
+BEGIN
+    UPDATE treasury_expense
+    SET syncStatus = 'PENDING',
+        updatedAt = max(new.updatedAt + 1, CAST(strftime('%s', 'now') AS INTEGER) * 1000)
+    WHERE id = new.id;
+END;
+
+CREATE TRIGGER message_queue_sync_insert
+AFTER INSERT ON message_queue
+BEGIN
+    UPDATE message_queue
+    SET syncStatus = 'PENDING',
+        updatedAt = max(new.updatedAt + 1, CAST(strftime('%s', 'now') AS INTEGER) * 1000)
+    WHERE id = new.id;
+END;
+
+CREATE TRIGGER message_queue_sync_update
+AFTER UPDATE OF targetPhone, messageBody, status, channel, createdAt, reminderStudentId ON message_queue
+BEGIN
+    UPDATE message_queue
+    SET syncStatus = 'PENDING',
+        updatedAt = max(new.updatedAt + 1, CAST(strftime('%s', 'now') AS INTEGER) * 1000)
+    WHERE id = new.id;
+END;
+
+CREATE TRIGGER exam_grade_sync_insert
+AFTER INSERT ON exam_grade
+BEGIN
+    UPDATE exam_grade
+    SET syncStatus = 'PENDING',
+        updatedAt = max(new.updatedAt + 1, CAST(strftime('%s', 'now') AS INTEGER) * 1000)
+    WHERE id = new.id;
+END;
+
+CREATE TRIGGER exam_grade_sync_update
+AFTER UPDATE OF studentId, groupId, examTitle, score, maxScore, date, notes ON exam_grade
+BEGIN
+    UPDATE exam_grade
+    SET syncStatus = 'PENDING',
+        updatedAt = max(new.updatedAt + 1, CAST(strftime('%s', 'now') AS INTEGER) * 1000)
+    WHERE id = new.id;
+END;

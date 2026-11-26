@@ -17,11 +17,16 @@ import center.domain.model.ClassGroup
 import center.domain.model.EducationSystem
 import center.domain.model.GroupScheduleSlot
 import center.domain.model.GroupStatus
+import center.domain.model.LessonEnrollment
+import center.domain.model.LessonType
+import center.domain.model.StudentTrack
 import center.feature.courses.CourseGrade
 import center.feature.courses.CourseGroup
+import center.feature.courses.CourseLessonType
 import center.feature.courses.CourseRoom
 import center.feature.courses.CourseSchedule
 import center.feature.courses.CourseStage
+import center.feature.courses.CourseStudent
 import center.feature.courses.CourseSystem
 import center.feature.courses.CourseTeacher
 import center.feature.courses.CoursesDestination
@@ -186,15 +191,32 @@ internal class CoursesStateHolder(
                                 )
                             },
                             group.status == GroupStatus.ACTIVE,
+                            group.lessonType.toUi(),
+                            group.languagesPriceMinor?.decimalMinor().orEmpty(),
                         )
                     }
-                directory to models
-            }.catch { mutableFeedback.emit(failure) }.collect { (directory, groups) ->
+                val studentOptions =
+                    students.filter { it.isActive || it.enrolledGroupIds.isNotEmpty() }.map { student ->
+                        val gradeId = grades.firstOrNull { it.id == student.gradeLevel }?.id.orEmpty()
+                        val gradeLabel = grades.firstOrNull { it.id == gradeId }?.label ?: student.gradeLevel
+                        CourseStudent(
+                            student.id,
+                            student.fullName,
+                            gradeId,
+                            gradeLabel,
+                            student.enrolledGroupIds,
+                            student.groupTracks,
+                            student.groupCustomPricesMinor,
+                        )
+                    }
+                Triple(directory, models, studentOptions)
+            }.catch { mutableFeedback.emit(failure) }.collect { (directory, groups, studentOptions) ->
                 mutableState.update {
                     val form = it.modal as? CoursesModal.Form
                     it.copy(
                         teachers = directory,
                         groups = groups,
+                        students = studentOptions,
                         summary =
                             CoursesSummary(
                                 groups.size.toString(),
@@ -204,7 +226,10 @@ internal class CoursesStateHolder(
                                     }.toString(),
                                 directory.size.toString(),
                             ),
-                        modal = form?.let { modal -> CoursesModal.Form(modal.state.copy(teachers = directory)) } ?: it.modal,
+                        modal =
+                            form?.let { modal ->
+                                CoursesModal.Form(modal.state.copy(teachers = directory, students = studentOptions))
+                            } ?: it.modal,
                     )
                 }
             }
@@ -300,7 +325,16 @@ internal class CoursesStateHolder(
                     }
                 }
             is CoursesEvent.SystemSelected -> editForm { it.copy(system = event.system) }
+            is CoursesEvent.LessonTypeSelected ->
+                editForm {
+                    it.copy(
+                        lessonType = event.lessonType,
+                        system = event.lessonType.toSystem(),
+                        languagesPrice = if (event.lessonType == CourseLessonType.Mixed) it.languagesPrice else "",
+                    )
+                }
             is CoursesEvent.MonthlyPriceChanged -> editForm { it.copy(monthlyPrice = event.value) }
+            is CoursesEvent.LanguagesPriceChanged -> editForm { it.copy(languagesPrice = event.value) }
             is CoursesEvent.CommissionChanged -> editForm { it.copy(teacherCommission = event.value) }
             is CoursesEvent.MaxCapacityChanged -> editForm { it.copy(maxCapacity = event.value) }
             is CoursesEvent.RoomSelected ->
@@ -378,6 +412,49 @@ internal class CoursesStateHolder(
                             },
                     )
                 }
+            is CoursesEvent.ToggleScheduleDay ->
+                editForm { form ->
+                    val selected = form.timeSlots.firstOrNull { it.day == event.day }
+                    if (selected != null) {
+                        form.copy(timeSlots = form.timeSlots.filterNot { it.day == event.day })
+                    } else {
+                        form.copy(
+                            timeSlots =
+                                form.timeSlots +
+                                    GroupTimeSlotState(
+                                        "draft-slot-${nextSlot++}",
+                                        event.day,
+                                        "09:00",
+                                        "10:00",
+                                    ),
+                        )
+                    }
+                }
+            is CoursesEvent.StudentSearchChanged -> editForm { it.copy(studentSearch = event.value) }
+            is CoursesEvent.ShowOtherGradesChanged -> editForm { it.copy(showOtherGrades = event.show) }
+            is CoursesEvent.StudentEnrollmentToggled ->
+                editForm { form ->
+                    if (event.selected) {
+                        val student = form.students.firstOrNull { it.id == event.studentId } ?: return@editForm form
+                        form.copy(enrollments = form.enrollments + (student.id to enrollmentFor(form, student)))
+                    } else {
+                        form.copy(enrollments = form.enrollments - event.studentId)
+                    }
+                }
+            is CoursesEvent.StudentTrackSelected ->
+                editForm { form ->
+                    val student = form.students.firstOrNull { it.id == event.studentId } ?: return@editForm form
+                    form.copy(
+                        enrollments =
+                            form.enrollments +
+                                (student.id to enrollmentFor(form, student, event.track)),
+                    )
+                }
+            is CoursesEvent.StudentPriceChanged ->
+                editForm { form ->
+                    val enrollment = form.enrollments[event.studentId] ?: return@editForm form
+                    form.copy(enrollments = form.enrollments + (event.studentId to enrollment.copy(price = event.value)))
+                }
             CoursesEvent.SubmitGroup -> submit()
             CoursesEvent.ConfirmDeleteGroup -> delete()
             is CoursesEvent.Navigate, CoursesEvent.OpenNotifications, is CoursesEvent.LanguageSelected, CoursesEvent.LogOut -> Unit
@@ -395,6 +472,8 @@ internal class CoursesStateHolder(
             selectedGradeId = group?.gradeId?.takeIf { it.isNotBlank() },
             system = group?.system ?: CourseSystem.Arabic,
             monthlyPrice = group?.monthlyPrice.orEmpty(),
+            lessonType = group?.lessonType ?: CourseLessonType.Arabic,
+            languagesPrice = group?.languagesPrice.orEmpty(),
             teacherCommission = group?.teacherCommission?.takeIf { it.isNotBlank() } ?: "70",
             maxCapacity =
                 group
@@ -408,9 +487,51 @@ internal class CoursesStateHolder(
                     ?.schedule
                     .orEmpty()
                     .map { GroupTimeSlotState(it.id, it.day, it.from, it.to) }
-                    .ifEmpty { listOf(GroupTimeSlotState("draft-slot-${nextSlot++}")) },
+                    .ifEmpty { emptyList() },
+            students = state.students,
+            enrollments =
+                group
+                    ?.let { existing ->
+                        state.students.filter { existing.id in it.enrolledGroupIds }.associate { student ->
+                            student.id to
+                                enrollmentFor(
+                                    GroupFormState(
+                                        lessonType = existing.lessonType,
+                                        monthlyPrice = existing.monthlyPrice,
+                                        languagesPrice = existing.languagesPrice,
+                                    ),
+                                    student,
+                                    student.groupTracks[existing.id],
+                                    student.groupCustomPricesMinor[existing.id]?.decimalMinor(),
+                                )
+                        }
+                    }.orEmpty(),
             canSubmit = group?.maxCapacity?.let { it > 0 } == true && group.monthlyPrice.isNotBlank() && group.gradeId.isNotBlank(),
         )
+
+    private fun enrollmentFor(
+        form: GroupFormState,
+        student: CourseStudent,
+        trackOverride: StudentTrack? = null,
+        priceOverride: String? = null,
+    ): center.feature.courses.CourseStudentEnrollment {
+        val groupId = (form.mode as? GroupFormMode.Edit)?.groupId
+        val track =
+            trackOverride ?: groupId?.let(student.groupTracks::get) ?: when (form.lessonType) {
+                CourseLessonType.Arabic -> StudentTrack.ARABIC
+                CourseLessonType.Languages -> StudentTrack.LANGUAGES
+                CourseLessonType.Mixed -> StudentTrack.ARABIC
+                CourseLessonType.Private -> StudentTrack.PRIVATE
+            }
+        val existingPrice = groupId?.let(student.groupCustomPricesMinor::get)?.decimalMinor()
+        val defaultPrice =
+            if (form.lessonType == CourseLessonType.Mixed && track == StudentTrack.LANGUAGES) {
+                form.languagesPrice
+            } else {
+                form.monthlyPrice
+            }
+        return center.feature.courses.CourseStudentEnrollment(track, priceOverride ?: existingPrice ?: defaultPrice)
+    }
 
     private fun submit() {
         val form = (state.modal as? CoursesModal.Form)?.state ?: return
@@ -441,6 +562,14 @@ internal class CoursesStateHolder(
                             },
                             requireNotNull(form.selectedGradeId),
                             requireNotNull(form.maxCapacity.trim().toIntOrNull()).also { require(it > 0) },
+                            form.lessonType.toDomain(),
+                            form.languagesPrice.parseMinor(),
+                            form.enrollments.mapValues { (_, enrollment) ->
+                                LessonEnrollment(
+                                    requireNotNull(enrollment.price.parseMinor()),
+                                    enrollment.track,
+                                )
+                            },
                         ),
                     )
                 }
@@ -465,6 +594,18 @@ private fun EducationSystem.toUi(): CourseSystem =
         EducationSystem.ARABIC -> CourseSystem.Arabic
         EducationSystem.LANGUAGES -> CourseSystem.Languages
         EducationSystem.BOTH -> CourseSystem.Mixed
+    }
+
+private fun LessonType.toUi(): CourseLessonType = CourseLessonType.valueOf(name.lowercase().replaceFirstChar(Char::uppercase))
+
+private fun CourseLessonType.toDomain(): LessonType = LessonType.valueOf(name.uppercase())
+
+private fun CourseLessonType.toSystem(): CourseSystem =
+    when (this) {
+        CourseLessonType.Arabic -> CourseSystem.Arabic
+        CourseLessonType.Languages -> CourseSystem.Languages
+        CourseLessonType.Mixed -> CourseSystem.Mixed
+        CourseLessonType.Private -> CourseSystem.Arabic
     }
 
 private fun CourseSystem.toDomain(): EducationSystem =

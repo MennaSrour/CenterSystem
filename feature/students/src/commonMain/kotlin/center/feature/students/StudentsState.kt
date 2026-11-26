@@ -27,6 +27,7 @@ data class StudentRow(
     val parentPhone: String,
     val stage: EducationStage? = null,
     val gradeLabel: String? = null,
+    val monthlyDueMinor: Long = 0,
 )
 
 data class StudentMonthlyPayment(
@@ -156,5 +157,7 @@ data class AddStudentState(
     val selectedGroupIds: Set<String> = emptySet(),
     val studentPhone: String = "",
     val discounts: Map<String, String> = emptyMap(),
+    val customPrices: Map<String, String> = emptyMap(),
     val invalidDiscounts: Set<String> = emptySet(),
+    val invalidCustomPrices: Set<String> = emptySet(),
 )

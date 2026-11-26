@@ -3,7 +3,9 @@ CREATE TABLE attendance (
     studentId TEXT NOT NULL REFERENCES student(id) ON DELETE RESTRICT,
     classId TEXT NOT NULL REFERENCES class_group(id) ON DELETE RESTRICT,
     timestamp INTEGER NOT NULL,
-    status TEXT NOT NULL CHECK (status IN ('PRESENT', 'ABSENT'))
+    status TEXT NOT NULL CHECK (status IN ('PRESENT', 'ABSENT')),
+    syncStatus TEXT NOT NULL DEFAULT 'PENDING',
+    updatedAt INTEGER NOT NULL DEFAULT 0
 );
 CREATE UNIQUE INDEX attendance_student_class_time ON attendance(studentId, classId, timestamp);
 CREATE INDEX attendance_class_time ON attendance(classId, timestamp);

@@ -75,7 +75,15 @@ fun StudentsScreen(
     CenterOneLocalization(LocalAppLanguage.current) {
         Box(modifier.fillMaxSize()) {
             StudentsContent(state, onEvent)
-            state.details?.let { StudentDetails(it) { onEvent(StudentsEvent.CloseDetails) } }
+            state.details?.let { details ->
+                StudentDetails(
+                    state = details,
+                    onClose = { onEvent(StudentsEvent.CloseDetails) },
+                    onEdit = { onEvent(StudentsEvent.EditStudent(details.id)) },
+                    onEditEnrollment = { groupId -> onEvent(StudentsEvent.EditEnrollmentPrice(details.id, groupId)) },
+                    onRemoveEnrollment = { groupId -> onEvent(StudentsEvent.RemoveEnrollment(details.id, groupId)) },
+                )
+            }
             state.addStudent?.let { form ->
                 Box(Modifier.matchParentSize().background(ModalScrim))
                 AddStudentModal(form, onEvent)

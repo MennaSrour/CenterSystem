@@ -164,6 +164,8 @@ private fun PasswordField(
     )
 }
 
+internal val LocalCloudSettings = androidx.compose.runtime.staticCompositionLocalOf<@Composable () -> Unit> { {} }
+
 private sealed interface AccountForm {
     data object Add : AccountForm
 
@@ -182,7 +184,10 @@ internal fun SettingsScreen(
     CenterOnePageHeader("الإعدادات", "Settings", "") {
         CenterOneLanguageToggle(language, onLanguageSelected)
     }
-    if (canManageUsers) ManageUsers(session)
+    if (canManageUsers) {
+        LocalCloudSettings.current()
+        ManageUsers(session)
+    }
 }
 
 @Composable

@@ -9,7 +9,9 @@ CREATE TABLE class_group (
     system TEXT NOT NULL DEFAULT 'BOTH' CHECK (system IN ('ARABIC', 'LANGUAGES', 'BOTH')),
     status TEXT NOT NULL DEFAULT 'ACTIVE' CHECK (status IN ('ACTIVE', 'ARCHIVED')),
     gradeId TEXT,
-    maxCapacity INTEGER CHECK (maxCapacity BETWEEN 1 AND 2147483647)
+    maxCapacity INTEGER CHECK (maxCapacity BETWEEN 1 AND 2147483647),
+    lessonType TEXT NOT NULL DEFAULT 'ARABIC' CHECK (lessonType IN ('ARABIC', 'LANGUAGES', 'MIXED', 'PRIVATE')),
+    languagesPriceMinor INTEGER CHECK (languagesPriceMinor BETWEEN 0 AND 100000000000)
 );
 CREATE INDEX class_teacher ON class_group(teacherId);
 

@@ -1,5 +1,6 @@
 package center.feature.dashboard
 
+import center.domain.usecase.LessonAttendanceOption
 import center.ui.localization.AppLanguage
 import center.ui.localization.LocalizedText
 
@@ -15,6 +16,7 @@ data class DashboardState(
     val attendanceGroupId: String? = null,
     val groupMenuExpanded: Boolean = false,
     val checkingIn: Boolean = false,
+    val lessonAttendanceOptions: List<LessonAttendanceOption> = emptyList(),
 )
 
 data class QuickStudent(

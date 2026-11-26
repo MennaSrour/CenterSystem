@@ -21,7 +21,7 @@ import center.domain.usecase.AuthSession
 import center.feature.billing.BillingScreen
 import center.feature.dashboard.DashboardEvent
 import center.feature.reception.ReceptionScreen
-import center.feature.reports.ReportsScreen
+import center.feature.reports.MonthlyReportPlatform
 import center.ui.components.CenterOneCanvas
 import center.ui.components.CenterOneMainNavigation
 import center.ui.components.HeaderIdentity
@@ -37,6 +37,7 @@ internal fun App(
     session: AuthSession,
     language: AppLanguage,
     onLanguageSelected: (AppLanguage) -> Unit,
+    monthlyReportPlatform: MonthlyReportPlatform? = null,
     printCenter: @Composable () -> Unit,
 ) {
     val user = session.user.value ?: return
@@ -77,7 +78,7 @@ internal fun App(
                 Destination.Courses -> CoursesRoute(root, services, canDelete, onLanguageSelected)
                 Destination.Print -> printCenter()
                 Destination.Teachers -> TeachersRoute(root, services, onLanguageSelected, canDelete)
-                else -> SecondaryRoute(root, route.destination, language, session, onLanguageSelected)
+                else -> SecondaryRoute(root, route.destination, language, session, services, monthlyReportPlatform, onLanguageSelected)
             }
         }
     }
@@ -89,6 +90,8 @@ private fun SecondaryRoute(
     destination: Destination,
     language: AppLanguage,
     session: AuthSession,
+    services: DirectoryServices,
+    monthlyReportPlatform: MonthlyReportPlatform?,
     onLanguageSelected: (AppLanguage) -> Unit,
 ) {
     val selected =
@@ -105,7 +108,12 @@ private fun SecondaryRoute(
                 when (destination) {
                     Destination.Reception -> ReceptionScreen()
                     Destination.Billing -> BillingScreen()
-                    Destination.Reports -> ReportsScreen()
+                    Destination.Reports ->
+                        if (session.allows(Permission.VIEW_MONTHLY_PROFIT) && monthlyReportPlatform != null) {
+                            ReportsRoute(root, services, monthlyReportPlatform)
+                        } else {
+                            ReportsAccessDenied(language)
+                        }
                     Destination.Settings ->
                         SettingsScreen(session, session.allows(Permission.MANAGE_USERS), onLanguageSelected)
                     else -> Unit
