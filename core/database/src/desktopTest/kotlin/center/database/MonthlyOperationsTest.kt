@@ -53,6 +53,79 @@ class MonthlyOperationsTest {
     private val now = day.atStartOfDayIn(TimeZone.of("Africa/Cairo")).toEpochMilliseconds()
 
     @Test
+    fun paymentPersistsWithSqlDelightSyncFieldsAndDoesNotRequireAReceiptPhone() =
+        runTest {
+            val path = Files.createTempDirectory("center-payment-persist")
+            try {
+                openDatabase(path).use { driver ->
+                    val database = CenterDatabase(driver)
+                    val dispatcher = StandardTestDispatcher(testScheduler)
+                    val teachers = SqlTeacherRepository(database, dispatcher)
+                    val students = SqlStudentRepository(database, dispatcher)
+                    val groups = SqlClassGroupRepository(database, dispatcher)
+                    val payments = SqlPaymentRepository(database, dispatcher)
+                    val treasury = SqlTreasuryRepository(database, dispatcher)
+                    teachers.save(Teacher("teacher", "Teacher", "Math", commissionRate = 0.7))
+                    val student = Student("student", "Student", code = "ST-500", parentPhone = "")
+                    students.save(student)
+                    groups.save(
+                        ClassGroup(
+                            id = "lesson",
+                            name = "Math",
+                            teacherId = "teacher",
+                            monthlyPriceMinor = 100_000,
+                            commissionBasisPoints = 7_000,
+                            roomNumber = 1,
+                            system = EducationSystem.ARABIC,
+                            status = GroupStatus.ACTIVE,
+                            enrollments = mapOf(student.id to LessonEnrollment(100_000, StudentTrack.ARABIC)),
+                        ),
+                    )
+                    // Existing lessons can have a null commission after the column was introduced.
+                    driver.execute(null, "UPDATE class_group SET commissionBasisPoints = NULL WHERE id = 'lesson'", 0)
+                    var id = 0
+                    val process =
+                        ProcessPaymentUseCase(
+                            students,
+                            teachers,
+                            payments,
+                            EpochClock { now },
+                            IdGenerator { "payment-${++id}" },
+                        )
+
+                    val payment = process(student.code, "lesson", 500.0, month).getOrThrow()
+
+                    assertEquals(500.0, payment.amountPaid)
+                    assertEquals(350.0, payment.teacherShare)
+                    assertEquals(150.0, payment.centerShare)
+                    assertEquals(listOf(payment), payments.getPaymentsForStudent(student.id).first())
+                    val row = database.paymentQueries.selectById(payment.id).executeAsOne()
+                    assertEquals(month.toString(), row.billingMonth)
+                    assertEquals("PENDING", row.syncStatus)
+                    assertTrue(row.updatedAt > 0L)
+                    assertEquals(
+                        50_000L,
+                        treasury
+                            .observeLedger(now, now + 1)
+                            .first()
+                            .single()
+                            .amountMinor,
+                    )
+                    assertEquals(
+                        50_000L,
+                        SqlMonthlyBillingRepository(database, dispatcher)
+                            .remainingBalances(month)
+                            .single()
+                            .remainingMinor,
+                    )
+                    assertTrue(SqlMessageQueueRepository(database, dispatcher).getPendingMessages().first().isEmpty())
+                }
+            } finally {
+                path.toFile().deleteRecursively()
+            }
+        }
+
+    @Test
     fun mixedTracksCustomPricesAndMultipleLessonsAggregateMonthlyDue() =
         runTest {
             val path = Files.createTempDirectory("center-enrollment-pricing")

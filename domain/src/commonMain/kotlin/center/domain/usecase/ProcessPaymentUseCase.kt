@@ -32,7 +32,7 @@ class ProcessPaymentUseCase(
             val cents = round(amountPaid * 100).toLong()
             require(cents > 0 && abs(amountPaid * 100 - cents) < 0.000001) { "Amount must have at most two decimals" }
             val student = students.getStudentByCode(studentCode.trim()) ?: throw StudentNotFoundException(studentCode)
-            student.requireNotificationDetails()
+            if (student.id.isBlank() || !student.isActive || student.fullName.isBlank()) throw PaymentStudentUnavailableException()
             val rate = teachers.getCommissionForClass(classId) ?: throw ClassTeacherNotFoundException(classId)
             require(rate.isFinite() && rate in 0.0..1.0) { "Invalid teacher commission rate" }
             require(
@@ -52,12 +52,16 @@ class ProcessPaymentUseCase(
                 Payment(ids.newId(), student.id, classId, cents / 100.0, teacherCents / 100.0, (cents - teacherCents) / 100.0, now, month)
             val amountText = "${cents / 100}.${(cents % 100).toString().padStart(2, '0')}"
             val receipt =
-                QueuedMessage(
-                    ids.newId(),
-                    student.parentPhone,
-                    "تم استلام مبلغ $amountText للطالب ${student.fullName} في سنتر Center One. رقم الإيصال: ${payment.id}",
-                    createdAt = now,
-                )
+                student.parentPhone
+                    .takeIf(String::isNotBlank)
+                    ?.let { phone ->
+                        QueuedMessage(
+                            ids.newId(),
+                            phone,
+                            "تم استلام مبلغ $amountText للطالب ${student.fullName} في سنتر Center One. رقم الإيصال: ${payment.id}",
+                            createdAt = now,
+                        )
+                    }
             payments.saveWithReceipt(payment, receipt)
             payment
         }

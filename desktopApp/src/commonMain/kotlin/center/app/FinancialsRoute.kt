@@ -19,6 +19,14 @@ import center.domain.model.Student
 import center.domain.model.SubscriptionBalance
 import center.domain.model.Teacher
 import center.domain.model.TreasuryExpense
+import center.domain.usecase.ClassTeacherNotFoundException
+import center.domain.usecase.MonthlyPaymentAlreadySettledException
+import center.domain.usecase.PaymentExceedsRemainingBalanceException
+import center.domain.usecase.PaymentLessonUnavailableException
+import center.domain.usecase.PaymentStudentUnavailableException
+import center.domain.usecase.PaymentTermsChangedException
+import center.domain.usecase.StudentNotEnrolledException
+import center.domain.usecase.StudentNotFoundException
 import center.domain.usecase.salaryPayoutId
 import center.feature.financials.ClassOption
 import center.feature.financials.ExpenseType
@@ -54,6 +62,7 @@ import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.plus
 import kotlinx.datetime.toLocalDateTime
+import kotlin.math.roundToLong
 
 @Composable
 internal fun FinancialsRoute(
@@ -310,7 +319,10 @@ internal class FinancialsStateHolder(
                 }.map { StudentOption(it.id, it.fullName, it.code) }
         val options = balances[activeStudent?.id].orEmpty().values.map { ClassOption(it.groupId, it.groupName) }
         val balance = balances[activeStudent?.id]?.get(form.selectedClassId)
-        val commission = groups[balance?.groupId]?.commissionBasisPoints
+        val commission =
+            groups[balance?.groupId]?.let { group ->
+                group.commissionBasisPoints ?: teachers[group.teacherId]?.commissionRate?.let { (it * 10_000).roundToLong().toInt() }
+            }
         val amount = form.amount.parseMinor()
         val valid = amount != null && balance != null && commission != null && amount in 1..balance.remainingMinor
         val split =
@@ -331,7 +343,7 @@ internal class FinancialsStateHolder(
                 if (activeStudent != null &&
                     options.isEmpty()
                 ) {
-                    label("لا يوجد رصيد مستحق هذا الشهر.", "No balance due this month.")
+                    label("لا يوجد درس مسجل عليه رصيد مستحق هذا الشهر.", "No enrolled lesson has an outstanding balance this month.")
                 } else {
                     null
                 },
@@ -410,10 +422,19 @@ internal class FinancialsStateHolder(
             if (result.isSuccess) {
                 setModal(FinancialsModal.Closed)
                 messages.emit(
-                    label("تم تسجيل الدفع وإضافة التأكيد إلى قائمة واتساب.", "Payment recorded and WhatsApp confirmation queued."),
+                    if (student.parentPhone.isBlank()) {
+                        label(
+                            "تم تسجيل الدفع. لم يتم إرسال الإيصال لعدم توفر رقم هاتف ولي الأمر.",
+                            "Payment recorded. No receipt was queued because the parent phone is missing.",
+                        )
+                    } else {
+                        label("تم تسجيل الدفع وإضافة التأكيد إلى قائمة واتساب.", "Payment recorded and WhatsApp confirmation queued.")
+                    },
                 )
             } else {
-                setModal(FinancialsModal.ReceivePayment(refreshPayment(form).copy(message = error())))
+                val failure = requireNotNull(result.exceptionOrNull())
+                logPaymentFailure(failure)
+                setModal(FinancialsModal.ReceivePayment(refreshPayment(form).copy(message = paymentError(failure))))
             }
         }
     }
@@ -484,4 +505,33 @@ internal class FinancialsStateHolder(
 
     private fun error(): String =
         label("تعذر تنفيذ العملية. تحقق من البيانات وأعد المحاولة.", "Could not complete the operation. Check the details and try again.")
+
+    private fun paymentError(failure: Throwable): String =
+        when (failure) {
+            is StudentNotFoundException, is PaymentStudentUnavailableException ->
+                label("الطالب غير موجود أو غير نشط.", "The student could not be found or is inactive.")
+            is PaymentLessonUnavailableException, is ClassTeacherNotFoundException ->
+                label("الدرس غير متاح للتحصيل حالياً.", "This lesson is not available for payment.")
+            is StudentNotEnrolledException ->
+                label("الطالب غير مسجل في هذا الدرس.", "The student is not enrolled in this lesson.")
+            is MonthlyPaymentAlreadySettledException ->
+                label("تم سداد مستحقات هذا الدرس لهذا الشهر بالفعل.", "This lesson is already paid for this month.")
+            is PaymentExceedsRemainingBalanceException ->
+                label(
+                    "تغير الرصيد المستحق. حدّث البيانات وأدخل مبلغاً لا يتجاوز المتبقي.",
+                    "The balance changed. Refresh and enter no more than the remaining amount.",
+                )
+            is PaymentTermsChangedException ->
+                label("تغيرت نسبة المدرس. حدّث البيانات ثم أعد المحاولة.", "The teacher commission changed. Refresh and try again.")
+            else ->
+                label(
+                    "تعذر حفظ الدفعة. راجع سجل التطبيق لمعرفة السبب.",
+                    "Could not save the payment. Check the application log for details.",
+                )
+        }
+
+    private fun logPaymentFailure(failure: Throwable) {
+        println("Student payment failed: ${failure::class.simpleName}: ${failure.message}")
+        failure.printStackTrace()
+    }
 }
