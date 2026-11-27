@@ -15,6 +15,7 @@ import center.domain.model.AttendancePerson
 import center.domain.model.AttendanceSession
 import center.domain.model.ClassGroup
 import center.domain.model.GroupStatus
+import center.domain.model.MakeupSession
 import center.domain.model.PersonType
 import center.domain.model.StaffMember
 import center.domain.model.Student
@@ -98,6 +99,7 @@ internal class DashboardStateHolder(
     private var teachers = emptyList<Teacher>()
     private var staff = emptyList<StaffMember>()
     private var sessions = emptyList<AttendanceSession>()
+    private var makeupSessions = emptyList<MakeupSession>()
     private var selectedPerson: AttendancePerson? = null
 
     private data class ReceptionPerson(
@@ -117,8 +119,9 @@ internal class DashboardStateHolder(
                         services.treasury.observeTotals(day),
                         services.billing.observeChanges(),
                         services.sessions.observeDay(day),
-                    ) { count, treasury, _, sessions ->
-                        DaySnapshot(day, count + sessions.size, treasury.todayIncomeMinor - treasury.todayExpenseMinor, sessions)
+                        services.makeupSessions.observeForDate(day),
+                    ) { count, treasury, _, sessions, makeups ->
+                        DaySnapshot(day, count + sessions.size, treasury.todayIncomeMinor - treasury.todayExpenseMinor, sessions, makeups)
                     }
                 }
             combine(
@@ -127,10 +130,11 @@ internal class DashboardStateHolder(
                 services.teachers.observeTeachers(),
                 services.staff.observeStaff(),
                 dayUpdates,
-            ) { directory, catalog, teachers, staff, (day, attendance, treasury, sessions) ->
+            ) { directory, catalog, teachers, staff, (day, attendance, treasury, sessions, makeups) ->
                 this@DashboardStateHolder.teachers = teachers
                 this@DashboardStateHolder.staff = staff.filter { it.isActive }
                 this@DashboardStateHolder.sessions = sessions
+                this@DashboardStateHolder.makeupSessions = makeups
                 students = directory.filter { it.isActive }
                 groups = catalog.associateBy { it.id }
                 unpaidStudentIds =
@@ -196,7 +200,7 @@ internal class DashboardStateHolder(
                     current.copy(
                         lessonAttendanceOptions =
                             current.lessonAttendanceOptions.map { lesson ->
-                                if (lesson.lessonId == event.lessonId) lesson.copy(attended = !lesson.attended) else lesson
+                                if (lesson.key == event.lessonId) lesson.copy(attended = !lesson.attended) else lesson
                             },
                     )
                 }
@@ -256,6 +260,12 @@ internal class DashboardStateHolder(
                 .orEmpty()
                 .mapNotNull(groups::get)
                 .filter { it.status == GroupStatus.ACTIVE }
+        val scheduledGroups =
+            when (selected.person.type) {
+                PersonType.STUDENT -> enrolled
+                PersonType.TEACHER -> groups.values.filter { it.status == GroupStatus.ACTIVE && it.teacherId == selected.person.id }
+                PersonType.STAFF -> emptyList()
+            }
         val status =
             when {
                 enrolled.none { (it.monthlyPriceMinor ?: 0) > 0 } -> PaymentStatus.NoSubscription
@@ -308,10 +318,15 @@ internal class DashboardStateHolder(
             student = detail,
             candidates = emptyList(),
             lessonAttendanceOptions =
-                if (student == null || today.isNotEmpty()) {
+                if (scheduledGroups.isEmpty() || today.isNotEmpty()) {
                     emptyList()
                 } else {
-                    scheduledLessonsForCheckIn(enrolled, services.today(), services.clock.nowMillis())
+                    scheduledLessonsForCheckIn(
+                        scheduledGroups,
+                        services.today(),
+                        services.clock.nowMillis(),
+                        makeupSessions = makeupSessions.filter { makeup -> scheduledGroups.any { it.id == makeup.lessonId } },
+                    )
                 },
         )
     }
@@ -334,7 +349,7 @@ internal class DashboardStateHolder(
         state.update { it.copy(checkingIn = true) }
         scope.launch {
             try {
-                val lessonChoices = snapshot.lessonAttendanceOptions.map { it.copy(attended = it.lessonId in attendedLessonIds) }
+                val lessonChoices = snapshot.lessonAttendanceOptions.map { it.copy(attended = it.key in attendedLessonIds) }
                 val result =
                     if (checkout) {
                         services.presence.checkOut(person)
@@ -354,5 +369,6 @@ internal class DashboardStateHolder(
         val attendance: Long,
         val treasury: Long,
         val sessions: List<AttendanceSession>,
+        val makeupSessions: List<MakeupSession>,
     )
 }

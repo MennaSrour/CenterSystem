@@ -103,6 +103,7 @@ internal class MonthlyReportStateHolder(
                     val staff = services.staff.observeStaff().first()
                     val ledger = services.treasury.observeLedger(startMillis, endMillis).first()
                     val sessions = services.sessions.observePeriod(startMillis, endMillis).first()
+                    val makeupSessions = services.makeupSessions.observeForPeriod(month, nextMonth).first()
                     val due = services.billing.monthlyDueTotals(month).associate { it.studentId to it.totalMinor }
                     val remaining =
                         services.billing.remainingBalances(month).groupBy { it.studentId }.mapValues { (_, rows) ->
@@ -135,6 +136,7 @@ internal class MonthlyReportStateHolder(
                                     minOf(ledgerRemaining, remaining[studentId] ?: ledgerRemaining)
                                 },
                             expectedTeacherSalary,
+                            makeupSessions,
                         ),
                     )
                 }

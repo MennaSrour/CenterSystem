@@ -35,7 +35,8 @@ CREATE TABLE lesson_attendance (
     attended INTEGER AS kotlin.Boolean NOT NULL CHECK (attended IN (0, 1)),
     recordedAt INTEGER NOT NULL,
     checkOutAt INTEGER,
-    PRIMARY KEY (studentId, classId, date, recordedAt),
+    sessionKey TEXT NOT NULL DEFAULT '',
+    PRIMARY KEY (studentId, classId, date, recordedAt, sessionKey),
     CHECK (checkOutAt IS NULL OR checkOutAt >= recordedAt)
 );
 CREATE INDEX lesson_attendance_student_date ON lesson_attendance(studentId, date, recordedAt);
@@ -75,24 +76,31 @@ UPDATE attendance_session SET checkOutTime = :at
 WHERE personType = :personType AND personId = :personId AND groupId = :groupId AND date = :date AND checkOutTime IS NULL;
 
 upsertLessonAttendance:
-INSERT OR REPLACE INTO lesson_attendance(studentId, classId, date, attended, recordedAt, checkOutAt)
-VALUES (?, ?, ?, ?, ?, ?);
+INSERT OR REPLACE INTO lesson_attendance(studentId, classId, date, attended, recordedAt, checkOutAt, sessionKey)
+VALUES (?, ?, ?, ?, ?, ?, ?);
 
 markFutureLessonsMissed:
 UPDATE lesson_attendance SET attended = 0, checkOutAt = :at
-WHERE studentId = :studentId AND date = :date AND attended = 1 AND classId IN (
+WHERE studentId = :studentId AND date = :date AND attended = 1 AND sessionKey = '' AND classId IN (
     SELECT classId FROM schedule_slot
     WHERE day = :day AND fromMinute >= :minute
 );
 
+markFutureMakeupLessonsMissed:
+UPDATE lesson_attendance SET attended = 0, checkOutAt = :at
+WHERE studentId = :studentId AND date = :date AND attended = 1 AND sessionKey IN (
+    SELECT id FROM makeup_session
+    WHERE makeup_date = :date AND start_time >= :time
+);
+
 lessonAttendanceForStudent:
-SELECT studentId, classId, date, attended, recordedAt, checkOutAt
+SELECT studentId, classId, date, attended, recordedAt, checkOutAt, nullif(sessionKey, '') AS makeupSessionId
 FROM lesson_attendance
 WHERE lesson_attendance.studentId = ?
 ORDER BY lesson_attendance.date DESC, lesson_attendance.recordedAt DESC;
 
 lessonAttendanceForDay:
-SELECT studentId, classId, date, attended, recordedAt, checkOutAt
+SELECT studentId, classId, date, attended, recordedAt, checkOutAt, nullif(sessionKey, '') AS makeupSessionId
 FROM lesson_attendance WHERE studentId = ? AND date = ? ORDER BY recordedAt, classId;
 
 sessionHistory:

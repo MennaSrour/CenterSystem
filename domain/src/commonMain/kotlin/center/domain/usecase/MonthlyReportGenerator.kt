@@ -6,6 +6,7 @@ import center.domain.model.GroupStatus
 import center.domain.model.LedgerDirection
 import center.domain.model.LedgerEntry
 import center.domain.model.LedgerKind
+import center.domain.model.MakeupSession
 import center.domain.model.PersonType
 import center.domain.model.StaffMember
 import center.domain.model.Student
@@ -24,6 +25,7 @@ data class MonthlyReportInput(
     val monthlyDueMinorByStudent: Map<String, Long>,
     val remainingMinorByStudent: Map<String, Long>,
     val expectedTeacherSalaryMinorById: Map<String, Long>,
+    val makeupSessions: List<MakeupSession> = emptyList(),
 )
 
 data class MonthlyCenterReport(
@@ -49,6 +51,9 @@ data class ReportStudentsSummary(
     val attendanceCount: Int,
     val paidCount: Int,
     val unpaidCount: Int,
+    val scheduledSessionCount: Int = 0,
+    val makeupSessionCount: Int = 0,
+    val rescheduledDateCount: Int = 0,
 )
 
 data class ReportTeacherRow(
@@ -160,12 +165,17 @@ class MonthlyReportGenerator {
         val overdue = studentRows.sumOf { it.remainingMinor }
         val dueRows = studentRows.filter { it.monthlyDueMinor > 0 }
         val studentsSummary =
-            ReportStudentsSummary(
-                activeStudents.size,
-                input.sessions.count { it.person.type == PersonType.STUDENT },
-                dueRows.count { it.remainingMinor == 0L },
-                dueRows.count { it.remainingMinor > 0L },
-            )
+            monthlyLessonCounts(activeGroups, input.month, input.makeupSessions).let { lessonCounts ->
+                ReportStudentsSummary(
+                    activeStudents.size,
+                    input.sessions.count { it.person.type == PersonType.STUDENT },
+                    dueRows.count { it.remainingMinor == 0L },
+                    dueRows.count { it.remainingMinor > 0L },
+                    lessonCounts.scheduledSessionCount,
+                    lessonCounts.makeupSessionCount,
+                    lessonCounts.rescheduledDateCount,
+                )
+            }
 
         // The operational-expense total excludes teacher payouts, which have their own line item.
         val treasury =

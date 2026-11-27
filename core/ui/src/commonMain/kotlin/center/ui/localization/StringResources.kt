@@ -79,6 +79,16 @@ enum class AppStringKey {
     Settings,
     ExportPdf,
     MonthlyReport,
+    MakeupSession,
+    AddMakeupSession,
+    MakeupDate,
+    OriginalCanceledDate,
+    OptionalNote,
+    StartTime,
+    EndTime,
+    ScheduledSessions,
+    MakeupSessionsCount,
+    RescheduledDates,
     FeatureUnavailable,
     BillingWorkspace,
     ReceptionWorkspace,
@@ -147,6 +157,17 @@ object AppStrings {
             AppStringKey.Settings to LocalizedText("الإعدادات", "Settings"),
             AppStringKey.ExportPdf to LocalizedText("تصدير PDF", "Export PDF"),
             AppStringKey.MonthlyReport to LocalizedText("التقرير الشهري", "Monthly report"),
+            AppStringKey.MakeupSession to LocalizedText("تعويضية", "Make-up"),
+            AppStringKey.AddMakeupSession to LocalizedText("إضافة حصة تعويضية", "Add Make-up Session"),
+            AppStringKey.MakeupDate to LocalizedText("تاريخ الحصة التعويضية", "Make-up Date"),
+            AppStringKey.OriginalCanceledDate to LocalizedText("تاريخ الحصة الملغاة", "Original Canceled Date"),
+            AppStringKey.OptionalNote to LocalizedText("ملاحظة اختيارية", "Optional Note"),
+            AppStringKey.StartTime to LocalizedText("وقت البداية", "Start Time"),
+            AppStringKey.EndTime to LocalizedText("وقت النهاية", "End Time"),
+            AppStringKey.ScheduledSessions to LocalizedText("جلسات الدروس هذا الشهر: %1${'$'}s", "Lesson sessions this month: %1${'$'}s"),
+            AppStringKey.MakeupSessionsCount to
+                LocalizedText("الحصص التعويضية هذا الشهر: %1${'$'}s", "Make-up sessions this month: %1${'$'}s"),
+            AppStringKey.RescheduledDates to LocalizedText("تواريخ تم تعويضها: %1${'$'}s", "Rescheduled dates: %1${'$'}s"),
             AppStringKey.FeatureUnavailable to LocalizedText("هذه الوظيفة غير متاحة بعد.", "This feature is not available yet."),
             AppStringKey.BillingWorkspace to LocalizedText("مساحة الفواتير", "Billing workspace"),
             AppStringKey.ReceptionWorkspace to LocalizedText("مساحة الاستقبال", "Reception workspace"),
@@ -177,7 +198,15 @@ object AppStrings {
     fun get(
         key: AppStringKey,
         language: AppLanguage,
-    ): String = text(key).resolve(language)
+        vararg arguments: String,
+    ): String {
+        val template = text(key).resolve(language)
+        return Regex("%([1-9][0-9]*)" + '\\' + '$' + "[sd]").replace(template) { match ->
+            val index = match.groupValues[1].toInt() - 1
+            require(index in arguments.indices) { "Missing string argument ${index + 1} for $key" }
+            arguments[index]
+        }
+    }
 
     fun getResource(
         module: String,

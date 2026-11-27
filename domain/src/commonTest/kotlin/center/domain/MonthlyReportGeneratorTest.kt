@@ -10,6 +10,7 @@ import center.domain.model.LedgerDirection
 import center.domain.model.LedgerEntry
 import center.domain.model.LedgerKind
 import center.domain.model.LessonType
+import center.domain.model.MakeupSession
 import center.domain.model.PersonType
 import center.domain.model.StaffMember
 import center.domain.model.Student
@@ -80,6 +81,18 @@ class MonthlyReportGeneratorTest {
                     monthlyDueMinorByStudent = mapOf("s1" to 10_000, "s2" to 4_000),
                     remainingMinorByStudent = mapOf("s1" to 2_000),
                     expectedTeacherSalaryMinorById = mapOf("t1" to 7_500),
+                    makeupSessions =
+                        listOf(
+                            MakeupSession(
+                                "makeup-1",
+                                group.id,
+                                LocalDate(2026, 9, 1),
+                                LocalDate(2026, 9, 8),
+                                LocalTime(15, 0),
+                                LocalTime(16, 0),
+                                createdAt = 1,
+                            ),
+                        ),
                 ),
             )
 
@@ -93,6 +106,9 @@ class MonthlyReportGeneratorTest {
         assertEquals(3, report.studentsSummary.attendanceCount)
         assertEquals(1, report.studentsSummary.paidCount)
         assertEquals(1, report.studentsSummary.unpaidCount)
+        assertEquals(5, report.studentsSummary.scheduledSessionCount)
+        assertEquals(1, report.studentsSummary.makeupSessionCount)
+        assertEquals(1, report.studentsSummary.rescheduledDateCount)
         assertEquals(1, report.teachers.single().lessonCount)
         assertEquals(2, report.teachers.single().attendanceDays)
         assertEquals(180, report.teachers.single().workedMinutes)

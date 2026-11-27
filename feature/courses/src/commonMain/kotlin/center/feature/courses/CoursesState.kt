@@ -178,6 +178,21 @@ data class DeleteGroupState(
     val message: String? = null,
 )
 
+data class MakeupSessionFormState(
+    val lessonId: String,
+    val lessonName: String,
+    val makeupDate: String,
+    val startTime: String = "",
+    val endTime: String = "",
+    val originalCanceledDate: String = "",
+    val notes: String = "",
+    val isSubmitting: Boolean = false,
+    val message: String? = null,
+) {
+    val canSubmit: Boolean
+        get() = makeupDate.isNotBlank() && startTime.isNotBlank() && endTime.isNotBlank() && !isSubmitting
+}
+
 sealed interface CoursesModal {
     data object Closed : CoursesModal
 
@@ -187,5 +202,9 @@ sealed interface CoursesModal {
 
     data class Delete(
         val state: DeleteGroupState,
+    ) : CoursesModal
+
+    data class Makeup(
+        val state: MakeupSessionFormState,
     ) : CoursesModal
 }

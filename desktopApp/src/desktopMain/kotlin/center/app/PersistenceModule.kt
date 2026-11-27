@@ -8,6 +8,7 @@ import center.database.SqlStudentRepository
 import center.database.repository.SqlAttendanceRepository
 import center.database.repository.SqlAttendanceSessionRepository
 import center.database.repository.SqlClassGroupRepository
+import center.database.repository.SqlMakeupSessionRepository
 import center.database.repository.SqlMessageQueueRepository
 import center.database.repository.SqlMonthlyBillingRepository
 import center.database.repository.SqlPaymentRepository
@@ -19,6 +20,7 @@ import center.domain.repository.AttendanceRepository
 import center.domain.repository.AttendanceSessionRepository
 import center.domain.repository.AuthRepository
 import center.domain.repository.ClassGroupRepository
+import center.domain.repository.MakeupSessionRepository
 import center.domain.repository.MessageQueueRepository
 import center.domain.repository.MonthlyBillingRepository
 import center.domain.repository.PaymentRepository
@@ -72,6 +74,7 @@ internal fun persistenceModule(
     single<TreasuryRepository> { SqlTreasuryRepository(get(), dispatcher) }
     single<StaffRepository> { SqlStaffRepository(get(), dispatcher) }
     single<AttendanceSessionRepository> { SqlAttendanceSessionRepository(get(), dispatcher) }
+    single<MakeupSessionRepository> { SqlMakeupSessionRepository(get(), dispatcher) }
     factory { RegisterPresenceUseCase(get(), get(), get(), get()) }
     single { clock }
     single { IdGenerator { UUID.randomUUID().toString() } }
@@ -101,6 +104,7 @@ internal fun persistenceModule(
             ids = get(),
             attendance = get(),
             sessions = get(),
+            makeupSessions = get(),
             staff = get(),
             presence = get(),
             processPayment = get(),

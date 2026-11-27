@@ -9,6 +9,7 @@ import center.domain.model.EducationStage
 import center.domain.repository.AttendanceRepository
 import center.domain.repository.AttendanceSessionRepository
 import center.domain.repository.ClassGroupRepository
+import center.domain.repository.MakeupSessionRepository
 import center.domain.repository.MonthlyBillingRepository
 import center.domain.repository.PaymentRepository
 import center.domain.repository.StaffRepository
@@ -57,6 +58,7 @@ internal class DirectoryServices(
     val ids: IdGenerator,
     val attendance: AttendanceRepository,
     val sessions: AttendanceSessionRepository,
+    val makeupSessions: MakeupSessionRepository,
     val staff: StaffRepository,
     val presence: RegisterPresenceUseCase,
     val processPayment: ProcessPaymentUseCase,

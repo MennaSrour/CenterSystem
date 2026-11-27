@@ -69,6 +69,7 @@ fun CoursesScreen(
                 CoursesModal.Closed -> Unit
                 is CoursesModal.Form -> GroupFormModal(modal.state, onEvent)
                 is CoursesModal.Delete -> DeleteConfirmationModal(modal.state, onEvent)
+                is CoursesModal.Makeup -> MakeupSessionModal(modal.state, onEvent)
             }
         }
     }

@@ -1,0 +1,31 @@
+CREATE TABLE makeup_session (
+    id TEXT NOT NULL PRIMARY KEY,
+    lesson_id TEXT NOT NULL REFERENCES class_group(id) ON DELETE CASCADE,
+    original_canceled_date TEXT,
+    makeup_date TEXT NOT NULL,
+    start_time TEXT NOT NULL,
+    end_time TEXT NOT NULL,
+    notes TEXT NOT NULL DEFAULT '',
+    created_at INTEGER NOT NULL,
+    CHECK (start_time < end_time)
+);
+CREATE INDEX makeup_session_date ON makeup_session(makeup_date, start_time);
+CREATE INDEX makeup_session_lesson ON makeup_session(lesson_id, makeup_date);
+
+ALTER TABLE lesson_attendance RENAME TO lesson_attendance_v9;
+CREATE TABLE lesson_attendance (
+    studentId TEXT NOT NULL REFERENCES student(id) ON DELETE CASCADE,
+    classId TEXT NOT NULL REFERENCES class_group(id) ON DELETE CASCADE,
+    date TEXT NOT NULL,
+    attended INTEGER NOT NULL CHECK (attended IN (0, 1)),
+    recordedAt INTEGER NOT NULL,
+    checkOutAt INTEGER,
+    sessionKey TEXT NOT NULL DEFAULT '',
+    PRIMARY KEY (studentId, classId, date, recordedAt, sessionKey),
+    CHECK (checkOutAt IS NULL OR checkOutAt >= recordedAt)
+);
+INSERT INTO lesson_attendance(studentId, classId, date, attended, recordedAt, checkOutAt, sessionKey)
+SELECT studentId, classId, date, attended, recordedAt, checkOutAt, '' FROM lesson_attendance_v9;
+DROP TABLE lesson_attendance_v9;
+CREATE INDEX lesson_attendance_student_date ON lesson_attendance(studentId, date, recordedAt);
+CREATE INDEX lesson_attendance_class_date ON lesson_attendance(classId, date, recordedAt);

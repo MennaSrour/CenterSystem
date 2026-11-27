@@ -38,7 +38,7 @@ class RegisterPresenceUseCase(
             attendance.checkIn(
                 AttendanceSession(person, date, now, null),
                 message,
-                lessons.map { LessonAttendance(person.id, it.lessonId, date, it.attended, now) },
+                lessons.map { LessonAttendance(person.id, it.lessonId, date, it.attended, now, makeupSessionId = it.makeupSessionId) },
             )
         }
 

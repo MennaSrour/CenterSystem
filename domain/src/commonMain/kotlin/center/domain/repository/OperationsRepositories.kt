@@ -2,6 +2,7 @@ package center.domain.repository
 
 import center.domain.model.ClassGroup
 import center.domain.model.LedgerEntry
+import center.domain.model.MakeupSession
 import center.domain.model.StudentMonthlyDue
 import center.domain.model.SubscriptionBalance
 import center.domain.model.TreasuryExpense
@@ -17,6 +18,17 @@ interface ClassGroupRepository {
     suspend fun archive(id: String)
 
     suspend fun delete(id: String)
+}
+
+interface MakeupSessionRepository {
+    fun observeForDate(date: LocalDate): Flow<List<MakeupSession>>
+
+    fun observeForPeriod(
+        startInclusive: LocalDate,
+        endExclusive: LocalDate,
+    ): Flow<List<MakeupSession>>
+
+    suspend fun save(session: MakeupSession)
 }
 
 interface MonthlyBillingRepository {

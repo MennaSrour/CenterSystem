@@ -17,6 +17,7 @@ import center.domain.model.GroupScheduleSlot
 import center.domain.model.GroupStatus
 import center.domain.model.LessonEnrollment
 import center.domain.model.LessonType
+import center.domain.model.MakeupSession
 import center.domain.model.StudentTrack
 import center.feature.courses.CourseGrade
 import center.feature.courses.CourseGroup
@@ -37,6 +38,7 @@ import center.feature.courses.DeleteGroupState
 import center.feature.courses.GroupFormMode
 import center.feature.courses.GroupFormState
 import center.feature.courses.GroupTimeSlotState
+import center.feature.courses.MakeupSessionFormState
 import center.feature.courses.ScheduleDay
 import center.ui.localization.AppLanguage
 import center.ui.localization.AppStringKey
@@ -53,6 +55,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.DayOfWeek
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
 
 @Composable
@@ -100,7 +103,7 @@ internal fun CoursesRoute(
 internal class CoursesStateHolder(
     private val services: DirectoryServices,
     private val scope: CoroutineScope,
-    language: AppLanguage,
+    private val language: AppLanguage,
     private val canDelete: () -> Boolean,
 ) {
     private val grades =
@@ -249,6 +252,12 @@ internal class CoursesStateHolder(
         state = state.copy(modal = CoursesModal.Form(form.copy(canSubmit = complete, message = null)))
     }
 
+    private fun editMakeup(edit: (MakeupSessionFormState) -> MakeupSessionFormState) {
+        val modal = state.modal as? CoursesModal.Makeup ?: return
+        if (modal.state.isSubmitting) return
+        state = state.copy(modal = CoursesModal.Makeup(edit(modal.state)))
+    }
+
     fun onEvent(event: CoursesEvent) {
         when (event) {
             is CoursesEvent.TeacherFilterSelected -> state = state.copy(selectedTeacherId = event.id)
@@ -276,6 +285,20 @@ internal class CoursesStateHolder(
                             expandedGroupMenuId = null,
                         )
                 }
+            is CoursesEvent.AddMakeupSession ->
+                state.groups.firstOrNull { it.id == event.id }?.let { group ->
+                    state =
+                        state.copy(
+                            modal = CoursesModal.Makeup(MakeupSessionFormState(group.id, group.subject, services.today().toString())),
+                            expandedGroupMenuId = null,
+                        )
+                }
+            is CoursesEvent.MakeupDateChanged -> editMakeup { it.copy(makeupDate = event.value, message = null) }
+            is CoursesEvent.MakeupStartTimeChanged -> editMakeup { it.copy(startTime = event.value, message = null) }
+            is CoursesEvent.MakeupEndTimeChanged -> editMakeup { it.copy(endTime = event.value, message = null) }
+            is CoursesEvent.OriginalCanceledDateChanged -> editMakeup { it.copy(originalCanceledDate = event.value, message = null) }
+            is CoursesEvent.MakeupNotesChanged -> editMakeup { it.copy(notes = event.value, message = null) }
+            CoursesEvent.SubmitMakeupSession -> submitMakeup()
             is CoursesEvent.DeactivateGroup -> {
                 state = state.copy(expandedGroupMenuId = null)
                 scope.launch { if (directoryResult { services.groups.archive(event.id) }.isFailure) mutableFeedback.emit(failure) }
@@ -296,6 +319,7 @@ internal class CoursesStateHolder(
                         CoursesModal.Closed -> false
                         is CoursesModal.Form -> modal.state.isSubmitting
                         is CoursesModal.Delete -> modal.state.isDeleting
+                        is CoursesModal.Makeup -> modal.state.isSubmitting
                     }
                 if (!busy) state = state.copy(modal = CoursesModal.Closed)
             }
@@ -584,6 +608,51 @@ internal class CoursesStateHolder(
         scope.launch {
             val result = directoryResult { services.groups.delete(form.groupId) }
             state = state.copy(modal = if (result.isSuccess) CoursesModal.Closed else CoursesModal.Delete(form.copy(message = failure)))
+        }
+    }
+
+    private fun submitMakeup() {
+        val form = (state.modal as? CoursesModal.Makeup)?.state ?: return
+        if (!form.canSubmit) return
+        state = state.copy(modal = CoursesModal.Makeup(form.copy(isSubmitting = true, message = null)))
+        scope.launch {
+            val result =
+                directoryResult {
+                    services.makeupSessions.save(
+                        MakeupSession(
+                            id = services.ids.newId(),
+                            lessonId = form.lessonId,
+                            originalCanceledDate =
+                                form.originalCanceledDate
+                                    .trim()
+                                    .takeIf { it.isNotEmpty() }
+                                    ?.let { LocalDate.parse(it) },
+                            makeupDate = LocalDate.parse(form.makeupDate.trim()),
+                            startTime = LocalTime.parse(form.startTime.trim()),
+                            endTime = LocalTime.parse(form.endTime.trim()),
+                            notes = form.notes.trim(),
+                            createdAt = services.clock.nowMillis(),
+                        ),
+                    )
+                }
+            state =
+                state.copy(
+                    modal =
+                        if (result.isSuccess) {
+                            CoursesModal.Closed
+                        } else {
+                            CoursesModal.Makeup(
+                                form.copy(
+                                    isSubmitting = false,
+                                    message =
+                                        LocalizedText(
+                                            "تحقق من التاريخ والوقت وتأكد أن وقت النهاية بعد البداية.",
+                                            "Check the dates and times, and make sure the end time is after the start time.",
+                                        ).resolve(language),
+                                ),
+                            )
+                        },
+                )
         }
     }
 }
