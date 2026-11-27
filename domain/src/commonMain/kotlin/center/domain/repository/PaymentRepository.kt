@@ -13,9 +13,9 @@ interface PaymentRepository {
         endExclusive: Long,
     ): Flow<List<Payment>>
 
-    /** Insert both records atomically; roll back both on failure. IDs must be new. */
+    /** Insert the payment and, when available, its receipt atomically; IDs must be new. */
     suspend fun saveWithReceipt(
         payment: Payment,
-        receipt: QueuedMessage,
+        receipt: QueuedMessage?,
     )
 }

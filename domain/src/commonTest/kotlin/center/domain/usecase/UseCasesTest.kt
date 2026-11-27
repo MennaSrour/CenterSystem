@@ -47,6 +47,19 @@ class UseCasesTest {
         }
 
     @Test
+    fun paymentWithoutParentPhoneStillPersistsWithoutQueueingAReceipt() =
+        runTest {
+            val fixture = Fixture()
+            fixture.student = fixture.student.copy(parentPhone = "")
+
+            val payment = fixture.process("student", "class", 500.0).getOrThrow()
+
+            assertEquals(500.0, payment.amountPaid)
+            assertEquals(listOf(payment), fixture.payments)
+            assertTrue(fixture.messages.isEmpty())
+        }
+
+    @Test
     fun customCommissionRoundsToCentsAndKeepsExactRemainder() =
         runTest {
             val fixture = Fixture()
@@ -230,11 +243,11 @@ class UseCasesTest {
 
         override suspend fun saveWithReceipt(
             payment: Payment,
-            receipt: QueuedMessage,
+            receipt: QueuedMessage?,
         ) {
             writeFailure?.let { throw it }
             payments.add(payment)
-            messages.add(receipt)
+            receipt?.let(messages::add)
         }
 
         override fun observePresentCount(
