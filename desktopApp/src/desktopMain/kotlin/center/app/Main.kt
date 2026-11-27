@@ -29,6 +29,7 @@ import center.database.SqlAuthRepository
 import center.database.SqlStudentRepository
 import center.database.lockDatabaseDirectory
 import center.database.openDatabase
+import center.domain.repository.AttendanceSessionRepository
 import center.domain.usecase.AuthSession
 import center.feature.print.PrintCenter
 import center.feature.reports.DesktopMonthlyReportPlatform
@@ -47,6 +48,8 @@ import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.compose.resources.painterResource
 import org.koin.dsl.koinApplication
 import java.nio.file.Path
@@ -116,6 +119,13 @@ private fun Startup(
                         val driver = openDatabase(directory).also { database = it }
                         val app = koinApplication { modules(persistenceModule(driver)) }.also { dependencies = it }
                         app.koin.get<SqlAuthRepository>().seedIfEmpty()
+                        val today =
+                            kotlinx.datetime.Instant
+                                .fromEpochMilliseconds(System.currentTimeMillis())
+                                .toLocalDateTime(TimeZone.of("Africa/Cairo"))
+                                .date
+                        app.koin.get<AttendanceSessionRepository>().closeOpenCheckInsBefore(today)
+                        backup.createDailyBackup(java.time.LocalDate.now(java.time.ZoneId.of("Africa/Cairo")))
                         StartupData(app.koin.get(), app.koin.get(), app.koin.get())
                     }
                 }

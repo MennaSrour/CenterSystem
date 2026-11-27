@@ -31,6 +31,14 @@ sealed interface CoursesEvent {
         val id: String,
     ) : CoursesEvent
 
+    data class ExportLessonRoster(
+        val id: String,
+    ) : CoursesEvent
+
+    data class PrintLessonRoster(
+        val id: String,
+    ) : CoursesEvent
+
     data class MakeupDateChanged(
         val value: String,
     ) : CoursesEvent

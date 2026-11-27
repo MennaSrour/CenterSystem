@@ -22,6 +22,7 @@ import center.domain.usecase.AuthSession
 import center.feature.billing.BillingScreen
 import center.feature.dashboard.DashboardEvent
 import center.feature.reception.ReceptionScreen
+import center.feature.reports.ContextualPdfPlatform
 import center.feature.reports.MonthlyReportPlatform
 import center.ui.components.CenterOneCanvas
 import center.ui.components.CenterOneMainNavigation
@@ -51,6 +52,7 @@ internal fun App(
     }
     val stack by state
     val canDelete = remember(session) { { session.allows(Permission.DELETE_DIRECTORY_RECORDS) } }
+    val contextualPdfPlatform = monthlyReportPlatform as? ContextualPdfPlatform
     CompositionLocalProvider(
         LocalCenterOneLogout provides session::logout,
         LocalHeaderIdentity provides HeaderIdentity(user.displayName, user.role.localizedRole()),
@@ -68,6 +70,8 @@ internal fun App(
                         services,
                         route.shortcut,
                         session.allows(Permission.VIEW_MONTHLY_PROFIT),
+                        session.allows(Permission.VOID_PAYMENTS),
+                        contextualPdfPlatform,
                         onLanguageSelected,
                     )
                 Destination.Students ->
@@ -79,9 +83,9 @@ internal fun App(
                         canDelete,
                         studentImport,
                     )
-                Destination.Courses -> CoursesRoute(root, services, canDelete, onLanguageSelected)
+                Destination.Courses -> CoursesRoute(root, services, canDelete, onLanguageSelected, contextualPdfPlatform)
                 Destination.Print -> printCenter()
-                Destination.Teachers -> TeachersRoute(root, services, onLanguageSelected, canDelete)
+                Destination.Teachers -> TeachersRoute(root, services, onLanguageSelected, canDelete, contextualPdfPlatform)
                 else ->
                     SecondaryRoute(
                         root,

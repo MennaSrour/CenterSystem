@@ -106,12 +106,13 @@ SELECT student.id AS studentId, coalesce(student.code, student.id) AS code,
            CASE WHEN class_group.lessonType = 'MIXED' AND enrollment.studentTrack = 'LANGUAGES'
                 THEN class_group.languagesPriceMinor ELSE class_group.monthlyPriceMinor END
            - CAST(round(enrollment.discountAmount * 100) AS INTEGER)))
-           - coalesce(sum(CAST(round(payment.amountPaid * 100) AS INTEGER)), 0) AS INTEGER) AS remainingMinor
+           - coalesce(sum(CASE WHEN payment.voidedAt IS NULL THEN CAST(round(payment.amountPaid * 100) AS INTEGER) ELSE 0 END), 0) AS INTEGER) AS remainingMinor
 FROM enrollment
 JOIN student ON student.id = enrollment.studentId
 JOIN class_group ON class_group.id = enrollment.classId
 JOIN teacher ON teacher.id = class_group.teacherId
 LEFT JOIN payment ON payment.studentId = student.id AND payment.classId = class_group.id
+    AND payment.voidedAt IS NULL
     AND (payment.billingMonth = :billingMonth OR
          (payment.billingMonth IS NULL AND payment.paymentDate >= :startTime AND payment.paymentDate < :endTime))
 WHERE student.isActive = 1 AND class_group.status = 'ACTIVE' AND class_group.monthlyPriceMinor IS NOT NULL
@@ -136,6 +137,7 @@ ORDER BY student.id;
 paidForMonth:
 SELECT CAST(coalesce(sum(CAST(round(amountPaid * 100) AS INTEGER)), 0) AS INTEGER)
 FROM payment WHERE studentId = :studentId AND classId = :classId
+AND voidedAt IS NULL
 AND (billingMonth = :billingMonth OR (billingMonth IS NULL AND paymentDate >= :startTime AND paymentDate < :endTime));
 
 setPaymentMonth:
@@ -157,10 +159,12 @@ INSERT INTO treasury_expense(id, kind, amountMinor, recordedAt, description, tea
 selectLedger:
 SELECT id, 'INCOME' AS direction, 'STUDENT_PAYMENT' AS kind,
        CAST(round(amountPaid * 100) AS INTEGER) AS amountMinor, paymentDate AS recordedAt,
-       '' AS description, studentId, classId, NULL AS teacherId
+       CASE WHEN voidedAt IS NULL THEN '' ELSE voidReason END AS description,
+       studentId, classId, NULL AS teacherId, voidedAt, (voidedAt IS NOT NULL) AS isVoided
 FROM payment WHERE paymentDate >= :startTime AND paymentDate < :endTime
 UNION ALL
 SELECT id, 'EXPENSE', kind, amountMinor, recordedAt, description, NULL, NULL, teacherId
+       , NULL, 0
 FROM treasury_expense WHERE recordedAt >= :startTime AND recordedAt < :endTime
 ORDER BY recordedAt, direction, id;
 
@@ -186,7 +190,7 @@ SELECT (SELECT count(*) FROM student), (SELECT count(*) FROM enrollment),
 
 treasuryTotals:
 WITH entries AS (
-    SELECT paymentDate AS recordedAt, CAST(round(amountPaid * 100) AS INTEGER) AS income, 0 AS expense
+    SELECT paymentDate AS recordedAt, CASE WHEN voidedAt IS NULL THEN CAST(round(amountPaid * 100) AS INTEGER) ELSE 0 END AS income, 0 AS expense
     FROM payment WHERE paymentDate < :dayEnd
     UNION ALL
     SELECT recordedAt, 0, amountMinor FROM treasury_expense WHERE recordedAt < :dayEnd

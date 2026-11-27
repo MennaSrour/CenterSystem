@@ -112,7 +112,8 @@ internal class MonthlyReportStateHolder(
                     val paid =
                         ledger
                             .filter {
-                                it.kind == center.domain.model.LedgerKind.STUDENT_PAYMENT &&
+                                !it.isVoided &&
+                                    it.kind == center.domain.model.LedgerKind.STUDENT_PAYMENT &&
                                     it.direction == center.domain.model.LedgerDirection.INCOME
                             }.groupBy { it.studentId.orEmpty() }
                             .mapValues { (_, rows) -> rows.sumOf { it.amountMinor } }

@@ -152,7 +152,10 @@ private fun activityDocuments(
                         "studentName" to student.text("name"),
                         "timestamp" to at,
                     ),
-                    push = source.number("updatedAt") > 0 && source.text("syncStatus") == "PENDING",
+                    push =
+                        source.number("updatedAt") > 0 &&
+                            source.text("syncStatus") == "PENDING" &&
+                            !(type == "PAYMENT_CONFIRMED" && source.number("voidedAt") > 0),
                 ),
             )
         }
@@ -187,7 +190,14 @@ private fun activityDocuments(
                 "payments",
                 id,
                 studentId,
-                mapOf("amount" to row.amount("amountPaid"), "date" to date, "month" to month, "status" to "CONFIRMED"),
+                mapOf(
+                    "amount" to row.amount("amountPaid"),
+                    "date" to date,
+                    "month" to month,
+                    "status" to if (row.number("voidedAt") > 0) "VOIDED" else "CONFIRMED",
+                    "voidedAt" to row.number("voidedAt").takeIf { it > 0 },
+                    "voidReason" to row.text("voidReason").takeIf { it.isNotBlank() },
+                ),
             )
             notify("payment-${portalHash(id)}", "PAYMENT_CONFIRMED", studentId, date, row)
         }

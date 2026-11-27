@@ -4,11 +4,13 @@ import kotlinx.coroutines.flow.Flow
 
 enum class UserRole { ADMIN, RECEPTION }
 
-enum class Permission { DELETE_DIRECTORY_RECORDS, VIEW_MONTHLY_PROFIT, MANAGE_USERS }
+enum class Permission { DELETE_DIRECTORY_RECORDS, VIEW_MONTHLY_PROFIT, MANAGE_USERS, VOID_PAYMENTS }
 
 fun UserRole.allows(permission: Permission): Boolean =
     when (permission) {
-        Permission.DELETE_DIRECTORY_RECORDS, Permission.VIEW_MONTHLY_PROFIT, Permission.MANAGE_USERS -> this == UserRole.ADMIN
+        Permission.DELETE_DIRECTORY_RECORDS, Permission.VIEW_MONTHLY_PROFIT, Permission.MANAGE_USERS, Permission.VOID_PAYMENTS ->
+            this ==
+                UserRole.ADMIN
     }
 
 data class AppUser(

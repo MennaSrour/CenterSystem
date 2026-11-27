@@ -26,6 +26,14 @@ internal interface PortalCloud : AutoCloseable {
     fun publish(projection: PortalProjection)
 }
 
+internal const val ATTENDANCE_PUSH_MAX_AGE_MILLIS = 3 * 60 * 60 * 1_000L
+
+internal fun shouldDispatchPush(
+    type: String,
+    timestamp: Long,
+    now: Long,
+): Boolean = type !in setOf("CHECK_IN", "CHECK_OUT") || timestamp >= now - ATTENDANCE_PUSH_MAX_AGE_MILLIS
+
 internal class FirebasePortal(
     key: Path,
 ) : PortalCloud {
@@ -127,11 +135,29 @@ internal class FirebasePortal(
                     path !in stale && path.contains("/notifications/") && record.getBoolean("pendingPush") == true
                 }.keys
                 .toMutableSet()
+        val stalePendingPush =
+            pendingPush
+                .filter { path ->
+                    val record = existingDocuments.getValue(path)
+                    val type = record.getString("type").orEmpty()
+                    val timestamp = record.getLong("timestamp") ?: 0L
+                    !shouldDispatchPush(type, timestamp, System.currentTimeMillis())
+                }.toSet()
+        pendingPush.removeAll(stalePendingPush)
+        stalePendingPush.forEach { path ->
+            firestore.document(path).update("pendingPush", FieldValue.delete()).await()
+        }
         changes.entries.chunked(400).forEach { batchEntries ->
             val batch = firestore.batch()
             batchEntries.forEach { (path, document) ->
                 val fields = document.fields + mapOf("revision" to portalHash(document.fields.toString()), "source" to "desktop")
-                val shouldPush = document.push && path.contains("/notifications/") && path !in existingDocuments
+                val timestamp = (document.fields["timestamp"] as? Number)?.toLong() ?: 0L
+                val type = document.fields["type"]?.toString().orEmpty()
+                val shouldPush =
+                    document.push &&
+                        path.contains("/notifications/") &&
+                        path !in existingDocuments &&
+                        shouldDispatchPush(type, timestamp, System.currentTimeMillis())
                 if (shouldPush) pendingPush.add(path)
                 batch.set(firestore.document(path), if (shouldPush) fields + ("pendingPush" to true) else fields, SetOptions.merge())
             }

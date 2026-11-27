@@ -66,13 +66,14 @@ insertShift:
 INSERT INTO staff_shift(staffId, day, fromMinute, toMinute) VALUES (?, ?, ?, ?);
 
 insertCheckIn:
-INSERT INTO attendance_session(personType, personId, groupId, date, checkInTime) VALUES (?, ?, ?, ?, ?);
+INSERT INTO attendance_session(personType, personId, groupId, date, checkInTime, syncStatus, updatedAt)
+VALUES (?, ?, ?, ?, ?, 'PENDING', ?);
 
 selectSession:
 SELECT * FROM attendance_session WHERE personType = ? AND personId = ? AND groupId = ? AND date = ?;
 
 setCheckOut:
-UPDATE attendance_session SET checkOutTime = :at
+UPDATE attendance_session SET checkOutTime = :at, syncStatus = 'PENDING', updatedAt = :at
 WHERE personType = :personType AND personId = :personId AND groupId = :groupId AND date = :date AND checkOutTime IS NULL;
 
 upsertLessonAttendance:
@@ -114,6 +115,43 @@ ORDER BY checkInTime DESC LIMIT 10;
 sessionsOnDate:
 SELECT personType, personId, groupId, date, checkInTime, checkOutTime
 FROM attendance_session WHERE date = ? ORDER BY checkInTime;
+
+openSessionsBeforeDate:
+SELECT personType, personId, groupId, date, checkInTime, checkOutTime
+FROM attendance_session WHERE date < :date AND checkOutTime IS NULL ORDER BY date, checkInTime;
+
+openSessionsOnDate:
+SELECT personType, personId, groupId, date, checkInTime, checkOutTime
+FROM attendance_session WHERE date = :date AND checkOutTime IS NULL ORDER BY checkInTime;
+
+lastScheduledMinute:
+SELECT max(toMinute) FROM (
+    SELECT schedule_slot.toMinute AS toMinute
+    FROM schedule_slot JOIN class_group ON class_group.id = schedule_slot.classId
+    WHERE schedule_slot.day = :day AND (
+        (:personType = 'STUDENT' AND (class_group.id = :groupId OR (:groupId = '' AND class_group.id IN (
+            SELECT classId FROM enrollment WHERE studentId = :personId
+        )))) OR
+        (:personType = 'TEACHER' AND class_group.teacherId = :personId)
+    )
+    UNION ALL
+    SELECT staff_shift.toMinute AS toMinute
+    FROM staff_shift WHERE :personType = 'STAFF' AND staff_shift.staffId = :personId AND staff_shift.day = :day
+    UNION ALL
+    SELECT CAST(substr(makeup_session.end_time, 1, 2) AS INTEGER) * 60 +
+           CAST(substr(makeup_session.end_time, 4, 2) AS INTEGER) AS toMinute
+    FROM makeup_session JOIN class_group ON class_group.id = makeup_session.lesson_id
+    WHERE makeup_session.makeup_date = :date AND (
+        (:personType = 'STUDENT' AND (class_group.id = :groupId OR (:groupId = '' AND class_group.id IN (
+            SELECT classId FROM enrollment WHERE studentId = :personId
+        )))) OR
+        (:personType = 'TEACHER' AND class_group.teacherId = :personId)
+    )
+);
+
+closeCheckIn:
+UPDATE attendance_session SET checkOutTime = :at, syncStatus = 'PENDING', updatedAt = :at
+WHERE personType = :personType AND personId = :personId AND groupId = :groupId AND date = :date AND checkOutTime IS NULL;
 
 sessionsInPeriod:
 SELECT personType, personId, groupId, date, checkInTime, checkOutTime

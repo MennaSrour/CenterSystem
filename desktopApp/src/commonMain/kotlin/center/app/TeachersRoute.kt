@@ -18,6 +18,7 @@ import center.domain.model.StaffMember
 import center.domain.model.activeSchedule
 import center.domain.model.lessonAnalytics
 import center.domain.usecase.salaryPayoutId
+import center.feature.reports.ContextualPdfPlatform
 import center.feature.teachers.StaffCardModel
 import center.feature.teachers.StaffDraft
 import center.feature.teachers.StaffShiftDraft
@@ -30,6 +31,8 @@ import center.feature.teachers.TeachersScreen
 import center.feature.teachers.TeachersState
 import center.feature.teachers.UnpaidStudent
 import center.ui.localization.AppLanguage
+import center.ui.localization.AppStringKey
+import center.ui.localization.AppStrings
 import center.ui.localization.LocalAppLanguage
 import center.ui.localization.LocalizedText
 import kotlinx.coroutines.CoroutineScope
@@ -59,6 +62,7 @@ internal fun TeachersRoute(
     services: DirectoryServices,
     onLanguageSelected: (AppLanguage) -> Unit,
     canDelete: () -> Boolean,
+    printPlatform: ContextualPdfPlatform? = null,
 ) {
     val language = LocalAppLanguage.current
     val scope = rememberDirectoryScope(language)
@@ -71,10 +75,72 @@ internal fun TeachersRoute(
             when (event) {
                 is TeachersEvent.Navigate -> root.navigate(event.destination)
                 is TeachersEvent.LanguageSelected -> onLanguageSelected(event.language)
+                is TeachersEvent.TeacherStatementAction ->
+                    createTeacherStatement(
+                        state.teachers.firstOrNull { it.id == event.id },
+                        event.print,
+                        printPlatform,
+                        language,
+                        services.today().toString().take(7),
+                        scope,
+                    ) {
+                        holder.notify(it)
+                    }
                 else -> holder.onEvent(event)
             }
         })
         SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter))
+    }
+}
+
+private fun createTeacherStatement(
+    teacher: center.feature.teachers.Teacher?,
+    print: Boolean,
+    platform: ContextualPdfPlatform?,
+    language: AppLanguage,
+    month: String,
+    scope: CoroutineScope,
+    notify: (String) -> Unit,
+) {
+    if (teacher == null || platform == null) {
+        notify(AppStrings.get(AppStringKey.FeatureUnavailable, language))
+        return
+    }
+    val title = AppStrings.get(AppStringKey.PrintTeacherStatement, language)
+    val periodLabel = LocalizedText("الشهر: $month", "Month: $month").resolve(language)
+    val lines =
+        listOf(
+            LocalizedText("كود المدرس: ${teacher.id}", "Teacher ID: ${teacher.id}").resolve(language),
+            LocalizedText("الاسم: ${teacher.name.arabic}", "Name: ${teacher.name.english}").resolve(language),
+            periodLabel,
+            LocalizedText(
+                "الدروس المسندة: ${teacher.assignedLessonCount}",
+                "Assigned lessons: ${teacher.assignedLessonCount}",
+            ).resolve(language),
+            LocalizedText(
+                "عدد الطلاب · عربي ${teacher.arabicStudentCount} · لغات ${teacher.languagesStudentCount} · برايفت ${teacher.privateStudentCount}",
+                "Students · Arabic ${teacher.arabicStudentCount} · Languages ${teacher.languagesStudentCount} · Private ${teacher.privateStudentCount}",
+            ).resolve(language),
+            LocalizedText(
+                "الراتب المستحق: ${teacher.monthlySalaryMinor?.decimalMinor().orEmpty()} ج.م",
+                "Salary due: ${teacher.monthlySalaryMinor?.decimalMinor().orEmpty()} EGP",
+            ).resolve(language),
+            LocalizedText("سجل الصرف", "Payout history").resolve(language),
+        ) + teacher.payoutHistory.map { it.resolve(language) }
+    val bytes = platform.createContextPdf(title, lines, language)
+    scope.launch {
+        runCatching {
+            if (print) {
+                platform.printContextPdf(title, bytes)
+            } else {
+                platform.saveContextPdf(
+                    title,
+                    "Teacher_Statement_${teacher.id}.pdf",
+                    LocalizedText("استبدال الملف الموجود؟", "Replace the existing file?").resolve(language),
+                    bytes,
+                )
+            }
+        }.onFailure { notify(AppStrings.get(AppStringKey.Error, language)) }
     }
 }
 
@@ -85,6 +151,10 @@ internal class TeachersStateHolder(
     private val language: AppLanguage,
     private val canDelete: () -> Boolean,
 ) {
+    fun notify(message: String) {
+        mutableFeedback.tryEmit(message)
+    }
+
     private val mutableState = MutableStateFlow(TeachersState(emptyList(), canDelete = canDelete()))
     val state = mutableState.asStateFlow()
     private val mutableFeedback = MutableSharedFlow<String>(extraBufferCapacity = 4)
@@ -289,6 +359,7 @@ internal class TeachersStateHolder(
             is TeachersEvent.NotesChanged -> edit { it.copy(notes = event.value) }
             TeachersEvent.SaveTeacher -> save()
             is TeachersEvent.PaySalary -> pay(event.id)
+            is TeachersEvent.TeacherStatementAction -> Unit
             is TeachersEvent.Navigate, is TeachersEvent.LanguageSelected -> Unit
         }
     }

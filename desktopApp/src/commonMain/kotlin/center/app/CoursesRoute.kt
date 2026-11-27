@@ -40,6 +40,7 @@ import center.feature.courses.GroupFormState
 import center.feature.courses.GroupTimeSlotState
 import center.feature.courses.MakeupSessionFormState
 import center.feature.courses.ScheduleDay
+import center.feature.reports.ContextualPdfPlatform
 import center.ui.localization.AppLanguage
 import center.ui.localization.AppStringKey
 import center.ui.localization.AppStrings
@@ -64,6 +65,7 @@ internal fun CoursesRoute(
     services: DirectoryServices,
     canDelete: () -> Boolean,
     onLanguageSelected: (AppLanguage) -> Unit,
+    printPlatform: ContextualPdfPlatform? = null,
 ) {
     val language = LocalAppLanguage.current
     val scope = rememberDirectoryScope(language)
@@ -92,11 +94,78 @@ internal fun CoursesRoute(
                         CoursesDestination.Schedule -> notify(unavailable)
                     }
                 is CoursesEvent.LanguageSelected -> onLanguageSelected(event.language)
+                is CoursesEvent.ExportLessonRoster -> exportLessonRoster(state, event.id, printPlatform, language, scope, ::notify)
+                is CoursesEvent.PrintLessonRoster -> printLessonRoster(state, event.id, printPlatform, language, scope, ::notify)
                 CoursesEvent.OpenNotifications, CoursesEvent.LogOut -> notify(unavailable)
                 else -> holder.onEvent(event)
             }
         })
         SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter))
+    }
+}
+
+private fun exportLessonRoster(
+    state: CoursesState,
+    groupId: String,
+    platform: ContextualPdfPlatform?,
+    language: AppLanguage,
+    scope: CoroutineScope,
+    notify: (String) -> Unit,
+) = createLessonRoster(state, groupId, platform, language, scope, notify, print = false)
+
+private fun printLessonRoster(
+    state: CoursesState,
+    groupId: String,
+    platform: ContextualPdfPlatform?,
+    language: AppLanguage,
+    scope: CoroutineScope,
+    notify: (String) -> Unit,
+) = createLessonRoster(state, groupId, platform, language, scope, notify, print = true)
+
+private fun createLessonRoster(
+    state: CoursesState,
+    groupId: String,
+    platform: ContextualPdfPlatform?,
+    language: AppLanguage,
+    scope: CoroutineScope,
+    notify: (String) -> Unit,
+    print: Boolean,
+) {
+    if (platform == null) {
+        notify(AppStrings.get(AppStringKey.FeatureUnavailable, language))
+        return
+    }
+    val group = state.groups.firstOrNull { it.id == groupId } ?: return
+    val title = AppStrings.get(AppStringKey.PrintRoster, language)
+    val teacher =
+        state.teachers
+            .firstOrNull { it.id == group.teacherId }
+            ?.name
+            .orEmpty()
+    val students = state.students.filter { groupId in it.enrolledGroupIds }.sortedBy { it.id }
+    val lines =
+        listOf(
+            LocalizedText("الدرس: ${group.subject}", "Lesson: ${group.subject}").resolve(language),
+            LocalizedText("المدرس: $teacher", "Teacher: $teacher").resolve(language),
+            LocalizedText("كود الطالب · الاسم · الحضور · التقييم", "Student ID · Name · Attendance · Grade").resolve(language),
+        ) +
+            students.map { student ->
+                "${student.id} · ${student.name} · __________________ · __________________"
+            }
+    val bytes = platform.createContextPdf(title, lines, language)
+    scope.launch {
+        runCatching {
+            if (print) {
+                platform.printContextPdf(title, bytes)
+            } else {
+                platform.saveContextPdf(
+                    title,
+                    "Lesson_Roster_${group.id}.pdf",
+                    LocalizedText("استبدال الملف الموجود؟", "Replace the existing file?").resolve(language),
+                    bytes,
+                )
+            }
+        }.onFailure { notify(AppStrings.get(AppStringKey.Error, language)) }
     }
 }
 
@@ -293,6 +362,7 @@ internal class CoursesStateHolder(
                             expandedGroupMenuId = null,
                         )
                 }
+            is CoursesEvent.ExportLessonRoster, is CoursesEvent.PrintLessonRoster -> Unit
             is CoursesEvent.MakeupDateChanged -> editMakeup { it.copy(makeupDate = event.value, message = null) }
             is CoursesEvent.MakeupStartTimeChanged -> editMakeup { it.copy(startTime = event.value, message = null) }
             is CoursesEvent.MakeupEndTimeChanged -> editMakeup { it.copy(endTime = event.value, message = null) }

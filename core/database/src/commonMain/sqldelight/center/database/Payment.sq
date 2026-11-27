@@ -7,6 +7,8 @@ CREATE TABLE payment (
     centerShare REAL NOT NULL CHECK (centerShare >= 0),
     paymentDate INTEGER NOT NULL,
     billingMonth TEXT,
+    voidedAt INTEGER,
+    voidReason TEXT NOT NULL DEFAULT '',
     syncStatus TEXT NOT NULL DEFAULT 'PENDING',
     updatedAt INTEGER NOT NULL DEFAULT 0,
     CHECK (abs(amountPaid - teacherShare - centerShare) <= 0.000001)
@@ -38,12 +40,16 @@ SELECT coalesce(sum(payment.amountPaid), 0.0) AS totalPaid,
        coalesce(sum(payment.teacherShare), 0.0) AS teacherShare,
        coalesce(sum(payment.centerShare), 0.0) AS centerShare
 FROM payment JOIN class_group ON class_group.id = payment.classId
-WHERE class_group.teacherId = ? AND payment.paymentDate >= ? AND payment.paymentDate < ?;
+WHERE class_group.teacherId = ? AND payment.paymentDate >= ? AND payment.paymentDate < ? AND payment.voidedAt IS NULL;
 
 countForClass:
 SELECT count(*) FROM payment WHERE classId = ?;
 
 selectForTeacher:
 SELECT payment.* FROM payment JOIN class_group ON class_group.id = payment.classId
-WHERE class_group.teacherId = ? AND payment.paymentDate >= ? AND payment.paymentDate < ?
+WHERE class_group.teacherId = ? AND payment.paymentDate >= ? AND payment.paymentDate < ? AND payment.voidedAt IS NULL
 ORDER BY payment.paymentDate, payment.id;
+
+voidPayment:
+UPDATE payment SET voidedAt = :voidedAt, voidReason = :reason, syncStatus = 'PENDING', updatedAt = :voidedAt
+WHERE id = :id AND voidedAt IS NULL;

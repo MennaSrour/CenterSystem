@@ -22,11 +22,14 @@ import center.ui.components.AttendanceHistory
 import center.ui.components.CenterOneDestructiveButton
 import center.ui.components.CenterOneGradientCard
 import center.ui.components.CenterOneModalContent
+import center.ui.components.CenterOneOutlinedButton
 import center.ui.components.CenterOnePrimaryButton
 import center.ui.components.CenterOneTextField
 import center.ui.components.LocalTeacherPortalDetails
 import center.ui.components.StatusBadge
 import center.ui.components.StatusTone
+import center.ui.localization.AppStringKey
+import center.ui.localization.AppStrings
 import center.ui.localization.LocalAppLanguage
 import center.ui.localization.LocalizedText
 import center.ui.theme.CenterOneBrushes
@@ -79,6 +82,16 @@ internal fun TeacherDetails(
             onEvent(TeachersEvent.EditTeacher(teacher.id))
         }, enabled = !paying) { Text(teacherString(TeacherText.Edit)) }
         SalaryBox(teacher, paying, onPay = { onEvent(TeachersEvent.PaySalary(teacher.id)) })
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            CenterOneOutlinedButton(
+                modifier = Modifier.weight(1f),
+                onClick = { onEvent(TeachersEvent.TeacherStatementAction(teacher.id, print = false)) },
+            ) { Text(AppStrings.get(AppStringKey.ExportPdf, language)) }
+            CenterOneOutlinedButton(
+                modifier = Modifier.weight(1f),
+                onClick = { onEvent(TeachersEvent.TeacherStatementAction(teacher.id, print = true)) },
+            ) { Text(AppStrings.get(AppStringKey.PrintTeacherStatement, language)) }
+        }
         Text(LocalizedText("سجل صرف المرتبات", "Salary payout history").resolve(language), style = MaterialTheme.typography.titleSmall)
         if (teacher.payoutHistory.isEmpty()) {
             Text(LocalizedText("لا توجد عمليات صرف مسجلة", "No salary payouts recorded").resolve(language))

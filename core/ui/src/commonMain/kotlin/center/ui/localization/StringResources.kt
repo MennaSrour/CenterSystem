@@ -104,6 +104,14 @@ enum class AppStringKey {
     DisplayName,
     PasswordLengthHint,
     AccountSaveError,
+    VoidPayment,
+    ConfirmVoidPayment,
+    VoidReason,
+    Voided,
+    PrintReceipt,
+    PrintRoster,
+    PrintTeacherStatement,
+    CloseOpenCheckIns,
 }
 
 object AppStrings {
@@ -187,6 +195,14 @@ object AppStrings {
                     "تعذر الحفظ. تحقق من البيانات وتفرّد اسم المستخدم.",
                     "Could not save. Check the details and use a unique username.",
                 ),
+            AppStringKey.VoidPayment to LocalizedText("إلغاء / استرداد دفعة", "Void / Refund Payment"),
+            AppStringKey.ConfirmVoidPayment to LocalizedText("تأكيد إلغاء الدفعة؟", "Confirm voiding this payment?"),
+            AppStringKey.VoidReason to LocalizedText("سبب الإلغاء (اختياري)", "Reason (optional)"),
+            AppStringKey.Voided to LocalizedText("ملغاة", "Voided"),
+            AppStringKey.PrintReceipt to LocalizedText("طباعة إيصال", "Print receipt"),
+            AppStringKey.PrintRoster to LocalizedText("طباعة كشف طلاب الدرس", "Print lesson roster"),
+            AppStringKey.PrintTeacherStatement to LocalizedText("طباعة كشف حساب المدرس", "Print teacher statement"),
+            AppStringKey.CloseOpenCheckIns to LocalizedText("إغلاق الحضور المفتوح", "Close Today's Open Check-Ins"),
         )
 
     val entries: Map<AppStringKey, LocalizedText> get() = dictionary

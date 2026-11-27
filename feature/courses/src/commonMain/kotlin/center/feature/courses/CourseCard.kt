@@ -24,6 +24,7 @@ import center.ui.components.CenterOneAvatar
 import center.ui.components.CenterOneCapacityMeter
 import center.ui.components.CenterOneCard
 import center.ui.components.CenterOneIconButton
+import center.ui.components.CenterOneOutlinedButton
 import center.ui.components.CenterOneTag
 import center.ui.localization.AppStringKey
 import center.ui.localization.AppStrings
@@ -94,6 +95,16 @@ fun CourseCard(
                 )
             }
             HorizontalDivider(color = MaterialTheme.colorScheme.outline)
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                CenterOneOutlinedButton(
+                    modifier = Modifier.weight(1f),
+                    onClick = { onEvent(CoursesEvent.ExportLessonRoster(group.id)) },
+                ) { Text(AppStrings.get(AppStringKey.ExportPdf, language)) }
+                CenterOneOutlinedButton(
+                    modifier = Modifier.weight(1f),
+                    onClick = { onEvent(CoursesEvent.PrintLessonRoster(group.id)) },
+                ) { Text(AppStrings.get(AppStringKey.PrintRoster, language)) }
+            }
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
                 CenterOneAvatar(teacherName.removePrefix("أ. ").take(1))
                 Text(teacherName, style = MaterialTheme.typography.titleSmall)

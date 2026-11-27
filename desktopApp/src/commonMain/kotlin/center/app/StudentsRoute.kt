@@ -338,7 +338,7 @@ internal class StudentsStateHolder(
                 ) ==
                     month
             }
-        val totalPaid = monthlyPayments.sumOf { (it.amountPaid * 100).roundToLong() }
+        val totalPaid = monthlyPayments.filter { it.voidedAt == null }.sumOf { (it.amountPaid * 100).roundToLong() }
         val lessonCounts =
             monthlyLessonCounts(
                 enrolled,
@@ -396,7 +396,11 @@ internal class StudentsStateHolder(
             ),
             monthlyPayments.sortedByDescending { it.paymentDate }.map { payment ->
                 val amount = (payment.amountPaid * 100).roundToLong().decimalMinor()
-                LocalizedText("${payment.billingMonth ?: month}: $amount ج.م", "${payment.billingMonth ?: month}: $amount EGP")
+                val voided = payment.voidedAt != null
+                LocalizedText(
+                    "${payment.billingMonth ?: month}: $amount ج.م${if (voided) " · ملغاة" else ""}",
+                    "${payment.billingMonth ?: month}: $amount EGP${if (voided) " · Voided" else ""}",
+                )
             },
             listOf(
                 LocalizedText(

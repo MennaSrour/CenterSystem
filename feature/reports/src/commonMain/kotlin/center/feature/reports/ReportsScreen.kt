@@ -67,6 +67,27 @@ interface MonthlyReportPlatform {
     ): Boolean
 }
 
+/** Desktop PDF actions for contextual documents such as receipts and rosters. */
+interface ContextualPdfPlatform {
+    fun createContextPdf(
+        title: String,
+        lines: List<String>,
+        language: AppLanguage,
+    ): ByteArray
+
+    suspend fun saveContextPdf(
+        title: String,
+        fileName: String,
+        overwrite: String,
+        bytes: ByteArray,
+    ): Boolean
+
+    suspend fun printContextPdf(
+        title: String,
+        bytes: ByteArray,
+    ): Boolean
+}
+
 sealed interface MonthlyReportEvent {
     data class MonthChanged(
         val month: LocalDate,

@@ -20,6 +20,32 @@ class DatabaseBackup(
     private val pending = directory.resolve("center.restore-pending")
     private val previous = directory.resolve("center.before-restore.db")
 
+    /** Captures one consistent SQLite snapshot per local calendar day and retains seven days. */
+    fun createDailyBackup(date: LocalDate): Path {
+        val folder = live.parent.resolve("backups")
+        Files.createDirectories(folder)
+        val target = folder.resolve("centerone_backup_$date.db")
+        if (Files.notExists(target) && Files.isRegularFile(live)) {
+            withSnapshot(live, folder) { Files.move(it, target, ATOMIC_MOVE, REPLACE_EXISTING) }
+        }
+        pruneDailyBackups(folder, date)
+        return target
+    }
+
+    private fun pruneDailyBackups(
+        folder: Path,
+        today: LocalDate,
+    ) {
+        val oldest = today.minusDays(6)
+        Files.list(folder).use { files ->
+            files.forEach { path ->
+                val match = Regex("centerone_backup_(\\d{4}-\\d{2}-\\d{2})\\.db").matchEntire(path.fileName.toString())
+                val date = match?.groupValues?.get(1)?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
+                if (date != null && date < oldest) Files.deleteIfExists(path)
+            }
+        }
+    }
+
     fun export(
         folder: Path,
         date: LocalDate,
