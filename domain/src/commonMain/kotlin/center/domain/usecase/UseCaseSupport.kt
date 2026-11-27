@@ -21,6 +21,18 @@ class ClassTeacherNotFoundException(
     classId: String,
 ) : IllegalArgumentException("Class teacher not found: $classId")
 
+class StudentNotEnrolledException : IllegalArgumentException("Student is not enrolled in the group")
+
+class PaymentStudentUnavailableException : IllegalArgumentException("Student is missing or inactive")
+
+class PaymentLessonUnavailableException : IllegalArgumentException("Group is missing or archived")
+
+class MonthlyPaymentAlreadySettledException : IllegalArgumentException("The monthly balance is already settled")
+
+class PaymentExceedsRemainingBalanceException : IllegalArgumentException("Payment exceeds the remaining subscription balance")
+
+class PaymentTermsChangedException : IllegalArgumentException("Group commission changed before payment")
+
 internal suspend fun <T> domainResult(block: suspend () -> T): Result<T> =
     try {
         currentCoroutineContext().ensureActive()

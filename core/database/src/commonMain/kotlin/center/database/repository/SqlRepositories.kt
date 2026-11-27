@@ -23,6 +23,12 @@ import center.domain.repository.MessageQueueRepository
 import center.domain.repository.PaymentRepository
 import center.domain.repository.TeacherRepository
 import center.domain.usecase.DuplicateAttendanceException
+import center.domain.usecase.MonthlyPaymentAlreadySettledException
+import center.domain.usecase.PaymentExceedsRemainingBalanceException
+import center.domain.usecase.PaymentLessonUnavailableException
+import center.domain.usecase.PaymentStudentUnavailableException
+import center.domain.usecase.PaymentTermsChangedException
+import center.domain.usecase.StudentNotEnrolledException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -137,7 +143,7 @@ class SqlPaymentRepository(
 
     override suspend fun saveWithReceipt(
         payment: Payment,
-        receipt: QueuedMessage,
+        receipt: QueuedMessage?,
     ): Unit =
         withContext(dispatcher) {
             require(payment.billingMonth?.let { it.dayOfMonth == 1 && it.year in 1..9999 } != false) { "Invalid billing month" }
@@ -151,8 +157,8 @@ class SqlPaymentRepository(
                     payment.centerShare,
                     payment.paymentDate,
                 )
-            val message = receipt.toEntity()
-            require(message.status == center.database.entity.MessageStatus.PENDING)
+            val message = receipt?.toEntity()
+            require(message == null || message.status == center.database.entity.MessageStatus.PENDING)
             database.transaction {
                 val group = database.requireEligibleGroup(payment.classId, payment.studentId)
                 validateMonthlyPayment(group, payment)
@@ -166,7 +172,7 @@ class SqlPaymentRepository(
                     entity.paymentDate,
                 )
                 payment.billingMonth?.let { database.operationsQueries.setPaymentMonth(it.toString(), payment.id) }
-                database.insertMessage(message)
+                message?.let(database::insertMessage)
             }
         }
 
@@ -182,10 +188,20 @@ class SqlPaymentRepository(
         val discount = database.operationsQueries.enrollmentDiscount(payment.studentId, payment.classId).executeAsOne()
         val net = (price - (discount * 100).roundToLong()).coerceAtLeast(0)
         val amount = (payment.amountPaid * 100).roundToLong()
-        val commission = checkNotNull(group.commissionBasisPoints)
-        require(amount in 1..100_000_000_000L && amount <= net - paid) { "Payment exceeds the remaining subscription balance" }
+        val commission =
+            group.commissionBasisPoints
+                ?: database.teacherQueries
+                    .selectById(group.teacherId)
+                    .executeAsOne()
+                    .commissionRate
+                    .let { (it * 10_000).roundToLong() }
+        require(commission in 0L..10_000L) { "Invalid teacher commission rate" }
+        val remaining = net - paid
+        if (remaining <= 0) throw MonthlyPaymentAlreadySettledException()
+        require(amount in 1..100_000_000_000L)
+        if (amount > remaining) throw PaymentExceedsRemainingBalanceException()
         val teacherMinor = (amount * commission + 5_000) / 10_000
-        require((payment.teacherShare * 100).roundToLong() == teacherMinor) { "Group commission changed before payment" }
+        if ((payment.teacherShare * 100).roundToLong() != teacherMinor) throw PaymentTermsChangedException()
     }
 }
 
@@ -305,11 +321,11 @@ private fun CenterDatabase.requireEligibleGroup(
     classId: String,
     studentId: String,
 ): Class_group {
-    val group = requireNotNull(classGroupQueries.selectById(classId).executeAsOneOrNull()) { "Group not found" }
-    require(group.status == "ACTIVE") { "Group is archived" }
-    require(studentQueries.selectById(studentId).executeAsOneOrNull()?.isActive == true) { "Student is missing or inactive" }
+    val group = classGroupQueries.selectById(classId).executeAsOneOrNull() ?: throw PaymentLessonUnavailableException()
+    if (group.status != "ACTIVE") throw PaymentLessonUnavailableException()
+    if (studentQueries.selectById(studentId).executeAsOneOrNull()?.isActive != true) throw PaymentStudentUnavailableException()
     if (group.monthlyPriceMinor != null) {
-        require(operationsQueries.hasEnrollment(studentId, classId).executeAsOne()) { "Student is not enrolled in the group" }
+        if (!operationsQueries.hasEnrollment(studentId, classId).executeAsOne()) throw StudentNotEnrolledException()
     }
     return group
 }
