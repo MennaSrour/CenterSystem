@@ -48,6 +48,8 @@ import center.ui.components.CenterOneTextButton
 import center.ui.components.CenterOneTextField
 import center.ui.components.LocalCenterOneLogo
 import center.ui.localization.AppLanguage
+import center.ui.localization.AppStringKey
+import center.ui.localization.AppStrings
 import center.ui.localization.LocalAppLanguage
 import center.ui.localization.LocalizedText
 import kotlinx.coroutines.launch
@@ -56,9 +58,12 @@ internal val brandTitle = LocalizedText("سنتر وان", "Center One")
 
 internal fun UserRole.localizedRole() =
     when (this) {
-        UserRole.ADMIN -> LocalizedText("مدير", "Administrator")
-        UserRole.RECEPTION -> LocalizedText("الاستقبال", "Reception")
+        UserRole.ADMIN -> AppStrings.text(AppStringKey.Admin)
+        UserRole.RECEPTION -> AppStrings.text(AppStringKey.Reception)
     }
+
+@Composable
+internal fun authText(key: AppStringKey) = AppStrings.get(key, LocalAppLanguage.current)
 
 @Composable
 internal fun authText(
@@ -122,7 +127,7 @@ internal fun LoginScreen(
                             error = null
                         },
                         Modifier.fillMaxWidth(),
-                        label = { Text(authText("اسم المستخدم", "Username")) },
+                        label = { Text(authText(AppStringKey.Username)) },
                         enabled = !busy,
                     )
                     PasswordField(password, {
@@ -131,7 +136,7 @@ internal fun LoginScreen(
                     }, enabled = !busy, onSubmit = ::submit)
                     error?.let { Text(it.resolve(language), color = MaterialTheme.colorScheme.error) }
                     CenterOnePrimaryButton(::submit, Modifier.fillMaxWidth(), enabled = canSubmit) {
-                        Text(if (busy) authText("جارٍ تسجيل الدخول…", "Signing in…") else authText("تسجيل الدخول", "Sign in"))
+                        Text(if (busy) authText(AppStringKey.LoggingIn) else authText(AppStringKey.Login))
                     }
                 }
             }
@@ -151,18 +156,20 @@ private fun PasswordField(
         value,
         onChange,
         Modifier.fillMaxWidth(),
-        label = { Text(authText("كلمة المرور", "Password")) },
+        label = { Text(authText(AppStringKey.Password)) },
         enabled = enabled,
         visualTransformation = if (visible) VisualTransformation.None else PasswordVisualTransformation(),
         trailingIcon = {
             CenterOneTextButton(onClick = { visible = !visible }, enabled = enabled) {
-                Text(if (visible) authText("إخفاء", "Hide") else authText("إظهار", "Show"))
+                Text(if (visible) authText(AppStringKey.Hide) else authText(AppStringKey.Show))
             }
         },
         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done, keyboardType = KeyboardType.Password),
         keyboardActions = KeyboardActions(onDone = { onSubmit() }),
     )
 }
+
+internal val LocalCloudSettings = androidx.compose.runtime.staticCompositionLocalOf<@Composable () -> Unit> { {} }
 
 private sealed interface AccountForm {
     data object Add : AccountForm
@@ -184,7 +191,10 @@ internal fun SettingsScreen(
         CenterOneLanguageToggle(language, onLanguageSelected)
     }
     databaseBackup()
-    if (canManageUsers) ManageUsers(session)
+    if (canManageUsers) {
+        LocalCloudSettings.current()
+        ManageUsers(session)
+    }
 }
 
 @Composable
@@ -194,8 +204,8 @@ private fun ManageUsers(session: AuthSession) {
     var form by remember { mutableStateOf<AccountForm?>(null) }
     val language = LocalAppLanguage.current
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-        Text(authText("إدارة الحسابات", "Manage Users"), style = MaterialTheme.typography.titleLarge)
-        CenterOnePrimaryButton(onClick = { form = AccountForm.Add }) { Text(authText("إضافة مستخدم", "Add user")) }
+        Text(authText(AppStringKey.ManageAccounts), style = MaterialTheme.typography.titleLarge)
+        CenterOnePrimaryButton(onClick = { form = AccountForm.Add }) { Text(authText(AppStringKey.AddUser)) }
     }
     Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         users.forEach { user ->
@@ -213,7 +223,7 @@ private fun ManageUsers(session: AuthSession) {
                         )
                     }
                     CenterOneTextButton(onClick = { form = AccountForm.ChangePassword(user) }) {
-                        Text(authText("تغيير كلمة المرور", "Change password"))
+                        Text(authText(AppStringKey.ChangePassword))
                     }
                 }
             }
@@ -260,9 +270,9 @@ private fun AccountDialog(
     val close = { if (!busy) onClose() }
     CenterOneModal(close) {
         CenterOneModalContent(
-            title = if (adding) authText("إضافة مستخدم", "Add user") else authText("تغيير كلمة المرور", "Change password"),
+            title = if (adding) authText(AppStringKey.AddUser) else authText(AppStringKey.ChangePassword),
             subtitle = (form as? AccountForm.ChangePassword)?.user?.displayName.orEmpty(),
-            closeLabel = authText("إغلاق", "Close"),
+            closeLabel = authText(AppStringKey.Close),
             onClose = close,
             enabled = !busy,
         ) {
@@ -271,14 +281,14 @@ private fun AccountDialog(
                     name,
                     { name = it },
                     Modifier.fillMaxWidth(),
-                    label = { Text(authText("الاسم", "Display name")) },
+                    label = { Text(authText(AppStringKey.DisplayName)) },
                     enabled = !busy,
                 )
                 CenterOneTextField(
                     username,
                     { username = it },
                     Modifier.fillMaxWidth(),
-                    label = { Text(authText("اسم المستخدم", "Username")) },
+                    label = { Text(authText(AppStringKey.Username)) },
                     enabled = !busy,
                 )
                 CenterOnePillTabs(
@@ -292,17 +302,14 @@ private fun AccountDialog(
                 password = it
                 failed = false
             }, enabled = !busy, onSubmit = ::save)
-            Text(authText("كلمة المرور من ٤ إلى ٢٥٦ حرفًا.", "Use 4–256 characters."), style = MaterialTheme.typography.bodySmall)
+            Text(authText(AppStringKey.PasswordLengthHint), style = MaterialTheme.typography.bodySmall)
             if (failed) {
                 Text(
-                    authText(
-                        "تعذر الحفظ. تحقق من البيانات وتفرّد اسم المستخدم.",
-                        "Could not save. Check the details and use a unique username.",
-                    ),
+                    authText(AppStringKey.AccountSaveError),
                     color = MaterialTheme.colorScheme.error,
                 )
             }
-            CenterOnePrimaryButton(::save, enabled = canSave) { Text(authText("حفظ", "Save")) }
+            CenterOnePrimaryButton(::save, enabled = canSave) { Text(authText(AppStringKey.Save)) }
         }
     }
 }

@@ -63,6 +63,7 @@ class DirectoryPersistenceTest {
                         )
 
                         courses.onEvent(CoursesEvent.OpenAddGroup)
+                        courses.onEvent(CoursesEvent.ToggleScheduleDay(ScheduleDay.Monday))
                         val slotId =
                             (courses.uiState.value.modal as CoursesModal.Form)
                                 .state.timeSlots
@@ -76,7 +77,6 @@ class DirectoryPersistenceTest {
                             CoursesEvent.MonthlyPriceChanged("200.50"),
                             CoursesEvent.CommissionChanged("60"),
                             CoursesEvent.MaxCapacityChanged("10"),
-                            CoursesEvent.DaySelected(slotId, ScheduleDay.Monday),
                             CoursesEvent.FromTimeChanged(slotId, "16:00"),
                             CoursesEvent.ToTimeChanged(slotId, "17:30"),
                             CoursesEvent.SubmitGroup,

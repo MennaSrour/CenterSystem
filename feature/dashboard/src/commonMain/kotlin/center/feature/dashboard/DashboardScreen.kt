@@ -93,6 +93,7 @@ fun DashboardScreen(
                                     state.attendanceGroupId,
                                     state.groupMenuExpanded,
                                     state.checkingIn,
+                                    state.lessonAttendanceOptions,
                                 )
                             }
                             ReceptionShortcuts(onEvent)

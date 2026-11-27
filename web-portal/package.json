@@ -1,0 +1,8 @@
+{
+  "name": "center-one-portal",
+  "private": true,
+  "type": "module",
+  "scripts": {"build": "tsc --noEmit && vite build", "dev": "vite"},
+  "dependencies": {"firebase": "10.14.1", "react": "^18.3.1", "react-dom": "^18.3.1", "papaparse": "^5.5.3", "read-excel-file": "^5.8.8"},
+  "devDependencies": {"@types/react": "^18.3.0", "@types/react-dom": "^18.3.0", "@types/papaparse": "^5.3.16", "typescript": "^5.8.3", "vite": "^6.4.0", "tailwindcss": "^3.4.17", "postcss": "^8.5.3", "autoprefixer": "^10.4.21"}
+}

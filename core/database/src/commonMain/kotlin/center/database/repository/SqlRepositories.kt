@@ -268,6 +268,7 @@ class SqlMessageQueueRepository(
                     MessageStatus.valueOf(it.status.name),
                     it.createdAt,
                     ReminderChannel.valueOf(it.channel.name),
+                    it.reminderStudentId,
                 )
             }
         }
@@ -291,11 +292,13 @@ internal fun QueuedMessage.toEntity() =
         createdAt,
         center.database.entity.ReminderChannel
             .valueOf(channel.name),
+        reminderStudentId,
     )
 
 internal fun CenterDatabase.insertMessage(message: MessageQueueEntity) {
     messageQueueQueries.insertRow(message.id, message.targetPhone, message.messageBody, message.status.name, message.createdAt)
     operationsQueries.setMessageChannel(message.channel.name, message.id)
+    message.reminderStudentId?.let { messageQueueQueries.setReminderStudent(it, message.id) }
 }
 
 private fun CenterDatabase.requireEligibleGroup(

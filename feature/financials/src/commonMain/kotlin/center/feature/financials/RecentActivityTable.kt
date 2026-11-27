@@ -9,20 +9,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import center.feature.financials.resources.Res
-import center.feature.financials.resources.amount
-import center.feature.financials.resources.category
-import center.feature.financials.resources.date
-import center.feature.financials.resources.empty_records
-import center.feature.financials.resources.party
-import center.feature.financials.resources.time
 import center.ui.components.CenterOneAvatar
 import center.ui.components.CenterOneTable
 import center.ui.components.CenterOneTableColumn
 import center.ui.theme.Rose
 import center.ui.theme.Success
 import center.ui.theme.accentContentColor
-import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun RecentActivityTable(
@@ -32,15 +24,15 @@ fun RecentActivityTable(
 ) {
     val columns =
         listOf(
-            CenterOneTableColumn(stringResource(Res.string.party), 2f),
-            CenterOneTableColumn(stringResource(Res.string.category), 1.5f),
-            CenterOneTableColumn(stringResource(Res.string.amount)),
-            CenterOneTableColumn(stringResource(Res.string.date)),
-            CenterOneTableColumn(stringResource(Res.string.time), 0.7f),
+            CenterOneTableColumn(appString("party"), 2f),
+            CenterOneTableColumn(appString("category"), 1.5f),
+            CenterOneTableColumn(appString("amount")),
+            CenterOneTableColumn(appString("date")),
+            CenterOneTableColumn(appString("time"), 0.7f),
         )
     CenterOneTable(columns, records, rowKey = {
         it.id
-    }, emptyLabel = stringResource(Res.string.empty_records), modifier = modifier) { record, column ->
+    }, emptyLabel = appString("empty_records"), modifier = modifier) { record, column ->
         when (column) {
             0 ->
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {

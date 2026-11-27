@@ -36,7 +36,7 @@ class FinancialsInteractionTest {
                 assertEquals(FinancialsEvent.PaymentAmountChanged("125"), events.last())
                 assertEquals("100", form.amount)
             }
-            onNodeWithText("تأكيد التحصيل / Confirm Payment").performScrollTo().performClick()
+            onNodeWithText("تأكيد التحصيل").performScrollTo().performClick()
             runOnIdle { assertEquals(FinancialsEvent.ConfirmReceivePayment, events.last()) }
         }
 
@@ -54,9 +54,9 @@ class FinancialsInteractionTest {
             }
             onNodeWithText("مصروفات تشغيل").performClick()
             runOnIdle { assertEquals(FinancialsEvent.ExpenseTypeSelected(ExpenseType.Operational), events.last()) }
-            onNodeWithText("اختر المدرس / Select Teacher").assertExists()
+            onNodeWithText("اختر المدرس").assertExists()
             runOnIdle { state.value = state.value.copy(type = ExpenseType.Operational) }
-            onNodeWithText("اختر المدرس / Select Teacher").assertDoesNotExist()
+            onNodeWithText("اختر المدرس").assertDoesNotExist()
         }
 
     @Test
@@ -67,9 +67,9 @@ class FinancialsInteractionTest {
                     RecordExpenseModalContent(FinancialsPreviewData.recordExpense().copy(isSubmitting = true), {})
                 }
             }
-            onNodeWithText("تأكيد الصرف / Confirm Payout").performScrollTo().assertIsNotEnabled()
-            onNodeWithText("إلغاء / Cancel").assertIsNotEnabled()
-            onNodeWithText("رفع صورة الإيصال / Attach Receipt").performScrollTo().assertIsNotEnabled()
+            onNodeWithText("تأكيد الصرف").performScrollTo().assertIsNotEnabled()
+            onNodeWithText("إلغاء").assertIsNotEnabled()
+            onNodeWithText("رفع صورة الإيصال").performScrollTo().assertIsNotEnabled()
             onNodeWithText("إغلاق").performScrollTo().assertIsNotEnabled()
         }
 }

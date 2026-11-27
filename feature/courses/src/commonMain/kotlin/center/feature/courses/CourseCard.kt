@@ -20,22 +20,16 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import center.feature.courses.resources.Res
-import center.feature.courses.resources.capacity
-import center.feature.courses.resources.deactivate_group
-import center.feature.courses.resources.delete_group
-import center.feature.courses.resources.edit_group
-import center.feature.courses.resources.inactive
-import center.feature.courses.resources.menu_for
 import center.ui.components.CenterOneAvatar
 import center.ui.components.CenterOneCapacityMeter
 import center.ui.components.CenterOneCard
 import center.ui.components.CenterOneIconButton
 import center.ui.components.CenterOneTag
+import center.ui.localization.LocalAppLanguage
+import center.ui.localization.LocalizedText
 import center.ui.text.isolateLtr
 import center.ui.theme.Indigo
 import center.ui.theme.Rose
-import org.jetbrains.compose.resources.stringResource
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -49,34 +43,50 @@ fun CourseCard(
     canDelete: Boolean = true,
 ) {
     val accent = if (group.isActive) Indigo else Rose
+    val language = LocalAppLanguage.current
     CenterOneCard(modifier) {
         Column(Modifier.fillMaxWidth().padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 // The first item is physically right in RTL, as required for the kebab anchor.
                 Box {
-                    CenterOneIconButton(Icons.Outlined.MoreVert, stringResource(Res.string.menu_for, group.subject), {
+                    CenterOneIconButton(Icons.Outlined.MoreVert, appString("menu_for", group.subject), {
                         onEvent(CoursesEvent.GroupMenuChanged(if (menuExpanded) null else group.id))
                     })
                     DropdownMenu(expanded = menuExpanded, onDismissRequest = { onEvent(CoursesEvent.GroupMenuChanged(null)) }) {
                         DropdownMenuItem(
-                            text = { Text(stringResource(Res.string.edit_group)) },
+                            text = { Text(appString("edit_group")) },
                             onClick = { onEvent(CoursesEvent.EditGroup(group.id)) },
                         )
                         DropdownMenuItem(text = {
-                            Text(stringResource(Res.string.deactivate_group))
+                            Text(appString("deactivate_group"))
                         }, onClick = { onEvent(CoursesEvent.DeactivateGroup(group.id)) }, enabled = group.isActive)
                         if (canDelete) {
                             DropdownMenuItem(text = {
-                                Text(stringResource(Res.string.delete_group), color = MaterialTheme.colorScheme.error)
+                                Text(appString("delete_group"), color = MaterialTheme.colorScheme.error)
                             }, onClick = { onEvent(CoursesEvent.RequestDeleteGroup(group.id)) })
                         }
                     }
                 }
                 Spacer(Modifier.weight(1f))
-                if (!group.isActive) CenterOneTag(stringResource(Res.string.inactive), color = accent)
+                if (!group.isActive) CenterOneTag(appString("inactive"), color = accent)
             }
             Text(group.subject, style = MaterialTheme.typography.titleLarge)
             Text(gradeLabel, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(group.lessonType.label(language), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.tertiary)
+            Text(
+                LocalizedText("السعر الأساسي: ${group.monthlyPrice} ج.م", "Base price: ${group.monthlyPrice} EGP").resolve(language),
+                style = MaterialTheme.typography.bodyMedium,
+            )
+            if (group.lessonType == CourseLessonType.Mixed && group.languagesPrice.isNotBlank()) {
+                Text(
+                    LocalizedText(
+                        "سعر مسار اللغات: ${group.languagesPrice} ج.م",
+                        "Languages track: ${group.languagesPrice} EGP",
+                    ).resolve(language),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
             HorizontalDivider(color = MaterialTheme.colorScheme.outline)
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
                 CenterOneAvatar(teacherName.removePrefix("أ. ").take(1))
@@ -89,7 +99,7 @@ fun CourseCard(
                 }
             }
             CenterOneCapacityMeter(
-                stringResource(Res.string.capacity, "${group.enrolled} / ${group.maxCapacity}".isolateLtr()),
+                appString("capacity", "${group.enrolled} / ${group.maxCapacity}".isolateLtr()),
                 group.capacityProgress,
                 Modifier.fillMaxWidth(),
                 accent,
@@ -97,3 +107,11 @@ fun CourseCard(
         }
     }
 }
+
+private fun CourseLessonType.label(language: center.ui.localization.AppLanguage): String =
+    when (this) {
+        CourseLessonType.Arabic -> LocalizedText("عربي", "Arabic").resolve(language)
+        CourseLessonType.Languages -> LocalizedText("لغات", "Languages").resolve(language)
+        CourseLessonType.Mixed -> LocalizedText("مشترك عربي ولغات", "Arabic and Languages").resolve(language)
+        CourseLessonType.Private -> LocalizedText("برايفت", "Private").resolve(language)
+    }

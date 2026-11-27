@@ -24,6 +24,7 @@ import center.ui.components.CenterOneGradientCard
 import center.ui.components.CenterOneModalContent
 import center.ui.components.CenterOnePrimaryButton
 import center.ui.components.CenterOneTextField
+import center.ui.components.LocalTeacherPortalDetails
 import center.ui.components.StatusBadge
 import center.ui.components.StatusTone
 import center.ui.localization.LocalAppLanguage
@@ -56,14 +57,37 @@ internal fun TeacherDetails(
             Text(teacherString(TeacherText.Phone), style = MaterialTheme.typography.labelMedium)
             Text(teacher.phone, style = MaterialTheme.typography.bodyLarge.copy(textDirection = TextDirection.Ltr))
         }
+        LocalTeacherPortalDetails.current(teacher.id)
         if (teacher.notes.isNotBlank()) Text(teacher.notes, style = MaterialTheme.typography.bodyMedium)
+        Text(
+            teacherString(TeacherText.Details) + " · ${teacher.assignedLessonCount} " +
+                LocalizedText("درس", "lessons").resolve(language),
+            style = MaterialTheme.typography.titleSmall,
+        )
+        Text(
+            LocalizedText(
+                "عربي ${teacher.arabicStudentCount} · لغات ${teacher.languagesStudentCount} · برايفت ${teacher.privateStudentCount}",
+                "Arabic ${teacher.arabicStudentCount} · Languages ${teacher.languagesStudentCount} · Private ${teacher.privateStudentCount}",
+            ).resolve(language),
+        )
+        Text(
+            LocalizedText("الأيام والساعات المتوقعة", "Expected center days and hours").resolve(language),
+            style = MaterialTheme.typography.titleSmall,
+        )
+        Text(teacher.expectedSchedule.resolve(language).ifBlank { LocalizedText("لا يوجد جدول محدد", "No schedule set").resolve(language) })
         CenterOnePrimaryButton(onClick = {
             onEvent(TeachersEvent.EditTeacher(teacher.id))
         }, enabled = !paying) { Text(teacherString(TeacherText.Edit)) }
         SalaryBox(teacher, paying, onPay = { onEvent(TeachersEvent.PaySalary(teacher.id)) })
+        Text(LocalizedText("سجل صرف المرتبات", "Salary payout history").resolve(language), style = MaterialTheme.typography.titleSmall)
+        if (teacher.payoutHistory.isEmpty()) {
+            Text(LocalizedText("لا توجد عمليات صرف مسجلة", "No salary payouts recorded").resolve(language))
+        } else {
+            teacher.payoutHistory.forEach { Text(it.resolve(language), style = MaterialTheme.typography.bodySmall) }
+        }
         if (teacher.unpaidStudents.isNotEmpty()) CollectionDeficit(teacher.unpaidStudents)
         Text(
-            LocalizedText("جدول المجموعات النشطة", "Active group schedule").resolve(language),
+            LocalizedText("جدول الدروس النشطة", "Active lesson schedule").resolve(language),
             style = MaterialTheme.typography.titleMedium,
         )
         if (teacher.groups.isEmpty()) {
@@ -169,6 +193,15 @@ internal fun AddTeacherForm(
         BoxWithConstraints(Modifier.fillMaxWidth()) {
             val mainFields: @Composable (Modifier) -> Unit = { fieldModifier ->
                 Column(fieldModifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    CenterOneTextField(
+                        draft.code,
+                        {},
+                        Modifier.fillMaxWidth(),
+                        enabled = !saving,
+                        readOnly = true,
+                        label = { Text(staffLabel("كود المدرس", "Teacher ID")) },
+                        textStyle = MaterialTheme.typography.bodyLarge.copy(textDirection = TextDirection.Ltr),
+                    )
                     CenterOneTextField(
                         draft.name,
                         { onEvent(TeachersEvent.NameChanged(it)) },

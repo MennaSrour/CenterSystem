@@ -8,6 +8,7 @@ kotlin {
     jvmToolchain(21)
     sourceSets {
         commonMain.dependencies {
+            implementation(project(":domain"))
             implementation(project(":core:ui"))
             implementation(compose.components.resources)
             implementation(compose.materialIconsExtended)

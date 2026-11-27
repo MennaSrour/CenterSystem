@@ -35,26 +35,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.dp
-import center.feature.courses.resources.Res
-import center.feature.courses.resources.active_groups
-import center.feature.courses.resources.add_group
-import center.feature.courses.resources.all
-import center.feature.courses.resources.courses_title
-import center.feature.courses.resources.courses_title_en
-import center.feature.courses.resources.empty
-import center.feature.courses.resources.grade_missing
-import center.feature.courses.resources.groups_title
-import center.feature.courses.resources.notifications
-import center.feature.courses.resources.prep
-import center.feature.courses.resources.primary
-import center.feature.courses.resources.search
-import center.feature.courses.resources.secondary
-import center.feature.courses.resources.section
-import center.feature.courses.resources.subtitle
-import center.feature.courses.resources.teacher_missing
-import center.feature.courses.resources.term
-import center.feature.courses.resources.total_groups
-import center.feature.courses.resources.total_teachers
 import center.ui.components.CenterOneCanvas
 import center.ui.components.CenterOneCard
 import center.ui.components.CenterOneDropdown
@@ -73,7 +53,6 @@ import center.ui.theme.CenterOneBrushes
 import center.ui.theme.CenterOneSpacing
 import center.ui.theme.Indigo
 import center.ui.theme.ModalScrim
-import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun CoursesScreen(
@@ -123,13 +102,13 @@ internal fun CoursesContent(
                         item(key = "heading", span = { GridItemSpan(maxLineSpan) }) {
                             Column {
                                 Text(
-                                    stringResource(Res.string.section),
+                                    appString("section"),
                                     style = MaterialTheme.typography.labelMedium,
                                     color = MaterialTheme.colorScheme.tertiary,
                                 )
-                                Text(stringResource(Res.string.groups_title), style = MaterialTheme.typography.headlineLarge)
+                                Text(appString("groups_title"), style = MaterialTheme.typography.headlineLarge)
                                 Text(
-                                    stringResource(Res.string.subtitle),
+                                    appString("subtitle"),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
@@ -141,10 +120,10 @@ internal fun CoursesContent(
                                 Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                                     CenterOnePillTabs(
                                         listOf(
-                                            stringResource(Res.string.all),
-                                            stringResource(Res.string.primary),
-                                            stringResource(Res.string.prep),
-                                            stringResource(Res.string.secondary),
+                                            appString("all"),
+                                            appString("primary"),
+                                            appString("prep"),
+                                            appString("secondary"),
                                         ),
                                         CourseStageFilter.entries.indexOf(state.stageFilter),
                                         {
@@ -160,11 +139,11 @@ internal fun CoursesContent(
                                         CenterOneTextField(state.searchQuery, {
                                             onEvent(CoursesEvent.SearchChanged(it))
                                         }, Modifier.weight(1f), placeholder = {
-                                            Text(stringResource(Res.string.search))
+                                            Text(appString("search"))
                                         }, leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null) })
                                         CenterOnePrimaryButton(
                                             onClick = { onEvent(CoursesEvent.OpenAddGroup) },
-                                        ) { Text(stringResource(Res.string.add_group)) }
+                                        ) { Text(appString("add_group")) }
                                     }
                                 }
                             }
@@ -172,13 +151,13 @@ internal fun CoursesContent(
                         if (groups.isEmpty()) {
                             item(key = "empty", span = {
                                 GridItemSpan(maxLineSpan)
-                            }) { Text(stringResource(Res.string.empty), Modifier.padding(24.dp)) }
+                            }) { Text(appString("empty"), Modifier.padding(24.dp)) }
                         }
                         items(groups, key = { "group:${it.id}" }) { group ->
                             CourseCard(
                                 group = group,
-                                teacherName = teacherById[group.teacherId]?.name ?: stringResource(Res.string.teacher_missing),
-                                gradeLabel = gradeById[group.gradeId]?.label ?: stringResource(Res.string.grade_missing),
+                                teacherName = teacherById[group.teacherId]?.name ?: appString("teacher_missing"),
+                                gradeLabel = gradeById[group.gradeId]?.label ?: appString("grade_missing"),
                                 menuExpanded = state.expandedGroupMenuId == group.id,
                                 canDelete = state.canDelete,
                                 onEvent = onEvent,
@@ -197,18 +176,18 @@ internal fun CoursesContent(
 private fun CoursesStats(summary: CoursesSummary) {
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
         listOf(
-            Triple(Res.string.total_groups, summary.totalGroups, Icons.Outlined.Layers),
-            Triple(Res.string.active_groups, summary.activeGroups, Icons.Outlined.CheckCircleOutline),
-            Triple(Res.string.total_teachers, summary.totalTeachers, Icons.Outlined.PeopleOutline),
+            Triple("total_groups", summary.totalGroups, Icons.Outlined.Layers),
+            Triple("active_groups", summary.activeGroups, Icons.Outlined.CheckCircleOutline),
+            Triple("total_teachers", summary.totalTeachers, Icons.Outlined.PeopleOutline),
         ).forEach { (title, value, icon) ->
             CenterOneMetricCard(
-                title = stringResource(title),
+                title = appString(title),
                 value = value,
-                caption = stringResource(Res.string.term),
+                caption = appString("term"),
                 icon = { Icon(icon, contentDescription = null) },
                 modifier = Modifier.weight(1f),
                 accent = Indigo,
-                gradient = CenterOneBrushes.Treasury.takeIf { title == Res.string.total_groups },
+                gradient = CenterOneBrushes.Treasury.takeIf { title == "total_groups" },
             )
         }
     }
@@ -219,11 +198,11 @@ private fun CoursesHeader(
     state: CoursesState,
     onEvent: (CoursesEvent) -> Unit,
 ) {
-    CenterOnePageHeader(stringResource(Res.string.courses_title), stringResource(Res.string.courses_title_en), state.dateLabel) {
+    CenterOnePageHeader(appString("courses_title"), appString("courses_title_en"), state.dateLabel) {
         CenterOneLanguageToggle(LocalAppLanguage.current, { onEvent(CoursesEvent.LanguageSelected(it)) })
         CenterOneIconButton(
             Icons.Outlined.Notifications,
-            stringResource(Res.string.notifications),
+            appString("notifications"),
             { onEvent(CoursesEvent.OpenNotifications) },
         )
         Text(state.userName, Modifier.padding(start = 12.dp), style = MaterialTheme.typography.titleSmall)

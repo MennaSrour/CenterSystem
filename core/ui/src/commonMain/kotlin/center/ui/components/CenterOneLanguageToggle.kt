@@ -21,6 +21,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import center.ui.localization.AppLanguage
+import center.ui.localization.AppStringKey
+import center.ui.localization.AppStrings
 import center.ui.theme.CenterOneSize
 
 /** Language names remain recognizable in either locale; selection belongs to the caller. */
@@ -51,7 +53,9 @@ fun CenterOneLanguageToggle(
                         contentAlignment = Alignment.Center,
                     ) {
                         Text(
-                            if (option == AppLanguage.Arabic) "عربي" else "English",
+                            AppStrings
+                                .text(if (option == AppLanguage.Arabic) AppStringKey.ArabicLanguage else AppStringKey.EnglishLanguage)
+                                .resolve(language),
                             color = if (selected) colors.onPrimaryContainer else colors.onSurface,
                             style = MaterialTheme.typography.labelLarge,
                             maxLines = 1,

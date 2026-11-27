@@ -2,6 +2,7 @@ package center.domain.usecase
 
 import center.domain.model.AttendancePerson
 import center.domain.model.AttendanceSession
+import center.domain.model.LessonAttendance
 import center.domain.model.PersonType
 import center.domain.model.QueuedMessage
 import center.domain.repository.AttendanceSessionRepository
@@ -17,7 +18,10 @@ class RegisterPresenceUseCase(
     private val ids: IdGenerator,
     private val timeZone: TimeZone = TimeZone.of("Africa/Cairo"),
 ) {
-    suspend fun checkIn(person: AttendancePerson): Result<Unit> =
+    suspend fun checkIn(
+        person: AttendancePerson,
+        lessons: List<LessonAttendanceOption> = emptyList(),
+    ): Result<Unit> =
         domainResult {
             val now = clock.nowMillis()
             val date = Instant.fromEpochMilliseconds(now).toLocalDateTime(timeZone).date
@@ -31,12 +35,18 @@ class RegisterPresenceUseCase(
                         createdAt = now,
                     )
                 }
-            attendance.checkIn(AttendanceSession(person, date, now, null), message)
+            attendance.checkIn(
+                AttendanceSession(person, date, now, null),
+                message,
+                lessons.map { LessonAttendance(person.id, it.lessonId, date, it.attended, now) },
+            )
         }
 
     suspend fun checkOut(person: AttendancePerson): Result<Unit> =
         domainResult {
             val now = clock.nowMillis()
-            attendance.checkOut(person, Instant.fromEpochMilliseconds(now).toLocalDateTime(timeZone).date, now)
+            val date = Instant.fromEpochMilliseconds(now).toLocalDateTime(timeZone).date
+            attendance.checkOut(person, date, now)
+            if (person.type == PersonType.STUDENT) attendance.markFutureLessonsMissed(person.id, date, now)
         }
 }

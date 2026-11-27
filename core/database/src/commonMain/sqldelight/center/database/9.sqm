@@ -1,0 +1,19 @@
+ALTER TABLE staff_member ADD COLUMN monthlySalaryMinor INTEGER CHECK (monthlySalaryMinor BETWEEN 0 AND 100000000000);
+
+CREATE TABLE lesson_attendance (
+    studentId TEXT NOT NULL REFERENCES student(id) ON DELETE CASCADE,
+    classId TEXT NOT NULL REFERENCES class_group(id) ON DELETE CASCADE,
+    date TEXT NOT NULL,
+    attended INTEGER NOT NULL CHECK (attended IN (0, 1)),
+    recordedAt INTEGER NOT NULL,
+    checkOutAt INTEGER,
+    PRIMARY KEY (studentId, classId, date, recordedAt),
+    CHECK (checkOutAt IS NULL OR checkOutAt >= recordedAt)
+);
+CREATE INDEX lesson_attendance_student_date ON lesson_attendance(studentId, date, recordedAt);
+CREATE INDEX lesson_attendance_class_date ON lesson_attendance(classId, date, recordedAt);
+
+INSERT OR IGNORE INTO lesson_attendance(studentId, classId, date, attended, recordedAt)
+SELECT studentId, classId, strftime('%Y-%m-%d', timestamp / 1000, 'unixepoch'),
+       CASE WHEN status = 'PRESENT' THEN 1 ELSE 0 END, timestamp
+FROM attendance;

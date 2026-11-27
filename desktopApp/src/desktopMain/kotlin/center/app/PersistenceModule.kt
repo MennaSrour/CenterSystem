@@ -38,6 +38,7 @@ import center.domain.usecase.ProcessPaymentUseCase
 import center.domain.usecase.QueueReminderUseCase
 import center.domain.usecase.RecordAttendanceUseCase
 import center.domain.usecase.RegisterPresenceUseCase
+import center.domain.usecase.SequentialPersonCodeGenerator
 import center.domain.usecase.SyncPendingMessagesUseCase
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -74,6 +75,7 @@ internal fun persistenceModule(
     factory { RegisterPresenceUseCase(get(), get(), get(), get()) }
     single { clock }
     single { IdGenerator { UUID.randomUUID().toString() } }
+    single { SequentialPersonCodeGenerator() }
     factory { RegisterStudent(get()) }
     factory { ProcessPaymentUseCase(get(), get(), get(), get(), get()) }
     factory { RecordAttendanceUseCase(get(), get(), get(), get(), get()) }
@@ -88,6 +90,7 @@ internal fun persistenceModule(
             teachers = get(),
             groups = get(),
             billing = get(),
+            payments = get(),
             treasury = get(),
             registerStudent = get(),
             overdue = get(),
@@ -101,6 +104,7 @@ internal fun persistenceModule(
             staff = get(),
             presence = get(),
             processPayment = get(),
+            personCodes = get(),
         )
     }
     factory { QueueReminderUseCase(get(), get(), get(), get()) }

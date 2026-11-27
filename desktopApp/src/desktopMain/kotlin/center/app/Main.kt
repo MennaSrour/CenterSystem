@@ -16,6 +16,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
+import center.app.portal.CloudSettingsCard
+import center.app.portal.PortalStore
+import center.app.portal.StudentPortalDetails
+import center.app.portal.SyncStatusPill
+import center.app.portal.TeacherPortalPin
+import center.app.portal.cloudSyncManager
 import center.app.resources.Res
 import center.app.resources.center_one_logo
 import center.database.DatabaseBackup
@@ -25,7 +31,10 @@ import center.database.lockDatabaseDirectory
 import center.database.openDatabase
 import center.domain.usecase.AuthSession
 import center.feature.print.PrintCenter
+import center.feature.reports.DesktopMonthlyReportPlatform
 import center.ui.components.LocalCenterOneLogo
+import center.ui.components.LocalStudentPortalDetails
+import center.ui.components.LocalTeacherPortalDetails
 import center.ui.localization.AppLanguage
 import center.ui.localization.CenterOneLocalization
 import center.ui.theme.CenterOneTheme
@@ -59,8 +68,14 @@ fun main() =
                 CenterOneLocalization(language) {
                     CenterOneTheme {
                         Column(Modifier.fillMaxSize()) {
-                            WindowTitleBar(windowState, ::exitApplication)
-                            Startup(directory, language, onLanguageSelected = { language = it }, onClose = ::exitApplication)
+                            Startup(
+                                directory,
+                                language,
+                                onLanguageSelected = { language = it },
+                                onClose = ::exitApplication,
+                            ) { status ->
+                                WindowTitleBar(windowState, ::exitApplication, status)
+                            }
                         }
                     }
                 }
@@ -80,6 +95,7 @@ private fun Startup(
     language: AppLanguage,
     onLanguageSelected: (AppLanguage) -> Unit,
     onClose: () -> Unit,
+    titleBar: @Composable (@Composable () -> Unit) -> Unit,
 ) {
     val backup = remember(directory) { DatabaseBackup(directory) }
     var data by remember(directory) { mutableStateOf<StartupData?>(null) }
@@ -124,15 +140,20 @@ private fun Startup(
         failed = true
     }
 
+    val portalStore = remember(directory) { PortalStore(directory.resolve("center.db")) }
+    val cloud = remember(portalStore) { cloudSyncManager(portalStore) }
     val ready = data
     if (ready == null) {
+        titleBar {}
         StartupSplash(failed, onRetry = {
             failed = false
             attempt++
         })
         return
     }
+    LaunchedEffect(ready, cloud) { cloud.run() }
     val user by ready.auth.user.collectAsState()
+    titleBar { if (user != null) SyncStatusPill(cloud) }
     if (user == null) {
         LoginScreen(ready.auth, onLanguageSelected)
     } else {
@@ -142,16 +163,23 @@ private fun Startup(
             lifecycle.resume()
             onDispose { lifecycle.destroy() }
         }
-        App(
-            root,
-            ready.services,
-            ready.auth,
-            language,
-            onLanguageSelected,
-            studentImport = { StudentImportActions(ready.services, ready.students) },
-            databaseBackup = { DatabaseBackupCard(backup, ready.auth, onClose) },
+        CompositionLocalProvider(
+            LocalCloudSettings provides { CloudSettingsCard(cloud) },
+            LocalStudentPortalDetails provides { studentId, parentPhone -> StudentPortalDetails(portalStore, studentId, parentPhone) },
+            LocalTeacherPortalDetails provides { teacherId -> TeacherPortalPin(portalStore, teacherId) },
         ) {
-            PrintCenter(root::navigate, onLanguageSelected) { Res.readBytes("drawable/center_one_logo.webp") }
+            App(
+                root,
+                ready.services,
+                ready.auth,
+                language,
+                onLanguageSelected,
+                studentImport = { StudentImportActions(ready.services, ready.students) },
+                databaseBackup = { DatabaseBackupCard(backup, ready.auth, onClose) },
+                monthlyReportPlatform = remember { DesktopMonthlyReportPlatform() },
+            ) {
+                PrintCenter(root::navigate, onLanguageSelected) { Res.readBytes("drawable/center_one_logo.webp") }
+            }
         }
     }
 }

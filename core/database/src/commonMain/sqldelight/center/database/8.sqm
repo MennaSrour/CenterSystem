@@ -1,0 +1,22 @@
+ALTER TABLE enrollment ADD COLUMN customPriceMinor INTEGER
+    CHECK (customPriceMinor BETWEEN 0 AND 100000000000);
+ALTER TABLE enrollment ADD COLUMN studentTrack TEXT NOT NULL DEFAULT 'ARABIC'
+    CHECK (studentTrack IN ('ARABIC', 'LANGUAGES', 'PRIVATE'));
+
+-- Preserve each existing enrollment's effective fee and assign a sensible track.
+UPDATE enrollment
+SET studentTrack = (
+        SELECT CASE lessonType
+            WHEN 'LANGUAGES' THEN 'LANGUAGES'
+            WHEN 'PRIVATE' THEN 'PRIVATE'
+            ELSE 'ARABIC'
+        END
+        FROM class_group WHERE class_group.id = enrollment.classId
+    ),
+    customPriceMinor = (
+        SELECT CASE WHEN monthlyPriceMinor IS NULL THEN NULL ELSE max(0,
+            coalesce(CASE WHEN lessonType = 'MIXED' AND languagesPriceMinor IS NOT NULL
+                          THEN languagesPriceMinor ELSE monthlyPriceMinor END, 0)
+            - CAST(round(enrollment.discountAmount * 100) AS INTEGER)) END
+        FROM class_group WHERE class_group.id = enrollment.classId
+    );

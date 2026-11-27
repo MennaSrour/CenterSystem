@@ -4,7 +4,10 @@ CREATE TABLE message_queue (
     messageBody TEXT NOT NULL,
     status TEXT NOT NULL DEFAULT 'PENDING' CHECK (status IN ('PENDING', 'SENT')),
     createdAt INTEGER NOT NULL,
-    channel TEXT NOT NULL DEFAULT 'WHATSAPP' CHECK (channel IN ('WHATSAPP', 'NOTIFICATION'))
+    channel TEXT NOT NULL DEFAULT 'WHATSAPP' CHECK (channel IN ('WHATSAPP', 'NOTIFICATION')),
+    syncStatus TEXT NOT NULL DEFAULT 'PENDING',
+    updatedAt INTEGER NOT NULL DEFAULT 0,
+    reminderStudentId TEXT
 );
 CREATE INDEX message_status_created ON message_queue(status, createdAt);
 
@@ -28,3 +31,6 @@ SELECT * FROM message_queue WHERE status = 'PENDING' ORDER BY createdAt, id;
 
 markSent:
 UPDATE message_queue SET status = 'SENT' WHERE id = ?;
+
+setReminderStudent:
+UPDATE message_queue SET reminderStudentId = ? WHERE id = ?;

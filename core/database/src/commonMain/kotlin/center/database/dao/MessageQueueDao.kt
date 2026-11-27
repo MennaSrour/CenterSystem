@@ -32,6 +32,7 @@ class MessageQueueDao(
                         MessageStatus.valueOf(it.status),
                         it.createdAt,
                         ReminderChannel.valueOf(it.channel),
+                        it.reminderStudentId,
                     )
                 }
             }
@@ -50,6 +51,7 @@ class MessageQueueDao(
                         MessageStatus.valueOf(it.status),
                         it.createdAt,
                         ReminderChannel.valueOf(it.channel),
+                        it.reminderStudentId,
                     )
                 }
             }
@@ -63,6 +65,7 @@ class MessageQueueDao(
                     queries.updateRow(entity.targetPhone, entity.messageBody, entity.status.name, entity.createdAt, entity.id)
                 }
                 database.operationsQueries.setMessageChannel(entity.channel.name, entity.id)
+                queries.setReminderStudent(entity.reminderStudentId, entity.id)
             }
         }
 
@@ -82,6 +85,7 @@ class MessageQueueDao(
                         MessageStatus.valueOf(it.status),
                         it.createdAt,
                         ReminderChannel.valueOf(it.channel),
+                        it.reminderStudentId,
                     )
                 }
             }

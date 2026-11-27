@@ -43,7 +43,7 @@ private val strings =
             TeacherText.Search to LocalizedText("ابحث بالاسم أو المادة أو رقم الهاتف", "Search by name, subject, or phone"),
             TeacherText.Add to LocalizedText("إضافة مدرس", "Add teacher"),
             TeacherText.NoResults to LocalizedText("لا يوجد مدرسون مطابقون.", "No matching teachers."),
-            TeacherText.GroupsCount to LocalizedText("عدد المجموعات: %1\$s", "Groups: %1\$s"),
+            TeacherText.GroupsCount to LocalizedText("عدد الدروس: %1\$s", "Lessons: %1\$s"),
             TeacherText.DeficitBadge to LocalizedText("عجز تحصيل: %1\$s", "Collection deficit: %1\$s"),
             TeacherText.SalaryDue to LocalizedText("المرتب الشهري المستحق", "Monthly salary due"),
             TeacherText.MonthlySalary to LocalizedText("المرتب الشهري", "Monthly salary"),
@@ -53,8 +53,8 @@ private val strings =
             TeacherText.Details to LocalizedText("بيانات المدرس", "Teacher details"),
             TeacherText.Close to LocalizedText("إغلاق", "Close"),
             TeacherText.Phone to LocalizedText("رقم الهاتف", "Phone"),
-            TeacherText.Groups to LocalizedText("المجموعات المسندة", "Assigned groups"),
-            TeacherText.NoGroups to LocalizedText("لا توجد مجموعات مسندة.", "No assigned groups."),
+            TeacherText.Groups to LocalizedText("الدروس المسندة", "Assigned lessons"),
+            TeacherText.NoGroups to LocalizedText("لا توجد دروس مسندة.", "No assigned lessons."),
             TeacherText.SalaryPolicy to
                 LocalizedText(
                     "يُصرف المرتب الشهري كاملاً حتى لو تأخر الطلاب في الدفع.",

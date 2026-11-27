@@ -2,6 +2,7 @@ package center.domain.repository
 
 import center.domain.model.ClassGroup
 import center.domain.model.LedgerEntry
+import center.domain.model.StudentMonthlyDue
 import center.domain.model.SubscriptionBalance
 import center.domain.model.TreasuryExpense
 import center.domain.model.TreasuryTotals
@@ -26,6 +27,11 @@ interface MonthlyBillingRepository {
         month: LocalDate,
         teacherId: String? = null,
     ): List<SubscriptionBalance>
+
+    suspend fun monthlyDueTotals(month: LocalDate): List<StudentMonthlyDue> =
+        remainingBalances(month).groupBy { it.studentId }.map { (studentId, rows) ->
+            StudentMonthlyDue(studentId, rows.sumOf { it.remainingMinor })
+        }
 
     /** Full contracted monthly commission across active enrollments, independent of collections. */
     suspend fun monthlySalaryMinor(teacherId: String): Long
