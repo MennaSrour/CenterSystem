@@ -47,70 +47,105 @@ class SqlStudentRepository(
 
     override suspend fun save(student: Student): Unit =
         withContext(dispatcher) {
-            require(student.id.isNotBlank() && student.fullName.isNotBlank() && student.code.isNotBlank())
-            require(student.system != EducationSystem.BOTH) { "Students must use one education system" }
-            require(
-                student.groupDiscounts.filterKeys { it in student.enrolledGroupIds }.values.all {
-                    it.isFinite() && it in 0.0..1_000_000_000.0 && kotlin.math.abs(it * 100 - kotlin.math.round(it * 100)) < 0.000001
-                },
-            ) { "Invalid enrollment discount" }
-            database.transaction {
-                val students = database.studentQueries
-                val existing = students.selectById(student.id).executeAsOneOrNull()
-                if (existing == null) {
-                    directory.insertDirectoryStudent(
-                        student.id,
-                        student.fullName,
-                        student.gradeLevel,
-                        student.studentPhone,
-                        student.parentPhone,
-                        student.isActive,
-                        student.code.trim(),
-                        student.stage?.name,
-                        student.system?.name,
-                    )
-                } else {
-                    students.updateRow(
-                        student.fullName,
-                        student.gradeLevel,
-                        student.studentPhone,
-                        student.parentPhone,
-                        student.isActive,
-                        student.id,
-                    )
-                    directory.updateStudentDetails(student.code.trim(), student.stage?.name, student.system?.name, student.id)
-                }
-                val discounts = student.enrolledGroupIds.associateWith { student.groupDiscounts[it] ?: 0.0 }
-                val existingRows =
-                    directory
-                        .selectDirectoryStudentById(student.id, ::studentWithGroup)
-                        .executeAsList()
-                        .mapNotNull { it.second }
-                        .associate { it.groupId to (it.discountAmount to (it.customPriceMinor to it.studentTrack)) }
-                val requestedRows =
-                    student.enrolledGroupIds.associateWith { groupId ->
-                        (discounts[groupId] ?: 0.0) to
-                            (student.groupCustomPricesMinor[groupId] to (student.groupTracks[groupId] ?: StudentTrack.ARABIC))
-                    }
-                if (existingRows != requestedRows) {
-                    (student.enrolledGroupIds - existingRows.keys).forEach { groupId ->
-                        val group =
-                            requireNotNull(database.classGroupQueries.selectById(groupId).executeAsOneOrNull()) { "Group not found" }
-                        require(group.status == "ACTIVE") { "Cannot enroll in an archived group" }
-                    }
-                    directory.clearEnrollments(student.id)
-                    requestedRows.forEach { (groupId, enrollment) ->
-                        directory.insertEnrollment(
-                            student.id,
-                            groupId,
-                            enrollment.first,
-                            enrollment.second.first,
-                            enrollment.second.second.name,
-                        )
+            database.transaction { saveStudent(student) }
+        }
+
+    data class ImportSummary(
+        val imported: Int,
+        val duplicates: Int,
+    )
+
+    suspend fun importStudents(
+        students: List<Student>,
+        gradeAliases: Map<String, String>,
+    ): ImportSummary =
+        withContext(dispatcher) {
+            database.transactionWithResult {
+                val existing = directory.selectDirectory(::studentWithGroup).executeAsList().studentsWithEnrollments()
+                val seen = existing.mapTo(mutableSetOf()) { it.importKey(gradeAliases) }
+                var imported = 0
+                students.forEach { student ->
+                    if (seen.add(student.importKey(gradeAliases))) {
+                        saveStudent(student, allowUpdate = false)
+                        imported++
                     }
                 }
+                ImportSummary(imported, students.size - imported)
             }
         }
+
+    private fun saveStudent(
+        student: Student,
+        allowUpdate: Boolean = true,
+    ) {
+        require(student.id.isNotBlank() && student.fullName.isNotBlank() && student.code.isNotBlank())
+        require(student.system != EducationSystem.BOTH) { "Students must use one education system" }
+        require(
+            student.groupDiscounts.filterKeys { it in student.enrolledGroupIds }.values.all {
+                it.isFinite() && it in 0.0..1_000_000_000.0 && kotlin.math.abs(it * 100 - kotlin.math.round(it * 100)) < 0.000001
+            },
+        ) { "Invalid enrollment discount" }
+        require(
+            student.groupCustomPricesMinor
+                .filterKeys { it in student.enrolledGroupIds }
+                .values
+                .all { it in 0L..100_000_000_000L },
+        ) { "Invalid custom enrollment price" }
+        val studentsQueries = database.studentQueries
+        val existing = studentsQueries.selectById(student.id).executeAsOneOrNull()
+        if (existing == null) {
+            directory.insertDirectoryStudent(
+                student.id,
+                student.fullName,
+                student.gradeLevel,
+                student.studentPhone,
+                student.parentPhone,
+                student.isActive,
+                student.code.trim(),
+                student.stage?.name,
+                student.system?.name,
+            )
+        } else {
+            check(allowUpdate) { "Student ID already exists" }
+            studentsQueries.updateRow(
+                student.fullName,
+                student.gradeLevel,
+                student.studentPhone,
+                student.parentPhone,
+                student.isActive,
+                student.id,
+            )
+            directory.updateStudentDetails(student.code.trim(), student.stage?.name, student.system?.name, student.id)
+        }
+        val existingRows =
+            directory
+                .selectDirectoryStudentById(student.id, ::studentWithGroup)
+                .executeAsList()
+                .mapNotNull { it.second }
+                .associate { it.groupId to (it.discountAmount to (it.customPriceMinor to it.studentTrack)) }
+        val requestedRows =
+            student.enrolledGroupIds.associateWith { groupId ->
+                (student.groupDiscounts[groupId] ?: 0.0) to
+                    (student.groupCustomPricesMinor[groupId] to (student.groupTracks[groupId] ?: StudentTrack.ARABIC))
+            }
+        if (existingRows != requestedRows) {
+            (student.enrolledGroupIds - existingRows.keys).forEach { groupId ->
+                val group =
+                    requireNotNull(database.classGroupQueries.selectById(groupId).executeAsOneOrNull()) { "Group not found" }
+                require(group.status == "ACTIVE") { "Cannot enroll in an archived group" }
+            }
+            directory.clearEnrollments(student.id)
+            requestedRows.forEach { (groupId, enrollment) ->
+                directory.insertEnrollment(
+                    student.id,
+                    groupId,
+                    enrollment.first,
+                    enrollment.second.first,
+                    enrollment.second.second.name,
+                )
+            }
+        }
+    }
 
     override suspend fun delete(id: String): Unit =
         withContext(dispatcher) {
@@ -170,3 +205,20 @@ private fun List<Pair<Student, EnrollmentRow?>>.studentsWithEnrollments(): List<
                     .toMap(),
         )
     }
+
+private data class StudentImportKey(
+    val name: String,
+    val grade: String,
+    val studentPhone: String,
+    val parentPhone: String,
+    val groups: Set<String>,
+)
+
+private fun Student.importKey(gradeAliases: Map<String, String>): StudentImportKey =
+    StudentImportKey(
+        fullName.trim(),
+        gradeAliases[gradeLevel.trim()] ?: gradeLevel.trim(),
+        studentPhone.orEmpty().trim(),
+        parentPhone.trim(),
+        enrolledGroupIds,
+    )

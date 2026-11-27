@@ -54,10 +54,11 @@ fun StudentsScreen(
     state: StudentsState,
     onEvent: (StudentsEvent) -> Unit,
     modifier: Modifier = Modifier,
+    directoryActions: @Composable () -> Unit = {},
 ) {
     CenterOneLocalization(LocalAppLanguage.current) {
         Box(modifier.fillMaxSize()) {
-            StudentsContent(state, onEvent)
+            StudentsContent(state, onEvent, directoryActions = directoryActions)
             state.details?.let { details ->
                 StudentDetails(
                     state = details,
@@ -99,6 +100,7 @@ internal fun StudentsContent(
     state: StudentsState,
     onEvent: (StudentsEvent) -> Unit,
     modifier: Modifier = Modifier,
+    directoryActions: @Composable () -> Unit = {},
 ) {
     CenterOneCanvas(modifier) {
         BoxWithConstraints(Modifier.fillMaxSize()) {
@@ -110,6 +112,7 @@ internal fun StudentsContent(
                 if (direction == LayoutDirection.Ltr) sidebar()
                 Column(Modifier.weight(1f)) {
                     StudentsHeader(state, onEvent)
+                    directoryActions()
                     HorizontalDivider(color = MaterialTheme.colorScheme.outline)
                     LazyColumn(
                         Modifier.weight(1f).fillMaxWidth(),

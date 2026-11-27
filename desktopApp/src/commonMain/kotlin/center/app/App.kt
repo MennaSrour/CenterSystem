@@ -17,6 +17,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import center.domain.repository.Permission
+import center.domain.repository.UserRole
 import center.domain.usecase.AuthSession
 import center.feature.billing.BillingScreen
 import center.feature.dashboard.DashboardEvent
@@ -37,6 +38,8 @@ internal fun App(
     session: AuthSession,
     language: AppLanguage,
     onLanguageSelected: (AppLanguage) -> Unit,
+    studentImport: @Composable () -> Unit = {},
+    databaseBackup: @Composable () -> Unit = {},
     monthlyReportPlatform: MonthlyReportPlatform? = null,
     printCenter: @Composable () -> Unit,
 ) {
@@ -74,11 +77,22 @@ internal fun App(
                         route.shortcut == ReceptionShortcut.AddStudent,
                         onLanguageSelected,
                         canDelete,
+                        studentImport,
                     )
                 Destination.Courses -> CoursesRoute(root, services, canDelete, onLanguageSelected)
                 Destination.Print -> printCenter()
                 Destination.Teachers -> TeachersRoute(root, services, onLanguageSelected, canDelete)
-                else -> SecondaryRoute(root, route.destination, language, session, services, monthlyReportPlatform, onLanguageSelected)
+                else ->
+                    SecondaryRoute(
+                        root,
+                        route.destination,
+                        language,
+                        session,
+                        services,
+                        monthlyReportPlatform,
+                        onLanguageSelected,
+                        databaseBackup,
+                    )
             }
         }
     }
@@ -93,6 +107,7 @@ private fun SecondaryRoute(
     services: DirectoryServices,
     monthlyReportPlatform: MonthlyReportPlatform?,
     onLanguageSelected: (AppLanguage) -> Unit,
+    databaseBackup: @Composable () -> Unit,
 ) {
     val selected =
         when (destination) {
@@ -115,7 +130,9 @@ private fun SecondaryRoute(
                             ReportsAccessDenied(language)
                         }
                     Destination.Settings ->
-                        SettingsScreen(session, session.allows(Permission.MANAGE_USERS), onLanguageSelected)
+                        SettingsScreen(session, session.allows(Permission.MANAGE_USERS), onLanguageSelected) {
+                            if (session.user.value?.role == UserRole.ADMIN) databaseBackup()
+                        }
                     else -> Unit
                 }
             }

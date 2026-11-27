@@ -184,11 +184,13 @@ internal fun SettingsScreen(
     session: AuthSession,
     canManageUsers: Boolean,
     onLanguageSelected: (AppLanguage) -> Unit,
+    databaseBackup: @Composable () -> Unit,
 ) {
     val language = LocalAppLanguage.current
     CenterOnePageHeader("الإعدادات", "Settings", "") {
         CenterOneLanguageToggle(language, onLanguageSelected)
     }
+    databaseBackup()
     if (canManageUsers) {
         LocalCloudSettings.current()
         ManageUsers(session)
