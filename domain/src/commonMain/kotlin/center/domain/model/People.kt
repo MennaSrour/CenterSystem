@@ -1,6 +1,7 @@
 package center.domain.model
 
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalTime
 
 data class StaffMember(
     val id: String,
@@ -19,7 +20,25 @@ data class LessonAttendance(
     val attended: Boolean,
     val recordedAt: Long,
     val checkOutAt: Long? = null,
+    val makeupSessionId: String? = null,
 )
+
+data class MakeupSession(
+    val id: String,
+    val lessonId: String,
+    val originalCanceledDate: LocalDate?,
+    val makeupDate: LocalDate,
+    val startTime: LocalTime,
+    val endTime: LocalTime,
+    val notes: String = "",
+    val createdAt: Long,
+) {
+    init {
+        require(id.isNotBlank() && lessonId.isNotBlank())
+        require(startTime < endTime)
+        require(notes.length <= 2_000)
+    }
+}
 
 enum class PersonType { STUDENT, TEACHER, STAFF }
 

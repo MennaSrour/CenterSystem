@@ -5,7 +5,9 @@ import center.domain.model.EducationSystem
 import center.domain.model.GroupScheduleSlot
 import center.domain.model.GroupStatus
 import center.domain.model.LessonType
+import center.domain.model.MakeupSession
 import center.domain.usecase.applyEarlyCheckOut
+import center.domain.usecase.monthlyLessonCounts
 import center.domain.usecase.scheduledLessonsForCheckIn
 import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.LocalDate
@@ -55,6 +57,31 @@ class SmartAttendanceTest {
 
         assertEquals(listOf("one", "two", "three"), options.map { it.lessonId })
         assertTrue(options.all { it.attended })
+    }
+
+    @Test
+    fun makeupsAppearOnTheirDateAndAreCountedAsTheirOwnAttendanceOption() {
+        val makeup =
+            MakeupSession(
+                "makeup-1",
+                "lesson",
+                LocalDate(2026, 11, 5),
+                LocalDate(2026, 11, 12),
+                LocalTime(15, 0),
+                LocalTime(16, 0),
+                createdAt = timestamp(9, 0),
+            )
+        val group = lesson("lesson", 13, 14)
+        val checkInAt = makeup.makeupDate.atStartOfDayIn(zone).toEpochMilliseconds() + 12 * 60 * 60_000L
+        val options = scheduledLessonsForCheckIn(listOf(group), makeup.makeupDate, checkInAt, zone, listOf(makeup))
+
+        assertEquals(2, options.size)
+        assertEquals("makeup-1", options.single { it.isMakeup }.key)
+        assertTrue(options.single { it.isMakeup }.attended)
+        val counts = monthlyLessonCounts(listOf(group), LocalDate(2026, 11, 1), listOf(makeup))
+        assertEquals(4, counts.scheduledSessionCount)
+        assertEquals(1, counts.makeupSessionCount)
+        assertEquals(1, counts.rescheduledDateCount)
     }
 
     @Test

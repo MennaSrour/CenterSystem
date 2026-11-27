@@ -90,6 +90,9 @@ class MonthlyReportPdfRenderer {
             section(text("studentSummary"))
             addLine(text("activeStudents", report.studentsSummary.activeCount))
             addLine(text("attendanceCount", report.studentsSummary.attendanceCount))
+            addLine(text("scheduledSessions", report.studentsSummary.scheduledSessionCount))
+            addLine(text("makeupSessions", report.studentsSummary.makeupSessionCount))
+            addLine(text("rescheduledDates", report.studentsSummary.rescheduledDateCount))
             addLine(text("paidUnpaid", report.studentsSummary.paidCount, report.studentsSummary.unpaidCount))
             section(text("students"))
             tableHeader(text("studentColumns"))
@@ -302,6 +305,9 @@ class MonthlyReportPdfRenderer {
                 "studentSummary" -> if (arabic) "ملخص الطلاب" else "Student Summary"
                 "activeStudents" -> if (arabic) "الطلاب النشطون: ${args[0]}" else "Active students: ${args[0]}"
                 "attendanceCount" -> if (arabic) "سجلات الحضور: ${args[0]}" else "Attendance records: ${args[0]}"
+                "scheduledSessions" -> if (arabic) "جلسات الدروس هذا الشهر: ${args[0]}" else "Lesson sessions this month: ${args[0]}"
+                "makeupSessions" -> if (arabic) "الحصص التعويضية هذا الشهر: ${args[0]}" else "Make-up sessions this month: ${args[0]}"
+                "rescheduledDates" -> if (arabic) "تواريخ تم تعويضها: ${args[0]}" else "Rescheduled dates: ${args[0]}"
                 "paidUnpaid" ->
                     if (arabic) {
                         "المدفوع بالكامل ${args[0]} · عليهم متأخرات ${args[1]}"

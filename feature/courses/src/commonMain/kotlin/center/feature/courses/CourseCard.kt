@@ -25,6 +25,8 @@ import center.ui.components.CenterOneCapacityMeter
 import center.ui.components.CenterOneCard
 import center.ui.components.CenterOneIconButton
 import center.ui.components.CenterOneTag
+import center.ui.localization.AppStringKey
+import center.ui.localization.AppStrings
 import center.ui.localization.LocalAppLanguage
 import center.ui.localization.LocalizedText
 import center.ui.text.isolateLtr
@@ -56,6 +58,10 @@ fun CourseCard(
                         DropdownMenuItem(
                             text = { Text(appString("edit_group")) },
                             onClick = { onEvent(CoursesEvent.EditGroup(group.id)) },
+                        )
+                        DropdownMenuItem(
+                            text = { Text(AppStrings.get(AppStringKey.AddMakeupSession, language)) },
+                            onClick = { onEvent(CoursesEvent.AddMakeupSession(group.id)) },
                         )
                         DropdownMenuItem(text = {
                             Text(appString("deactivate_group"))

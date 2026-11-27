@@ -32,6 +32,8 @@ import center.ui.components.CenterOnePageHeader
 import center.ui.components.CenterOnePrimaryButton
 import center.ui.components.CenterOneTag
 import center.ui.localization.AppLanguage
+import center.ui.localization.AppStringKey
+import center.ui.localization.AppStrings
 import center.ui.localization.LocalAppLanguage
 import center.ui.localization.LocalizedText
 import center.ui.theme.CenterOneSpacing
@@ -283,6 +285,9 @@ private fun StudentSummaryCard(
                     "Active students: ${report.studentsSummary.activeCount}",
                 ).resolve(language),
             )
+            Text(AppStrings.get(AppStringKey.ScheduledSessions, language, report.studentsSummary.scheduledSessionCount.toString()))
+            Text(AppStrings.get(AppStringKey.MakeupSessionsCount, language, report.studentsSummary.makeupSessionCount.toString()))
+            Text(AppStrings.get(AppStringKey.RescheduledDates, language, report.studentsSummary.rescheduledDateCount.toString()))
             Text(
                 LocalizedText(
                     "سجلات الحضور: ${report.studentsSummary.attendanceCount}",

@@ -27,6 +27,32 @@ sealed interface CoursesEvent {
         val id: String,
     ) : CoursesEvent
 
+    data class AddMakeupSession(
+        val id: String,
+    ) : CoursesEvent
+
+    data class MakeupDateChanged(
+        val value: String,
+    ) : CoursesEvent
+
+    data class MakeupStartTimeChanged(
+        val value: String,
+    ) : CoursesEvent
+
+    data class MakeupEndTimeChanged(
+        val value: String,
+    ) : CoursesEvent
+
+    data class OriginalCanceledDateChanged(
+        val value: String,
+    ) : CoursesEvent
+
+    data class MakeupNotesChanged(
+        val value: String,
+    ) : CoursesEvent
+
+    data object SubmitMakeupSession : CoursesEvent
+
     data class DeactivateGroup(
         val id: String,
     ) : CoursesEvent

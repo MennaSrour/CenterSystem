@@ -48,6 +48,8 @@ import center.ui.components.CenterOneTextField
 import center.ui.components.StatusBadge
 import center.ui.components.StatusTone
 import center.ui.localization.AppLanguage
+import center.ui.localization.AppStringKey
+import center.ui.localization.AppStrings
 import center.ui.localization.LocalizedText
 import center.ui.text.isolateLtr
 import center.ui.theme.Gold
@@ -157,21 +159,26 @@ internal fun StudentActionCard(
                 val exit = session.checkOut?.isolateLtr() ?: "—"
                 Text(LocalizedText("حضور $enter · انصراف $exit", "Check-in $enter · Check-out $exit").resolve(language))
             }
-            if (student.isStudent && session == null && lessonAttendanceOptions.isNotEmpty()) {
+            if (session == null && lessonAttendanceOptions.isNotEmpty()) {
                 Text(LocalizedText("دروس اليوم", "Today's lessons").resolve(language), style = MaterialTheme.typography.titleSmall)
                 lessonAttendanceOptions.forEach { lesson ->
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                        Checkbox(
-                            checked = lesson.attended,
-                            onCheckedChange = { onEvent(DashboardEvent.ToggleLessonAttendance(lesson.lessonId)) },
-                            enabled = !checkingIn,
-                        )
+                        if (student.isStudent) {
+                            Checkbox(
+                                checked = lesson.attended,
+                                onCheckedChange = { onEvent(DashboardEvent.ToggleLessonAttendance(lesson.key)) },
+                                enabled = !checkingIn,
+                            )
+                        }
                         Text(
                             "${lesson.lessonName} · ${lesson.startMinute.toClockLabel(
                                 language,
                             )}–${lesson.endMinute.toClockLabel(language)}",
                             color = MaterialTheme.colorScheme.onSurface,
                         )
+                        if (lesson.isMakeup) {
+                            Text(AppStrings.get(AppStringKey.MakeupSession, language), color = MaterialTheme.colorScheme.tertiary)
+                        }
                     }
                 }
             }
@@ -182,7 +189,7 @@ internal fun StudentActionCard(
                             DashboardEvent.RegisterAttendance(
                                 student.code,
                                 groupId,
-                                lessonAttendanceOptions.filter { it.attended }.map { it.lessonId }.toSet(),
+                                lessonAttendanceOptions.filter { it.attended }.map { it.key }.toSet(),
                             ),
                         )
                     },

@@ -16,11 +16,13 @@ import center.domain.model.ClassGroup
 import center.domain.model.EducationSystem
 import center.domain.model.GroupStatus
 import center.domain.model.LessonAttendance
+import center.domain.model.MakeupSession
 import center.domain.model.Payment
 import center.domain.model.PersonType
 import center.domain.model.Student
 import center.domain.model.activeSchedule
 import center.domain.model.effectiveMonthlyPriceMinor
+import center.domain.usecase.monthlyLessonCounts
 import center.feature.financials.ClassOption
 import center.feature.financials.StudentOption
 import center.feature.students.AddStudentState
@@ -52,11 +54,15 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.Instant
+import kotlinx.datetime.plus
 import kotlinx.datetime.toLocalDateTime
 import kotlin.math.roundToLong
 
@@ -151,6 +157,7 @@ internal class StudentsStateHolder(
     private val detailId = MutableStateFlow<String?>(null)
     private var history = emptyList<AttendanceSession>()
     private var lessonHistory = emptyList<LessonAttendance>()
+    private var makeupSessions = emptyList<MakeupSession>()
     private var paymentHistory = emptyList<Payment>()
     private var records = emptyMap<String, Student>()
     private var groups = emptyList<ClassGroup>()
@@ -185,6 +192,19 @@ internal class StudentsStateHolder(
         }
 
     init {
+        scope.launch {
+            services
+                .dates()
+                .map { it.monthStart() }
+                .distinctUntilChanged()
+                .flatMapLatest { month ->
+                    services.makeupSessions.observeForPeriod(month, month + DatePeriod(months = 1))
+                }.catch { mutableFeedback.emit(failure) }
+                .collect { sessions ->
+                    makeupSessions = sessions
+                    mutableState.update { current -> current.copy(details = details()) }
+                }
+        }
         scope.launch {
             detailId
                 .flatMapLatest { id ->
@@ -318,6 +338,12 @@ internal class StudentsStateHolder(
                     month
             }
         val totalPaid = monthlyPayments.sumOf { (it.amountPaid * 100).roundToLong() }
+        val lessonCounts =
+            monthlyLessonCounts(
+                enrolled,
+                month,
+                makeupSessions.filter { session -> enrolled.any { it.id == session.lessonId } },
+            )
         return StudentDetailsState(
             student.id,
             student.fullName,
@@ -371,15 +397,35 @@ internal class StudentsStateHolder(
                 val amount = (payment.amountPaid * 100).roundToLong().decimalMinor()
                 LocalizedText("${payment.billingMonth ?: month}: $amount ج.م", "${payment.billingMonth ?: month}: $amount EGP")
             },
-            lessonHistory.filter { it.studentId == student.id }.map { lesson ->
-                val label = groupLabels[lesson.lessonId] ?: lesson.lessonId
-                val checkIn = lesson.recordedAt.localTimeLabel()
-                val checkOut = lesson.checkOutAt?.localTimeLabel() ?: "—"
+            listOf(
                 LocalizedText(
-                    "${lesson.date} · $label · ${if (lesson.attended) "حضر" else "غاب"} · حضور $checkIn · انصراف $checkOut",
-                    "${lesson.date} · $label · ${if (lesson.attended) "Attended" else "Missed"} · In $checkIn · Out $checkOut",
-                )
-            },
+                    listOf(
+                        AppStrings.get(AppStringKey.ScheduledSessions, AppLanguage.Arabic, lessonCounts.scheduledSessionCount.toString()),
+                        AppStrings.get(AppStringKey.MakeupSessionsCount, AppLanguage.Arabic, lessonCounts.makeupSessionCount.toString()),
+                        AppStrings.get(AppStringKey.RescheduledDates, AppLanguage.Arabic, lessonCounts.rescheduledDateCount.toString()),
+                    ).joinToString(" · "),
+                    listOf(
+                        AppStrings.get(AppStringKey.ScheduledSessions, AppLanguage.English, lessonCounts.scheduledSessionCount.toString()),
+                        AppStrings.get(AppStringKey.MakeupSessionsCount, AppLanguage.English, lessonCounts.makeupSessionCount.toString()),
+                        AppStrings.get(AppStringKey.RescheduledDates, AppLanguage.English, lessonCounts.rescheduledDateCount.toString()),
+                    ).joinToString(" · "),
+                ),
+            ) +
+                lessonHistory.filter { it.studentId == student.id }.map { lesson ->
+                    val label = groupLabels[lesson.lessonId] ?: lesson.lessonId
+                    val checkIn = lesson.recordedAt.localTimeLabel()
+                    val checkOut = lesson.checkOutAt?.localTimeLabel() ?: "—"
+                    val sessionKind =
+                        if (lesson.makeupSessionId == null) {
+                            "حضر" to "Attended"
+                        } else {
+                            "حصة تعويضية" to "Make-up session"
+                        }
+                    LocalizedText(
+                        "${lesson.date} · $label · ${if (lesson.attended) sessionKind.first else "غاب"} · حضور $checkIn · انصراف $checkOut",
+                        "${lesson.date} · $label · ${if (lesson.attended) sessionKind.second else "Missed"} · In $checkIn · Out $checkOut",
+                    )
+                },
             canDeleteEnrollments = canDelete(),
         )
     }

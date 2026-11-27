@@ -7,10 +7,12 @@ import center.domain.model.AttendancePerson
 import center.domain.model.AttendanceSession
 import center.domain.model.GroupScheduleSlot
 import center.domain.model.LessonAttendance
+import center.domain.model.MakeupSession
 import center.domain.model.PersonType
 import center.domain.model.QueuedMessage
 import center.domain.model.StaffMember
 import center.domain.repository.AttendanceSessionRepository
+import center.domain.repository.MakeupSessionRepository
 import center.domain.repository.StaffRepository
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.map
@@ -135,6 +137,16 @@ class SqlAttendanceSessionRepository(
                 lessonAttendance.forEach { item ->
                     require(type == PersonType.STUDENT && item.studentId == id && item.date == date)
                     require(database.operationsQueries.hasEnrollment(id, item.lessonId).executeAsOne())
+                    item.makeupSessionId?.let { makeupId ->
+                        require(
+                            database.makeupSessionQueries
+                                .hasMakeupSessionForLessonDate(
+                                    makeupId,
+                                    item.lessonId,
+                                    date.toString(),
+                                ).executeAsOne(),
+                        )
+                    }
                     people.upsertLessonAttendance(
                         item.studentId,
                         item.lessonId,
@@ -142,6 +154,7 @@ class SqlAttendanceSessionRepository(
                         item.attended,
                         item.recordedAt,
                         item.checkOutAt,
+                        item.makeupSessionId.orEmpty(),
                     )
                 }
                 notification?.let { database.insertMessage(it.toEntity()) }
@@ -164,8 +177,8 @@ class SqlAttendanceSessionRepository(
 
     override fun observeLessonHistory(studentId: String) =
         people
-            .lessonAttendanceForStudent(studentId) { id, classId, date, attended, recordedAt, checkOutAt ->
-                LessonAttendance(id, classId, LocalDate.parse(date), attended, recordedAt, checkOutAt)
+            .lessonAttendanceForStudent(studentId) { id, classId, date, attended, recordedAt, checkOutAt, makeupSessionId ->
+                LessonAttendance(id, classId, LocalDate.parse(date), attended, recordedAt, checkOutAt, makeupSessionId)
             }.asFlow()
             .mapToList(dispatcher)
 
@@ -174,6 +187,13 @@ class SqlAttendanceSessionRepository(
             database.transaction {
                 records.forEach { item ->
                     require(database.operationsQueries.hasEnrollment(item.studentId, item.lessonId).executeAsOne())
+                    item.makeupSessionId?.let { makeupId ->
+                        require(
+                            database.makeupSessionQueries
+                                .hasMakeupSessionForLessonDate(makeupId, item.lessonId, item.date.toString())
+                                .executeAsOne(),
+                        )
+                    }
                     people.upsertLessonAttendance(
                         item.studentId,
                         item.lessonId,
@@ -181,6 +201,7 @@ class SqlAttendanceSessionRepository(
                         item.attended,
                         item.recordedAt,
                         item.checkOutAt,
+                        item.makeupSessionId.orEmpty(),
                     )
                 }
             }
@@ -200,6 +221,12 @@ class SqlAttendanceSessionRepository(
                 local.dayOfWeek.isoDayNumber.toLong(),
                 (local.hour * 60 + local.minute).toLong(),
             )
+            people.markFutureMakeupLessonsMissed(
+                timestamp,
+                studentId,
+                date.toString(),
+                LocalTime(local.hour, local.minute).toString(),
+            )
         }
 
     private fun session(
@@ -214,6 +241,70 @@ class SqlAttendanceSessionRepository(
         if (date.isEmpty()) Instant.fromEpochMilliseconds(checkIn).toLocalDateTime(zone).date else LocalDate.parse(date),
         checkIn,
         checkOut,
+    )
+}
+
+class SqlMakeupSessionRepository(
+    private val database: CenterDatabase,
+    private val dispatcher: CoroutineDispatcher,
+) : MakeupSessionRepository {
+    private val queries = database.makeupSessionQueries
+
+    override fun observeForDate(date: LocalDate) =
+        queries
+            .selectMakeupSessionsForDate(date.toString(), ::makeupSession)
+            .asFlow()
+            .mapToList(dispatcher)
+
+    override fun observeForPeriod(
+        startInclusive: LocalDate,
+        endExclusive: LocalDate,
+    ) = queries
+        .selectMakeupSessionsForPeriod(
+            startInclusive.toString(),
+            endExclusive.toString(),
+            startInclusive.toString(),
+            endExclusive.toString(),
+            ::makeupSession,
+        ).asFlow()
+        .mapToList(dispatcher)
+
+    override suspend fun save(session: MakeupSession): Unit =
+        withContext(dispatcher) {
+            require(session.startTime < session.endTime)
+            database.transaction {
+                check(database.classGroupQueries.selectById(session.lessonId).executeAsOneOrNull() != null)
+                queries.insertMakeupSession(
+                    session.id,
+                    session.lessonId,
+                    session.originalCanceledDate?.toString(),
+                    session.makeupDate.toString(),
+                    session.startTime.toString(),
+                    session.endTime.toString(),
+                    session.notes.trim(),
+                    session.createdAt,
+                )
+            }
+        }
+
+    private fun makeupSession(
+        id: String,
+        lessonId: String,
+        originalCanceledDate: String?,
+        makeupDate: String,
+        startTime: String,
+        endTime: String,
+        notes: String,
+        createdAt: Long,
+    ) = MakeupSession(
+        id,
+        lessonId,
+        originalCanceledDate?.let(LocalDate::parse),
+        LocalDate.parse(makeupDate),
+        LocalTime.parse(startTime),
+        LocalTime.parse(endTime),
+        notes,
+        createdAt,
     )
 }
 
