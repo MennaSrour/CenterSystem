@@ -42,10 +42,12 @@ import center.feature.courses.MakeupSessionFormState
 import center.feature.courses.ScheduleDay
 import center.feature.courses.TimetableBuilder
 import center.feature.courses.TimetableTrack
-import center.feature.courses.trackFor
+import center.feature.courses.lessonTrackLabel
 import center.feature.courses.trackLabel
 import center.feature.reports.ContextualPdfPlatform
 import center.feature.reports.TimetablePdfDocument
+import center.feature.reports.TimetablePdfLesson
+import center.feature.reports.TimetablePdfPeriod
 import center.ui.localization.AppLanguage
 import center.ui.localization.AppStringKey
 import center.ui.localization.AppStrings
@@ -239,7 +241,6 @@ private fun createTimetablePdf(
             ScheduleDay.Friday to AppStringKey.Friday,
         )
     val orderedDays = if (outputLanguage == AppLanguage.Arabic) timetable.days.reversed() else timetable.days
-    val slots = timetable.slots
 
     fun timeLabel(minute: Int): String {
         val hour = minute / 60
@@ -256,20 +257,31 @@ private fun createTimetablePdf(
             title = AppStrings.get(AppStringKey.WeeklyTimetable, outputLanguage),
             subtitle = "$grade · $trackName",
             generatedDate = "${AppStrings.get(AppStringKey.TimetableGenerated, outputLanguage)}: ${services.today()}",
+            timeHeader = AppStrings.get(AppStringKey.TimeLabel, outputLanguage),
             dayHeaders = orderedDays.map { AppStrings.get(dayKeys.getValue(it), outputLanguage) },
-            times = slots.map(::timeLabel),
-            cells =
-                slots.map { slot ->
-                    orderedDays.map { day ->
-                        timetable.lessons
-                            .filter { it.day == day && it.startMinute < slot + 30 && it.endMinute > slot }
-                            .joinToString(" / ") { lesson ->
-                                "${lesson.subject} · ${lesson.teacher} · ${trackLabel(
-                                    lesson.trackFor(track),
-                                    outputLanguage,
-                                )} · ${timeLabel(lesson.startMinute)}–${timeLabel(lesson.endMinute)}"
-                            }
-                    }
+            periods =
+                timetable.periods.map { period ->
+                    TimetablePdfPeriod(
+                        periodLabel = AppStrings.get(AppStringKey.PeriodNumber, outputLanguage, period.number.toString()),
+                        timeRange = "${timeLabel(period.startMinute)} – ${timeLabel(period.endMinute)}",
+                        dayLessons =
+                            orderedDays.map { day ->
+                                period.lessonsByDay[day].orEmpty().map { lesson ->
+                                    TimetablePdfLesson(
+                                        subject = lesson.subject,
+                                        teacher = lesson.teacher,
+                                        trackLabel =
+                                            if (track ==
+                                                TimetableTrack.ALL
+                                            ) {
+                                                lessonTrackLabel(lesson.lessonType, outputLanguage)
+                                            } else {
+                                                null
+                                            },
+                                    )
+                                }
+                            },
+                    )
                 },
         )
     val bytes = platform.createTimetablePdf(document, outputLanguage)

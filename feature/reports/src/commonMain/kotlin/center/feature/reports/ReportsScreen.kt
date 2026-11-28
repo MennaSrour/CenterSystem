@@ -93,14 +93,25 @@ interface ContextualPdfPlatform {
     ): Boolean
 }
 
+data class TimetablePdfLesson(
+    val subject: String,
+    val teacher: String,
+    val trackLabel: String?,
+)
+
+data class TimetablePdfPeriod(
+    val periodLabel: String,
+    val timeRange: String,
+    val dayLessons: List<List<TimetablePdfLesson>>,
+)
+
 data class TimetablePdfDocument(
     val title: String,
     val subtitle: String,
     val generatedDate: String,
+    val timeHeader: String,
     val dayHeaders: List<String>,
-    val times: List<String>,
-    /** Row-major by time, then by day. */
-    val cells: List<List<String>>,
+    val periods: List<TimetablePdfPeriod>,
 )
 
 sealed interface MonthlyReportEvent {

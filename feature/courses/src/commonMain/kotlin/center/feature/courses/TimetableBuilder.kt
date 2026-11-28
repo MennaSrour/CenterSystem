@@ -9,23 +9,25 @@ data class TimetableLesson(
     val endMinute: Int,
     val subject: String,
     val teacher: String,
-    val track: TimetableTrack,
-    val startLabel: String,
-    val endLabel: String,
+    val lessonType: CourseLessonType,
+)
+
+data class TimetablePeriod(
+    val number: Int,
+    val startMinute: Int,
+    val endMinute: Int,
+    val lessonsByDay: Map<ScheduleDay, List<TimetableLesson>>,
 )
 
 data class WeeklyTimetable(
     val lessons: List<TimetableLesson>,
-    val startMinute: Int?,
-    val endMinute: Int?,
+    val periods: List<TimetablePeriod>,
 ) {
     val isEmpty: Boolean get() = lessons.isEmpty()
     val days: List<ScheduleDay> get() = ScheduleDay.entries
-    val slots: List<Int>
-        get() = if (startMinute == null || endMinute == null) emptyList() else (startMinute until endMinute step 30).toList()
 }
 
-/** Builds a grade/track filtered weekly timetable from active lessons only. */
+/** Builds active lessons into unique, chronologically ordered periods with no filler rows. */
 object TimetableBuilder {
     fun build(
         groups: List<CourseGroup>,
@@ -60,17 +62,25 @@ object TimetableBuilder {
                             endMinute = to,
                             subject = group.subject,
                             teacher = teacherNames[group.teacherId].orEmpty(),
-                            track = group.lessonType.toTimetableTrack(),
-                            startLabel = schedule.from,
-                            endLabel = schedule.to,
+                            lessonType = group.lessonType,
                         )
                     }
-                }.sortedWith(compareBy<TimetableLesson> { it.day.ordinal }.thenBy { it.startMinute }.thenBy { it.endMinute })
+                }.sortedWith(compareBy<TimetableLesson> { it.startMinute }.thenBy { it.endMinute }.thenBy { it.day.ordinal })
                 .toList()
-        if (lessons.isEmpty()) return WeeklyTimetable(emptyList(), null, null)
-        val first = lessons.minOf { it.startMinute }
-        val last = lessons.maxOf { it.endMinute }
-        return WeeklyTimetable(lessons, first / 30 * 30, ((last + 29) / 30 * 30).coerceAtMost(24 * 60))
+        val periods =
+            lessons
+                .groupBy { it.startMinute to it.endMinute }
+                .entries
+                .sortedWith(compareBy({ it.key.first }, { it.key.second }))
+                .mapIndexed { index, (interval, periodLessons) ->
+                    TimetablePeriod(
+                        number = index + 1,
+                        startMinute = interval.first,
+                        endMinute = interval.second,
+                        lessonsByDay = periodLessons.groupBy { it.day },
+                    )
+                }
+        return WeeklyTimetable(lessons, periods)
     }
 
     private fun parseMinutes(value: String): Int? {
@@ -82,14 +92,3 @@ object TimetableBuilder {
         return hour * 60 + minute
     }
 }
-
-private fun CourseLessonType.toTimetableTrack(): TimetableTrack =
-    when (this) {
-        CourseLessonType.Arabic -> TimetableTrack.ARABIC
-        CourseLessonType.Languages -> TimetableTrack.LANGUAGES
-        CourseLessonType.Mixed -> TimetableTrack.ALL
-        CourseLessonType.Private -> TimetableTrack.ALL
-    }
-
-fun TimetableLesson.trackFor(track: TimetableTrack): TimetableTrack =
-    if (this.track == TimetableTrack.ALL) track.takeIf { it != TimetableTrack.ALL } ?: TimetableTrack.ALL else this.track

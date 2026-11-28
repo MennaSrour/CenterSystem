@@ -5,13 +5,12 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -20,6 +19,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import center.ui.components.CenterOneCard
 import center.ui.components.CenterOneDropdown
@@ -158,54 +158,82 @@ private fun TimetableGrid(
             ScheduleDay.Thursday to AppStringKey.Thursday,
             ScheduleDay.Friday to AppStringKey.Friday,
         )
-    val lessonsByDay = timetable.lessons.groupBy { it.day }
-    Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-        Column(Modifier.width(76.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+    val timeColumnWidth = 164.dp
+    val dayColumnWidth = 160.dp
+    Column(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState())) {
+        Row(Modifier.width(timeColumnWidth + dayColumnWidth * 7), verticalAlignment = Alignment.CenterVertically) {
             Text(
                 AppStrings.get(AppStringKey.TimeLabel, language),
-                style = MaterialTheme.typography.labelMedium,
-                modifier = Modifier.height(42.dp),
+                Modifier.width(timeColumnWidth).padding(8.dp),
+                style = MaterialTheme.typography.titleSmall,
             )
-            timetable.slots.forEach { minute ->
-                Text(formatTime(minute, language), style = MaterialTheme.typography.labelSmall, modifier = Modifier.height(70.dp))
-            }
-        }
-        timetable.days.forEach { day ->
-            Column(Modifier.width(136.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            timetable.days.forEach { day ->
                 Text(
                     AppStrings.get(dayKeys.getValue(day), language),
-                    style = MaterialTheme.typography.labelMedium,
-                    modifier = Modifier.height(42.dp),
+                    Modifier.width(dayColumnWidth).padding(8.dp),
+                    style = MaterialTheme.typography.titleSmall,
                 )
-                timetable.slots.forEach { slot ->
-                    val concurrent = lessonsByDay[day].orEmpty().filter { it.startMinute < slot + 30 && it.endMinute > slot }
+            }
+        }
+        timetable.periods.forEach { period ->
+            Row(
+                Modifier.width(timeColumnWidth + dayColumnWidth * 7).padding(vertical = 3.dp),
+                verticalAlignment = Alignment.Top,
+            ) {
+                Column(
+                    Modifier
+                        .width(timeColumnWidth)
+                        .padding(4.dp)
+                        .background(MaterialTheme.colorScheme.secondaryContainer, MaterialTheme.shapes.small)
+                        .padding(10.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    Text(
+                        AppStrings.get(AppStringKey.PeriodNumber, language, period.number.toString()),
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                    )
+                    Text(
+                        "${formatTime(period.startMinute, language)} – ${formatTime(period.endMinute, language)}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                    )
+                }
+                timetable.days.forEach { day ->
                     Column(
-                        Modifier
-                            .fillMaxWidth()
-                            .height(
-                                (maxOf(1, concurrent.size) * 64).dp,
-                            ).background(MaterialTheme.colorScheme.surfaceVariant, MaterialTheme.shapes.small)
-                            .padding(4.dp),
-                        verticalArrangement = Arrangement.spacedBy(2.dp),
+                        Modifier.width(dayColumnWidth).padding(horizontal = 3.dp),
+                        verticalArrangement = Arrangement.spacedBy(5.dp),
                     ) {
-                        concurrent.forEach { lesson ->
-                            Text(lesson.subject, style = MaterialTheme.typography.labelSmall, maxLines = 1)
-                            Text(
-                                lesson.teacher,
-                                style = MaterialTheme.typography.labelSmall,
-                                maxLines = 1,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                            Text(
-                                "${formatTime(
-                                    lesson.startMinute,
-                                    language,
-                                )}–${formatTime(lesson.endMinute, language)} · ${trackLabel(lesson.trackFor(track), language)}",
-                                style = MaterialTheme.typography.labelSmall,
-                                maxLines = 1,
-                            )
+                        period.lessonsByDay[day].orEmpty().forEach { lesson ->
+                            Surface(
+                                color = MaterialTheme.colorScheme.surfaceVariant,
+                                shape = MaterialTheme.shapes.small,
+                                tonalElevation = 1.dp,
+                            ) {
+                                Column(
+                                    Modifier.fillMaxWidth().padding(8.dp),
+                                    verticalArrangement = Arrangement.spacedBy(2.dp),
+                                ) {
+                                    Text(
+                                        lesson.subject,
+                                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                    )
+                                    Text(
+                                        lesson.teacher,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                    if (track == TimetableTrack.ALL) {
+                                        Text(
+                                            lessonTrackLabel(lesson.lessonType, language),
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.tertiary,
+                                        )
+                                    }
+                                }
+                            }
                         }
-                        if (concurrent.isEmpty()) Spacer(Modifier.height(1.dp))
                     }
                 }
             }
@@ -243,4 +271,15 @@ fun trackLabel(
         TimetableTrack.ALL -> AppStrings.get(AppStringKey.AllTracks, language)
         TimetableTrack.ARABIC -> AppStrings.get(AppStringKey.ArabicTrack, language)
         TimetableTrack.LANGUAGES -> AppStrings.get(AppStringKey.LanguagesTrack, language)
+    }
+
+fun lessonTrackLabel(
+    type: CourseLessonType,
+    language: AppLanguage,
+): String =
+    when (type) {
+        CourseLessonType.Arabic -> AppStrings.get(AppStringKey.Arabic, language)
+        CourseLessonType.Languages -> AppStrings.get(AppStringKey.Languages, language)
+        CourseLessonType.Mixed -> AppStrings.get(AppStringKey.Mixed, language)
+        CourseLessonType.Private -> AppStrings.get(AppStringKey.Private, language)
     }
