@@ -39,6 +39,18 @@ sealed interface CoursesEvent {
         val id: String,
     ) : CoursesEvent
 
+    data class ExportTimetable(
+        val gradeId: String?,
+        val track: TimetableTrack,
+        val language: center.ui.localization.AppLanguage,
+    ) : CoursesEvent
+
+    data class PrintTimetable(
+        val gradeId: String?,
+        val track: TimetableTrack,
+        val language: center.ui.localization.AppLanguage,
+    ) : CoursesEvent
+
     data class MakeupDateChanged(
         val value: String,
     ) : CoursesEvent

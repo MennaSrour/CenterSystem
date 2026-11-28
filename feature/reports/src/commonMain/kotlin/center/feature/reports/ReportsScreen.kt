@@ -75,6 +75,11 @@ interface ContextualPdfPlatform {
         language: AppLanguage,
     ): ByteArray
 
+    fun createTimetablePdf(
+        document: TimetablePdfDocument,
+        language: AppLanguage,
+    ): ByteArray
+
     suspend fun saveContextPdf(
         title: String,
         fileName: String,
@@ -87,6 +92,16 @@ interface ContextualPdfPlatform {
         bytes: ByteArray,
     ): Boolean
 }
+
+data class TimetablePdfDocument(
+    val title: String,
+    val subtitle: String,
+    val generatedDate: String,
+    val dayHeaders: List<String>,
+    val times: List<String>,
+    /** Row-major by time, then by day. */
+    val cells: List<List<String>>,
+)
 
 sealed interface MonthlyReportEvent {
     data class MonthChanged(

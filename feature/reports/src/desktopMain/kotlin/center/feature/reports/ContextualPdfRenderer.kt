@@ -19,6 +19,110 @@ import kotlin.math.ceil
 
 /** Single-column, paginated PDF renderer using the same bundled Almarai font and Java2D Arabic shaping. */
 class ContextualPdfRenderer {
+    fun renderTimetable(
+        documentData: TimetablePdfDocument,
+        language: AppLanguage,
+    ): ByteArray {
+        require(documentData.dayHeaders.size == 7)
+        val font =
+            ContextualPdfRenderer::class.java.getResourceAsStream("/fonts/almarai_regular.ttf")!!.use {
+                Font.createFont(Font.TRUETYPE_FONT, it)
+            }
+        PDDocument().use { document ->
+            val embeddedFont =
+                ContextualPdfRenderer::class.java.getResourceAsStream("/fonts/almarai_regular.ttf")!!.use {
+                    PDType0Font.load(document, it, true)
+                }
+            val chunks =
+                documentData.times.indices
+                    .chunked(14)
+                    .ifEmpty { listOf(emptyList()) }
+            chunks.forEachIndexed { pageIndex, rowIndices ->
+                val page = PDPage(PDRectangle(PDRectangle.A4.height, PDRectangle.A4.width))
+                document.addPage(page)
+                PDPageContentStream(document, page).use { stream ->
+                    val pageWidth = page.mediaBox.width
+                    val pageHeight = page.mediaBox.height
+                    val margin = 24f
+                    val frc = FontRenderContext(null, true, true)
+                    drawText(document, stream, font, documentData.title, margin, pageHeight - 32f, 14f, Color(0x2B4162), true, frc)
+                    drawText(document, stream, font, "Center One", pageWidth - 84f, pageHeight - 32f, 9f, Color(0x2B4162), true, frc)
+                    drawText(document, stream, font, documentData.subtitle, margin, pageHeight - 48f, 9f, Color(0x47566D), false, frc)
+                    drawText(
+                        document,
+                        stream,
+                        font,
+                        documentData.generatedDate,
+                        pageWidth - 130f,
+                        pageHeight - 48f,
+                        8f,
+                        Color(0x68758A),
+                        false,
+                        frc,
+                    )
+                    val top = pageHeight - 66f
+                    val labelWidth = 48f
+                    val colWidth = (pageWidth - margin * 2 - labelWidth) / 7f
+                    val headerHeight = 24f
+                    val rowHeight = 26f
+                    stream.setStrokingColor(Color(0x9CAAC0))
+                    stream.setLineWidth(0.55f)
+                    stream.addRect(margin, top - headerHeight, labelWidth, headerHeight)
+                    stream.stroke()
+                    documentData.dayHeaders.forEachIndexed { dayIndex, day ->
+                        val x = margin + labelWidth + colWidth * dayIndex
+                        stream.addRect(x, top - headerHeight, colWidth, headerHeight)
+                        stream.stroke()
+                        drawText(document, stream, font, day, x + 3f, top - 15f, 7f, Color(0x2B4162), true, frc)
+                    }
+                    rowIndices.forEachIndexed { rowIndex, timeIndex ->
+                        val y = top - headerHeight - rowHeight * (rowIndex + 1)
+                        stream.addRect(margin, y, labelWidth, rowHeight)
+                        stream.stroke()
+                        drawText(
+                            document,
+                            stream,
+                            font,
+                            documentData.times[timeIndex],
+                            margin + 3f,
+                            y + rowHeight / 2f,
+                            6f,
+                            Color(0x2B4162),
+                            false,
+                            frc,
+                        )
+                        documentData.dayHeaders.indices.forEach { dayIndex ->
+                            val x = margin + labelWidth + colWidth * dayIndex
+                            stream.addRect(x, y, colWidth, rowHeight)
+                            stream.stroke()
+                            val cell =
+                                documentData.cells
+                                    .getOrNull(timeIndex)
+                                    ?.getOrNull(dayIndex)
+                                    .orEmpty()
+                            if (cell.isNotBlank()) {
+                                drawText(document, stream, font, cell.take(48), x + 3f, y + rowHeight / 2f, 6f, Color(0x25354C), false, frc)
+                            }
+                        }
+                    }
+                    val footer =
+                        if (language ==
+                            AppLanguage.Arabic
+                        ) {
+                            "صفحة ${pageIndex + 1} من ${chunks.size}"
+                        } else {
+                            "Page ${pageIndex + 1} of ${chunks.size}"
+                        }
+                    drawText(document, stream, font, footer, margin, 18f, 7f, Color(0x68758A), false, frc)
+                }
+            }
+            return ByteArrayOutputStream().use { output ->
+                document.save(output)
+                output.toByteArray()
+            }
+        }
+    }
+
     fun render(
         title: String,
         lines: List<String>,

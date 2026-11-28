@@ -34,6 +34,11 @@ class DesktopMonthlyReportPlatform(
         language: AppLanguage,
     ): ByteArray = contextualRenderer.render(title, lines, language)
 
+    override fun createTimetablePdf(
+        document: TimetablePdfDocument,
+        language: AppLanguage,
+    ): ByteArray = contextualRenderer.renderTimetable(document, language)
+
     override suspend fun saveContextPdf(
         title: String,
         fileName: String,

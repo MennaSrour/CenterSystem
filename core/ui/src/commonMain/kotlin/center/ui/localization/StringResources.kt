@@ -112,6 +112,19 @@ enum class AppStringKey {
     PrintRoster,
     PrintTeacherStatement,
     CloseOpenCheckIns,
+    WeeklyTimetable,
+    GradeSelector,
+    TrackSelector,
+    TimetableLanguage,
+    AllGrades,
+    AllTracks,
+    ArabicTrack,
+    LanguagesTrack,
+    TimetableEmpty,
+    TimetableGenerated,
+    ArabicRtl,
+    EnglishLtr,
+    TimeLabel,
 }
 
 object AppStrings {
@@ -203,6 +216,19 @@ object AppStrings {
             AppStringKey.PrintRoster to LocalizedText("طباعة كشف طلاب الدرس", "Print lesson roster"),
             AppStringKey.PrintTeacherStatement to LocalizedText("طباعة كشف حساب المدرس", "Print teacher statement"),
             AppStringKey.CloseOpenCheckIns to LocalizedText("إغلاق الحضور المفتوح", "Close Today's Open Check-Ins"),
+            AppStringKey.WeeklyTimetable to LocalizedText("جدول الحصص الأسبوعي", "Weekly Timetable"),
+            AppStringKey.GradeSelector to LocalizedText("الصف الدراسي", "Grade"),
+            AppStringKey.TrackSelector to LocalizedText("المسار / القسم", "Track"),
+            AppStringKey.TimetableLanguage to LocalizedText("لغة الجدول", "Timetable language"),
+            AppStringKey.AllGrades to LocalizedText("كل الصفوف", "All grades"),
+            AppStringKey.AllTracks to LocalizedText("الكل", "All tracks"),
+            AppStringKey.ArabicTrack to LocalizedText("مسار العربي", "Arabic track"),
+            AppStringKey.LanguagesTrack to LocalizedText("مسار اللغات", "Languages track"),
+            AppStringKey.TimetableEmpty to LocalizedText("لا توجد دروس مطابقة لهذا الاختيار", "No lessons match this selection"),
+            AppStringKey.TimetableGenerated to LocalizedText("تاريخ الطباعة", "Generated"),
+            AppStringKey.ArabicRtl to LocalizedText("العربية (من اليمين إلى اليسار)", "Arabic (RTL)"),
+            AppStringKey.EnglishLtr to LocalizedText("الإنجليزية (من اليسار إلى اليمين)", "English (LTR)"),
+            AppStringKey.TimeLabel to LocalizedText("الوقت", "Time"),
         )
 
     val entries: Map<AppStringKey, LocalizedText> get() = dictionary

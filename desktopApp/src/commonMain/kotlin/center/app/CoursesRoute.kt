@@ -40,7 +40,12 @@ import center.feature.courses.GroupFormState
 import center.feature.courses.GroupTimeSlotState
 import center.feature.courses.MakeupSessionFormState
 import center.feature.courses.ScheduleDay
+import center.feature.courses.TimetableBuilder
+import center.feature.courses.TimetableTrack
+import center.feature.courses.trackFor
+import center.feature.courses.trackLabel
 import center.feature.reports.ContextualPdfPlatform
+import center.feature.reports.TimetablePdfDocument
 import center.ui.localization.AppLanguage
 import center.ui.localization.AppStringKey
 import center.ui.localization.AppStrings
@@ -96,6 +101,32 @@ internal fun CoursesRoute(
                 is CoursesEvent.LanguageSelected -> onLanguageSelected(event.language)
                 is CoursesEvent.ExportLessonRoster -> exportLessonRoster(state, event.id, printPlatform, language, scope, ::notify)
                 is CoursesEvent.PrintLessonRoster -> printLessonRoster(state, event.id, printPlatform, language, scope, ::notify)
+                is CoursesEvent.ExportTimetable ->
+                    createTimetablePdf(
+                        state,
+                        event.gradeId,
+                        event.track,
+                        event.language,
+                        language,
+                        services,
+                        printPlatform,
+                        scope,
+                        ::notify,
+                        print = false,
+                    )
+                is CoursesEvent.PrintTimetable ->
+                    createTimetablePdf(
+                        state,
+                        event.gradeId,
+                        event.track,
+                        event.language,
+                        language,
+                        services,
+                        printPlatform,
+                        scope,
+                        ::notify,
+                        print = true,
+                    )
                 CoursesEvent.OpenNotifications, CoursesEvent.LogOut -> notify(unavailable)
                 else -> holder.onEvent(event)
             }
@@ -169,12 +200,107 @@ private fun createLessonRoster(
     }
 }
 
+private fun createTimetablePdf(
+    state: CoursesState,
+    gradeId: String?,
+    track: TimetableTrack,
+    outputLanguage: AppLanguage,
+    appLanguage: AppLanguage,
+    services: DirectoryServices,
+    platform: ContextualPdfPlatform?,
+    scope: CoroutineScope,
+    notify: (String) -> Unit,
+    print: Boolean,
+) {
+    if (platform == null) {
+        notify(AppStrings.get(AppStringKey.FeatureUnavailable, appLanguage))
+        return
+    }
+    val timetable = TimetableBuilder.build(state.groups, state.teachers, gradeId, track)
+    if (timetable.isEmpty) {
+        notify(AppStrings.get(AppStringKey.TimetableEmpty, outputLanguage))
+        return
+    }
+    val grade =
+        gradeId?.let { id ->
+            state.grades.firstOrNull { it.id == id }?.let {
+                if (outputLanguage == AppLanguage.Arabic) it.arabicLabel else it.englishLabel
+            }
+        } ?: AppStrings.get(AppStringKey.AllGrades, outputLanguage)
+    val trackName = trackLabel(track, outputLanguage)
+    val dayKeys =
+        mapOf(
+            ScheduleDay.Saturday to AppStringKey.Saturday,
+            ScheduleDay.Sunday to AppStringKey.Sunday,
+            ScheduleDay.Monday to AppStringKey.Monday,
+            ScheduleDay.Tuesday to AppStringKey.Tuesday,
+            ScheduleDay.Wednesday to AppStringKey.Wednesday,
+            ScheduleDay.Thursday to AppStringKey.Thursday,
+            ScheduleDay.Friday to AppStringKey.Friday,
+        )
+    val orderedDays = if (outputLanguage == AppLanguage.Arabic) timetable.days.reversed() else timetable.days
+    val slots = timetable.slots
+
+    fun timeLabel(minute: Int): String {
+        val hour = minute / 60
+        val hour12 = (hour % 12).let { if (it == 0) 12 else it }
+        val suffix =
+            when (outputLanguage) {
+                AppLanguage.Arabic -> if (hour < 12) "ص" else "م"
+                AppLanguage.English -> if (hour < 12) "AM" else "PM"
+            }
+        return "$hour12:${(minute % 60).toString().padStart(2, '0')} $suffix"
+    }
+    val document =
+        TimetablePdfDocument(
+            title = AppStrings.get(AppStringKey.WeeklyTimetable, outputLanguage),
+            subtitle = "$grade · $trackName",
+            generatedDate = "${AppStrings.get(AppStringKey.TimetableGenerated, outputLanguage)}: ${services.today()}",
+            dayHeaders = orderedDays.map { AppStrings.get(dayKeys.getValue(it), outputLanguage) },
+            times = slots.map(::timeLabel),
+            cells =
+                slots.map { slot ->
+                    orderedDays.map { day ->
+                        timetable.lessons
+                            .filter { it.day == day && it.startMinute < slot + 30 && it.endMinute > slot }
+                            .joinToString(" / ") { lesson ->
+                                "${lesson.subject} · ${lesson.teacher} · ${trackLabel(
+                                    lesson.trackFor(track),
+                                    outputLanguage,
+                                )} · ${timeLabel(lesson.startMinute)}–${timeLabel(lesson.endMinute)}"
+                            }
+                    }
+                },
+        )
+    val bytes = platform.createTimetablePdf(document, outputLanguage)
+    val safeGrade = (gradeId ?: "All").replace(Regex("[^A-Za-z0-9_-]"), "_")
+    val safeTrack = track.name.lowercase()
+    val safeLanguage = if (outputLanguage == AppLanguage.Arabic) "Arabic" else "English"
+    val title = AppStrings.get(AppStringKey.WeeklyTimetable, outputLanguage)
+    scope.launch {
+        runCatching {
+            if (print) {
+                platform.printContextPdf(title, bytes)
+            } else {
+                platform.saveContextPdf(
+                    title,
+                    "CenterOne_Timetable_${safeGrade}_${safeTrack}_$safeLanguage.pdf",
+                    LocalizedText("استبدال الملف الموجود؟", "Replace the existing file?").resolve(outputLanguage),
+                    bytes,
+                )
+            }
+        }.onFailure { notify(AppStrings.get(AppStringKey.Error, appLanguage)) }
+    }
+}
+
 internal class CoursesStateHolder(
     private val services: DirectoryServices,
     private val scope: CoroutineScope,
     private val language: AppLanguage,
     private val canDelete: () -> Boolean,
 ) {
+    private val arabicGradeLabels = gradeCatalog(AppLanguage.Arabic).associate { it.id to it.label }
+    private val englishGradeLabels = gradeCatalog(AppLanguage.English).associate { it.id to it.label }
     private val grades =
         gradeCatalog(language).map {
             CourseGrade(
@@ -185,6 +311,8 @@ internal class CoursesStateHolder(
                         .lowercase()
                         .replaceFirstChar(Char::uppercase),
                 ),
+                arabicLabel = arabicGradeLabels[it.id] ?: it.label,
+                englishLabel = englishGradeLabels[it.id] ?: it.label,
             )
         }
     private val rooms = (1..8).map { CourseRoom(it.toString(), if (language == AppLanguage.Arabic) "قاعة $it" else "Room $it") }
@@ -362,7 +490,9 @@ internal class CoursesStateHolder(
                             expandedGroupMenuId = null,
                         )
                 }
-            is CoursesEvent.ExportLessonRoster, is CoursesEvent.PrintLessonRoster -> Unit
+            is CoursesEvent.ExportLessonRoster, is CoursesEvent.PrintLessonRoster,
+            is CoursesEvent.ExportTimetable, is CoursesEvent.PrintTimetable,
+            -> Unit
             is CoursesEvent.MakeupDateChanged -> editMakeup { it.copy(makeupDate = event.value, message = null) }
             is CoursesEvent.MakeupStartTimeChanged -> editMakeup { it.copy(startTime = event.value, message = null) }
             is CoursesEvent.MakeupEndTimeChanged -> editMakeup { it.copy(endTime = event.value, message = null) }

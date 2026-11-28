@@ -23,6 +23,8 @@ data class CourseGrade(
     val id: String,
     val label: String,
     val stage: CourseStage,
+    val arabicLabel: String = label,
+    val englishLabel: String = label,
 )
 
 data class CourseRoom(
