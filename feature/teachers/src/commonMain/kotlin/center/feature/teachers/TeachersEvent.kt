@@ -48,6 +48,11 @@ sealed interface TeachersEvent {
         val id: String,
     ) : TeachersEvent
 
+    data class TeacherStatementAction(
+        val id: String,
+        val print: Boolean,
+    ) : TeachersEvent
+
     data class EditTeacher(
         val id: String,
     ) : TeachersEvent

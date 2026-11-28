@@ -206,17 +206,19 @@ class SqlTreasuryRepository(
     ): Flow<List<LedgerEntry>> {
         require(startInclusive < endExclusive)
         return database.operationsQueries.selectLedger(startInclusive, endExclusive).asFlow().mapToList(dispatcher).map { rows ->
-            rows.map {
+            rows.map { row ->
                 LedgerEntry(
-                    it.id,
-                    LedgerDirection.valueOf(it.direction),
-                    LedgerKind.valueOf(it.kind),
-                    it.amountMinor,
-                    it.recordedAt,
-                    it.description,
-                    it.studentId,
-                    it.classId,
-                    it.teacherId,
+                    row.id,
+                    LedgerDirection.valueOf(row.direction),
+                    LedgerKind.valueOf(row.kind),
+                    row.amountMinor,
+                    row.recordedAt,
+                    row.description,
+                    row.studentId,
+                    row.classId,
+                    row.teacherId,
+                    row.voidedAt != null,
+                    row.description.takeIf { row.voidedAt != null }.orEmpty(),
                 )
             }
         }

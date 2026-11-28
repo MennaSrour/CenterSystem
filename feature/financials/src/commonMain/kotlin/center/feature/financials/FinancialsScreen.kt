@@ -58,6 +58,7 @@ fun FinancialsScreen(
                 FinancialsModal.Closed -> Unit
                 is FinancialsModal.ReceivePayment -> ReceivePaymentModal(modal.form, onEvent)
                 is FinancialsModal.RecordExpense -> RecordExpenseModal(modal.form, onEvent)
+                is FinancialsModal.VoidPayment -> VoidPaymentDialog(modal, onEvent)
             }
         }
     }
@@ -167,7 +168,13 @@ internal fun FinancialsContent(
                                         Text(appString("search_records"), style = MaterialTheme.typography.bodySmall)
                                     }, leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null) })
                                 }
-                                RecentActivityTable(state.visibleRecords, state.selectedLog, Modifier.fillMaxWidth())
+                                RecentActivityTable(
+                                    state.visibleRecords,
+                                    state.selectedLog,
+                                    state.canVoidPayments,
+                                    onEvent,
+                                    Modifier.fillMaxWidth(),
+                                )
                             }
                         }
                     }

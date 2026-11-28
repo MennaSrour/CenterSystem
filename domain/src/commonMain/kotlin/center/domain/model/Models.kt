@@ -51,6 +51,8 @@ data class Payment(
     val centerShare: Double,
     val paymentDate: Long,
     val billingMonth: LocalDate? = null,
+    val voidedAt: Long? = null,
+    val voidReason: String = "",
 )
 
 enum class MessageStatus { PENDING, SENT }

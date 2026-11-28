@@ -12,6 +12,31 @@ import kotlin.test.assertTrue
 
 class DatabaseBackupTest {
     @Test
+    fun dailyBackupIsCreatedAndOnlyLastSevenDaysAreKept() =
+        runTest {
+            val directory = Files.createTempDirectory("center-daily-backup")
+            try {
+                openDatabase(directory).use { }
+                val backup = DatabaseBackup(directory)
+                val today = LocalDate.of(2026, 11, 27)
+                val folder = directory.resolve("backups")
+                Files.createDirectories(folder)
+                Files.write(folder.resolve("centerone_backup_2026-11-21.db"), byteArrayOf(1))
+                Files.write(folder.resolve("centerone_backup_2026-11-20.db"), byteArrayOf(1))
+
+                val result = backup.createDailyBackup(today)
+
+                assertTrue(Files.isRegularFile(result))
+                assertTrue(Files.notExists(folder.resolve("centerone_backup_2026-11-20.db")))
+                assertTrue(Files.exists(folder.resolve("centerone_backup_2026-11-21.db")))
+                assertTrue(Files.exists(folder.resolve("centerone_backup_2026-11-27.db")))
+                assertEquals(2, Files.list(folder).use { it.count() })
+            } finally {
+                directory.toFile().deleteRecursively()
+            }
+        }
+
+    @Test
     fun exportsAStandaloneSnapshotIncludingCommittedWalChangesAndPreservesEarlierExports() =
         runTest {
             val directory = Files.createTempDirectory("center-backup-test")

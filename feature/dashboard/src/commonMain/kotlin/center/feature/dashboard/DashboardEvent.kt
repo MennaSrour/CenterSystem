@@ -47,6 +47,8 @@ sealed interface DashboardEvent {
 
     data object RecordExpense : DashboardEvent
 
+    data object CloseOpenCheckIns : DashboardEvent
+
     data class LanguageSelected(
         val language: AppLanguage,
     ) : DashboardEvent

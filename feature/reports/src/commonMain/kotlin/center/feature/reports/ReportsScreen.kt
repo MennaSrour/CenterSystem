@@ -67,6 +67,42 @@ interface MonthlyReportPlatform {
     ): Boolean
 }
 
+/** Desktop PDF actions for contextual documents such as receipts and rosters. */
+interface ContextualPdfPlatform {
+    fun createContextPdf(
+        title: String,
+        lines: List<String>,
+        language: AppLanguage,
+    ): ByteArray
+
+    fun createTimetablePdf(
+        document: TimetablePdfDocument,
+        language: AppLanguage,
+    ): ByteArray
+
+    suspend fun saveContextPdf(
+        title: String,
+        fileName: String,
+        overwrite: String,
+        bytes: ByteArray,
+    ): Boolean
+
+    suspend fun printContextPdf(
+        title: String,
+        bytes: ByteArray,
+    ): Boolean
+}
+
+data class TimetablePdfDocument(
+    val title: String,
+    val subtitle: String,
+    val generatedDate: String,
+    val dayHeaders: List<String>,
+    val times: List<String>,
+    /** Row-major by time, then by day. */
+    val cells: List<List<String>>,
+)
+
 sealed interface MonthlyReportEvent {
     data class MonthChanged(
         val month: LocalDate,

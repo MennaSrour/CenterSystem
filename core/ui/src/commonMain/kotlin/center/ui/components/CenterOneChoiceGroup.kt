@@ -1,5 +1,6 @@
 package center.ui.components
 
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -9,6 +10,7 @@ import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextOverflow
 import center.ui.theme.CenterOneSize
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -22,13 +24,13 @@ fun CenterOneChoiceGroup(
 ) {
     if (labels.isEmpty()) return
     require(selectedIndex in labels.indices)
-    SingleChoiceSegmentedButtonRow(modifier) {
+    SingleChoiceSegmentedButtonRow(modifier.fillMaxWidth()) {
         labels.forEachIndexed { index, label ->
             SegmentedButton(
                 selected = selectedIndex == index,
                 onClick = { onSelected(index) },
                 enabled = enabled,
-                modifier = Modifier.heightIn(min = CenterOneSize.ButtonHeight),
+                modifier = Modifier.weight(1f).heightIn(min = CenterOneSize.ButtonHeight),
                 colors =
                     SegmentedButtonDefaults.colors(
                         activeContainerColor = MaterialTheme.colorScheme.primaryContainer,
@@ -37,7 +39,15 @@ fun CenterOneChoiceGroup(
                         inactiveBorderColor = MaterialTheme.colorScheme.outline,
                     ),
                 shape = SegmentedButtonDefaults.itemShape(index, labels.size),
-            ) { Text(label) }
+            ) {
+                Text(
+                    label,
+                    maxLines = 1,
+                    softWrap = false,
+                    overflow = TextOverflow.Ellipsis,
+                    style = MaterialTheme.typography.labelSmall,
+                )
+            }
         }
     }
 }

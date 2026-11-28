@@ -152,7 +152,7 @@ class MonthlyReportGenerator {
         val collections =
             input.ledger
                 .filter {
-                    it.kind == LedgerKind.STUDENT_PAYMENT && it.direction == LedgerDirection.INCOME
+                    !it.isVoided && it.kind == LedgerKind.STUDENT_PAYMENT && it.direction == LedgerDirection.INCOME
                 }.sumOf { it.amountMinor }
         val expenses =
             input.ledger

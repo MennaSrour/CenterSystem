@@ -21,6 +21,8 @@ data class FinancialRecord(
     val formattedAmount: String,
     val formattedDate: String,
     val formattedTime: String,
+    val paymentId: String? = null,
+    val isVoided: Boolean = false,
 )
 
 data class FinancialsState(
@@ -33,6 +35,7 @@ data class FinancialsState(
     val recordQuery: String = "",
     val modal: FinancialsModal = FinancialsModal.Closed,
     val canViewMonthlyReport: Boolean = false,
+    val canVoidPayments: Boolean = false,
 ) {
     val visibleRecords: List<FinancialRecord>
         get() {
@@ -59,6 +62,12 @@ sealed interface FinancialsModal {
 
     data class RecordExpense(
         val form: RecordExpenseState,
+    ) : FinancialsModal
+
+    data class VoidPayment(
+        val paymentId: String,
+        val reason: String = "",
+        val isSubmitting: Boolean = false,
     ) : FinancialsModal
 }
 

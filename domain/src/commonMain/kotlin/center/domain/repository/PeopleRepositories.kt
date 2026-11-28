@@ -42,6 +42,12 @@ interface AttendanceSessionRepository {
         timestamp: Long,
     )
 
+    /** Close forgotten sessions from dates before [date], using the last scheduled end or day end. */
+    suspend fun closeOpenCheckInsBefore(date: LocalDate): Int = 0
+
+    /** Close sessions still open on [date], using the last scheduled end or day end. */
+    suspend fun closeOpenCheckInsOn(date: LocalDate): Int = 0
+
     fun observeLessonHistory(studentId: String): Flow<List<LessonAttendance>> = kotlinx.coroutines.flow.flowOf(emptyList())
 
     suspend fun saveLessonAttendance(records: List<LessonAttendance>) = Unit

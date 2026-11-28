@@ -8,6 +8,7 @@ import center.database.repository.SqlPaymentRepository
 import center.database.repository.SqlStaffRepository
 import center.database.repository.SqlTeacherRepository
 import center.domain.model.AttendancePerson
+import center.domain.model.AttendanceSession
 import center.domain.model.ClassGroup
 import center.domain.model.CollectionDeficit
 import center.domain.model.EducationSystem
@@ -42,6 +43,49 @@ class PeopleOperationsTest {
     private val day = LocalDate(2026, 11, 5)
     private val start = day.atStartOfDayIn(TimeZone.of("Africa/Cairo")).toEpochMilliseconds()
     private val shift = GroupScheduleSlot(DayOfWeek.THURSDAY, LocalTime(16, 5), LocalTime(18, 10))
+
+    @Test
+    fun forgottenCheckInFromPriorDayClosesAtLastScheduledLessonEnd() =
+        runTest {
+            JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY, schema = CenterDatabase.Schema).use { driver ->
+                val database = CenterDatabase(driver)
+                val dispatcher = StandardTestDispatcher(testScheduler)
+                val teachers = SqlTeacherRepository(database, dispatcher)
+                val students = SqlStudentRepository(database, dispatcher)
+                val groups = SqlClassGroupRepository(database, dispatcher)
+                val sessions = SqlAttendanceSessionRepository(database, dispatcher)
+                teachers.save(Teacher("teacher", "Teacher", "Math"))
+                val student = Student("student", "Student")
+                students.save(student)
+                groups.save(
+                    ClassGroup(
+                        "lesson",
+                        "Math",
+                        "teacher",
+                        10_000,
+                        7_000,
+                        1,
+                        EducationSystem.ARABIC,
+                        GroupStatus.ACTIVE,
+                        listOf(shift),
+                        enrollments =
+                            mapOf(
+                                "student" to center.domain.model.LessonEnrollment(10_000, center.domain.model.StudentTrack.ARABIC),
+                            ),
+                    ),
+                )
+                val checkIn = start + 8 * 60 * 60_000L
+                sessions.checkIn(
+                    AttendanceSession(AttendancePerson(PersonType.STUDENT, student.id, "lesson"), day, checkIn, null),
+                    null,
+                )
+
+                assertEquals(1, sessions.closeOpenCheckInsBefore(LocalDate(2026, 11, 6)))
+
+                val record = sessions.observeHistory(PersonType.STUDENT, student.id).first().single()
+                assertEquals(start + (18 * 60 + 10) * 60_000L, record.checkOutTime)
+            }
+        }
 
     @Test
     fun discountsSetThePaymentLimitAndDeficitWithoutChangingSalaryAndSchedulesFollowActiveGroups() =

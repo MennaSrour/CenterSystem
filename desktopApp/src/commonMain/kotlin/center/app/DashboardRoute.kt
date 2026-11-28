@@ -206,6 +206,7 @@ internal class DashboardStateHolder(
                 }
             is DashboardEvent.RegisterAttendance -> record(event.studentCode, event.groupId, checkout = false, event.attendedLessonIds)
             is DashboardEvent.CheckOut -> record(event.code, event.groupId, checkout = true)
+            DashboardEvent.CloseOpenCheckIns -> closeTodayOpenCheckIns()
             is DashboardEvent.LanguageSelected ->
                 state.update {
                     refreshSearch(
@@ -214,6 +215,21 @@ internal class DashboardStateHolder(
                     )
                 }
             else -> Unit
+        }
+    }
+
+    private fun closeTodayOpenCheckIns() {
+        scope.launch {
+            runCatching { services.sessions.closeOpenCheckInsOn(services.today()) }
+                .onSuccess { count ->
+                    val text =
+                        if (state.value.language == AppLanguage.Arabic) {
+                            "تم إغلاق $count سجل حضور مفتوح."
+                        } else {
+                            "Closed $count open check-in records."
+                        }
+                    messages.emit(text)
+                }.onFailure { messages.emit(failure.resolve(state.value.language)) }
         }
     }
 

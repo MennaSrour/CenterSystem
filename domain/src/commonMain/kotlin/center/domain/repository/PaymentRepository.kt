@@ -18,4 +18,11 @@ interface PaymentRepository {
         payment: Payment,
         receipt: QueuedMessage?,
     )
+
+    /** Soft-voids a payment so history remains auditable and all accounting queries can exclude it. */
+    suspend fun voidPayment(
+        paymentId: String,
+        voidedAt: Long,
+        reason: String = "",
+    ): Unit = throw UnsupportedOperationException("Payment voiding is unavailable")
 }

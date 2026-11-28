@@ -61,16 +61,18 @@ fun CoursesScreen(
     modifier: Modifier = Modifier,
 ) {
     val direction = LocalAppLanguage.current.layoutDirection
+    val timetableOpen = remember { mutableStateOf(false) }
     CompositionLocalProvider(LocalLayoutDirection provides direction) {
         Box(modifier.fillMaxSize()) {
-            CoursesContent(state, onEvent)
-            if (state.modal != CoursesModal.Closed) Box(Modifier.matchParentSize().background(ModalScrim))
+            CoursesContent(state, onEvent, onOpenTimetable = { timetableOpen.value = true })
+            if (state.modal != CoursesModal.Closed || timetableOpen.value) Box(Modifier.matchParentSize().background(ModalScrim))
             when (val modal = state.modal) {
                 CoursesModal.Closed -> Unit
                 is CoursesModal.Form -> GroupFormModal(modal.state, onEvent)
                 is CoursesModal.Delete -> DeleteConfirmationModal(modal.state, onEvent)
                 is CoursesModal.Makeup -> MakeupSessionModal(modal.state, onEvent)
             }
+            if (timetableOpen.value) WeeklyTimetableDialog(state, onEvent, onClose = { timetableOpen.value = false })
         }
     }
 }
@@ -80,6 +82,7 @@ internal fun CoursesContent(
     state: CoursesState,
     onEvent: (CoursesEvent) -> Unit,
     modifier: Modifier = Modifier,
+    onOpenTimetable: () -> Unit = {},
 ) {
     val teacherById = state.teachers.associateBy { it.id }
     val gradeById = state.grades.associateBy { it.id }
@@ -91,7 +94,7 @@ internal fun CoursesContent(
             Row(Modifier.horizontalScroll(rememberScrollState()).width(canvasWidth)) {
                 if (LocalAppLanguage.current == AppLanguage.English) CoursesSidebar(onEvent, Modifier.width(sidebarWidth))
                 Column(Modifier.weight(1f)) {
-                    CoursesHeader(state, onEvent)
+                    CoursesHeader(state, onEvent, onOpenTimetable)
                     HorizontalDivider(color = MaterialTheme.colorScheme.outline)
                     LazyVerticalGrid(
                         columns = GridCells.Adaptive(380.dp),
@@ -198,8 +201,15 @@ private fun CoursesStats(summary: CoursesSummary) {
 private fun CoursesHeader(
     state: CoursesState,
     onEvent: (CoursesEvent) -> Unit,
+    onOpenTimetable: () -> Unit,
 ) {
     CenterOnePageHeader(appString("courses_title"), appString("courses_title_en"), state.dateLabel) {
+        center.ui.components.CenterOnePrimaryButton(onClick = onOpenTimetable) {
+            Text(
+                center.ui.localization.AppStrings
+                    .get(center.ui.localization.AppStringKey.WeeklyTimetable, LocalAppLanguage.current),
+            )
+        }
         CenterOneLanguageToggle(LocalAppLanguage.current, { onEvent(CoursesEvent.LanguageSelected(it)) })
         CenterOneIconButton(
             Icons.Outlined.Notifications,

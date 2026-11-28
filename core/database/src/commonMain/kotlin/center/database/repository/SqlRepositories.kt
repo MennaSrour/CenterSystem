@@ -176,6 +176,20 @@ class SqlPaymentRepository(
             }
         }
 
+    override suspend fun voidPayment(
+        paymentId: String,
+        voidedAt: Long,
+        reason: String,
+    ): Unit =
+        withContext(dispatcher) {
+            require(paymentId.isNotBlank() && reason.length <= 1_000)
+            database.transaction {
+                val current = checkNotNull(database.paymentQueries.selectById(paymentId).executeAsOneOrNull())
+                check(current.voidedAt == null) { "Payment is already voided" }
+                database.paymentQueries.voidPayment(voidedAt, reason.trim(), paymentId)
+            }
+        }
+
     private fun validateMonthlyPayment(
         group: Class_group,
         payment: Payment,
@@ -206,7 +220,18 @@ class SqlPaymentRepository(
 }
 
 private fun center.database.Payment.toDomain(): Payment =
-    Payment(id, studentId, classId, amountPaid, teacherShare, centerShare, paymentDate, billingMonth?.let(LocalDate::parse))
+    Payment(
+        id,
+        studentId,
+        classId,
+        amountPaid,
+        teacherShare,
+        centerShare,
+        paymentDate,
+        billingMonth?.let(LocalDate::parse),
+        voidedAt,
+        voidReason,
+    )
 
 class SqlAttendanceRepository(
     private val database: CenterDatabase,

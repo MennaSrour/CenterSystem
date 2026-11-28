@@ -94,6 +94,8 @@ data class LedgerEntry(
     val studentId: String? = null,
     val groupId: String? = null,
     val teacherId: String? = null,
+    val isVoided: Boolean = false,
+    val voidReason: String = "",
 )
 
 data class TreasuryExpense(

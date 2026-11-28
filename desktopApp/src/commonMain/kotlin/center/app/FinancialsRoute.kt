@@ -42,10 +42,12 @@ import center.feature.financials.ReceivePaymentState
 import center.feature.financials.RecordExpenseState
 import center.feature.financials.StudentOption
 import center.feature.financials.TeacherOption
+import center.feature.reports.ContextualPdfPlatform
 import center.ui.localization.AppLanguage
 import center.ui.localization.AppStringKey
 import center.ui.localization.AppStrings
 import center.ui.localization.LocalAppLanguage
+import center.ui.localization.LocalizedText
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -70,11 +72,16 @@ internal fun FinancialsRoute(
     services: DirectoryServices,
     shortcut: ReceptionShortcut?,
     canViewProfit: Boolean,
+    canVoidPayments: Boolean,
+    printPlatform: ContextualPdfPlatform?,
     onLanguageSelected: (AppLanguage) -> Unit,
 ) {
     val language = LocalAppLanguage.current
     val scope = rememberDirectoryScope(language)
-    val holder = remember(services, scope, shortcut, language) { FinancialsStateHolder(services, scope, language, shortcut, canViewProfit) }
+    val holder =
+        remember(services, scope, shortcut, language) {
+            FinancialsStateHolder(services, scope, language, shortcut, canViewProfit, canVoidPayments)
+        }
     val state by holder.uiState.collectAsState()
     val snackbar = remember { SnackbarHostState() }
     val unavailable = AppStrings.get(AppStringKey.FeatureUnavailable, language)
@@ -100,11 +107,69 @@ internal fun FinancialsRoute(
                         FinancialsDestination.Schedule -> notify(unavailable)
                     }
                 is FinancialsEvent.LanguageSelected -> onLanguageSelected(event.language)
+                is FinancialsEvent.PaymentReceiptAction ->
+                    createPaymentReceipt(
+                        state.incomeRecords.firstOrNull { it.paymentId == event.paymentId },
+                        event.print,
+                        printPlatform,
+                        language,
+                        scope,
+                        ::notify,
+                    )
                 FinancialsEvent.OpenNotifications, FinancialsEvent.LogOut -> notify(unavailable)
                 else -> holder.onEvent(event)
             }
         })
         SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter))
+    }
+}
+
+private fun createPaymentReceipt(
+    record: FinancialRecord?,
+    print: Boolean,
+    platform: ContextualPdfPlatform?,
+    language: AppLanguage,
+    scope: CoroutineScope,
+    notify: (String) -> Unit,
+) {
+    if (record == null || platform == null) {
+        notify(AppStrings.get(AppStringKey.FeatureUnavailable, language))
+        return
+    }
+    val title = AppStrings.get(AppStringKey.PrintReceipt, language)
+    val lines =
+        listOf(
+            LocalizedText("رقم الإيصال: ${record.paymentId}", "Receipt ID: ${record.paymentId}").resolve(language),
+            LocalizedText("الطالب: ${record.partyName}", "Student: ${record.partyName}").resolve(language),
+            LocalizedText("الدرس: ${record.category}", "Lesson: ${record.category}").resolve(language),
+            LocalizedText("المبلغ: ${record.formattedAmount}", "Amount: ${record.formattedAmount}").resolve(language),
+            LocalizedText(
+                "التاريخ: ${record.formattedDate} · ${record.formattedTime}",
+                "Date: ${record.formattedDate} · ${record.formattedTime}",
+            ).resolve(language),
+            if (record.isVoided) {
+                AppStrings.get(
+                    AppStringKey.Voided,
+                    language,
+                )
+            } else {
+                LocalizedText("تم استلام الدفعة", "Payment received").resolve(language)
+            },
+        )
+    val bytes = platform.createContextPdf(title, lines, language)
+    scope.launch {
+        runCatching {
+            if (print) {
+                platform.printContextPdf(title, bytes)
+            } else {
+                platform.saveContextPdf(
+                    title,
+                    "Payment_Receipt_${record.paymentId}.pdf",
+                    LocalizedText("استبدال الملف الموجود؟", "Replace the existing file?").resolve(language),
+                    bytes,
+                )
+            }
+        }.onFailure { notify(AppStrings.get(AppStringKey.Error, language)) }
     }
 }
 
@@ -115,6 +180,7 @@ internal class FinancialsStateHolder(
     private val language: AppLanguage,
     shortcut: ReceptionShortcut? = null,
     private val canViewProfit: Boolean,
+    private val canVoidPayments: Boolean = false,
 ) {
     private val state =
         MutableStateFlow(
@@ -125,6 +191,7 @@ internal class FinancialsStateHolder(
                 "",
                 "",
                 canViewMonthlyReport = canViewProfit,
+                canVoidPayments = canVoidPayments,
             ),
         )
     val uiState = state.asStateFlow()
@@ -209,6 +276,15 @@ internal class FinancialsStateHolder(
         when (event) {
             is FinancialsEvent.TabSelected -> state.update { it.copy(selectedLog = event.log) }
             is FinancialsEvent.RecordQueryChanged -> state.update { it.copy(recordQuery = event.value) }
+            is FinancialsEvent.VoidPaymentSelected ->
+                if (canVoidPayments && state.value.incomeRecords.any { it.paymentId == event.paymentId && !it.isVoided }) {
+                    setModal(FinancialsModal.VoidPayment(event.paymentId))
+                }
+            is FinancialsEvent.VoidReasonChanged ->
+                (state.value.modal as? FinancialsModal.VoidPayment)?.let { modal ->
+                    if (!modal.isSubmitting) setModal(modal.copy(reason = event.value.take(1_000)))
+                }
+            FinancialsEvent.ConfirmVoidPayment -> voidPayment()
             FinancialsEvent.OpenReceivePayment -> setModal(paymentModal())
             FinancialsEvent.OpenRecordExpense -> setModal(expenseModal())
             FinancialsEvent.DismissModal -> dismiss()
@@ -305,6 +381,7 @@ internal class FinancialsStateHolder(
                         refreshExpense(modal.form),
                     )
                 }
+            is FinancialsModal.VoidPayment -> modal
             FinancialsModal.Closed -> modal
         }
 
@@ -404,6 +481,7 @@ internal class FinancialsStateHolder(
         when (val modal = state.value.modal) {
             is FinancialsModal.ReceivePayment -> if (modal.form.isSubmitting) return
             is FinancialsModal.RecordExpense -> if (modal.form.isSubmitting) return
+            is FinancialsModal.VoidPayment -> if (modal.isSubmitting) return
             FinancialsModal.Closed -> return
         }
         setModal(FinancialsModal.Closed)
@@ -469,6 +547,25 @@ internal class FinancialsStateHolder(
         }
     }
 
+    private fun voidPayment() {
+        val modal = state.value.modal as? FinancialsModal.VoidPayment ?: return
+        if (modal.isSubmitting || !canVoidPayments) return
+        setModal(modal.copy(isSubmitting = true))
+        scope.launch {
+            val result =
+                runCatching {
+                    services.payments.voidPayment(modal.paymentId, services.clock.nowMillis(), modal.reason)
+                }
+            if (result.isSuccess) {
+                setModal(FinancialsModal.Closed)
+                messages.emit(label("تم إلغاء الدفعة مع الاحتفاظ بسجلها.", "Payment voided; its audit record was retained."))
+            } else {
+                setModal(modal.copy(isSubmitting = false))
+                messages.emit(error())
+            }
+        }
+    }
+
     private fun LedgerEntry.toRecord(): FinancialRecord {
         val dateTime = Instant.fromEpochMilliseconds(recordedAt).toLocalDateTime(Cairo)
         val category =
@@ -483,7 +580,13 @@ internal class FinancialsStateHolder(
                 LedgerKind.OPERATIONAL -> description
                 LedgerKind.TEACHER_PAYOUT -> teachers[teacherId]?.fullName ?: teacherId.orEmpty()
             }
-        val details = if (kind == LedgerKind.TEACHER_PAYOUT && description.isNotBlank()) "$category · $description" else category
+        val localizedCategory = if (isVoided) "$category · ${label("ملغاة", "Voided")}" else category
+        val details =
+            when {
+                isVoided && description.isNotBlank() -> "$localizedCategory · $description"
+                kind == LedgerKind.TEACHER_PAYOUT && description.isNotBlank() -> "$category · $description"
+                else -> localizedCategory
+            }
         val sign = if (direction == LedgerDirection.INCOME) "+" else "−"
         return FinancialRecord(
             "${direction.name}:$id",
@@ -493,6 +596,8 @@ internal class FinancialsStateHolder(
             "$sign ${money(amountMinor)}",
             dateTime.date.toString(),
             "${dateTime.hour.toString().padStart(2, '0')}:${dateTime.minute.toString().padStart(2, '0')}",
+            paymentId = id.takeIf { kind == LedgerKind.STUDENT_PAYMENT },
+            isVoided = isVoided,
         )
     }
 

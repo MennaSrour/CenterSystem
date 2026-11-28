@@ -50,6 +50,7 @@ import center.ui.components.StatusTone
 import center.ui.localization.AppLanguage
 import center.ui.localization.AppStringKey
 import center.ui.localization.AppStrings
+import center.ui.localization.LocalAppLanguage
 import center.ui.localization.LocalizedText
 import center.ui.text.isolateLtr
 import center.ui.theme.Gold
@@ -238,6 +239,18 @@ internal fun ReceptionShortcuts(onEvent: (DashboardEvent) -> Unit) {
             Shortcut(DashboardText.ADD_STUDENT, Icons.Outlined.Add, Indigo, tile) { onEvent(DashboardEvent.AddStudent) }
             Shortcut(DashboardText.COLLECT_SUBSCRIPTION, Icons.Outlined.Add, Gold, tile) { onEvent(DashboardEvent.CollectSubscription) }
             Shortcut(DashboardText.RECORD_EXPENSE, Icons.Outlined.Remove, Rose, tile) { onEvent(DashboardEvent.RecordExpense) }
+            CenterOneCard(tile.heightIn(min = 72.dp), onClick = { onEvent(DashboardEvent.CloseOpenCheckIns) }) {
+                Row(
+                    Modifier.padding(12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        AppStrings.get(AppStringKey.CloseOpenCheckIns, LocalAppLanguage.current),
+                        style = MaterialTheme.typography.titleSmall,
+                    )
+                }
+            }
         }
     }
 }

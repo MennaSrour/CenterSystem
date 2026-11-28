@@ -23,7 +23,9 @@ import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.atStartOfDayIn
 import kotlinx.datetime.isoDayNumber
+import kotlinx.datetime.plus
 import kotlinx.datetime.toLocalDateTime
 
 class SqlStaffRepository(
@@ -90,6 +92,52 @@ class SqlAttendanceSessionRepository(
 
     override fun observeDay(date: LocalDate) = people.sessionsOnDate(date.toString(), ::session).asFlow().mapToList(dispatcher)
 
+    override suspend fun closeOpenCheckInsBefore(date: LocalDate): Int = closeOpenSessions(date, before = true)
+
+    override suspend fun closeOpenCheckInsOn(date: LocalDate): Int = closeOpenSessions(date, before = false)
+
+    private suspend fun closeOpenSessions(
+        date: LocalDate,
+        before: Boolean,
+    ): Int =
+        withContext(dispatcher) {
+            database.transactionWithResult {
+                val rows: List<OpenCheckIn> =
+                    if (before) {
+                        people
+                            .openSessionsBeforeDate(date.toString()) { type, person, group, sessionDate, checkIn, _ ->
+                                OpenCheckIn(type, person, group, sessionDate, checkIn)
+                            }.executeAsList()
+                    } else {
+                        people
+                            .openSessionsOnDate(date.toString()) { type, person, group, sessionDate, checkIn, _ ->
+                                OpenCheckIn(type, person, group, sessionDate, checkIn)
+                            }.executeAsList()
+                    }
+                rows.forEach { row ->
+                    val sessionDate = LocalDate.parse(row.date)
+                    val weekday = sessionDate.dayOfWeek.isoDayNumber.toLong()
+                    val lastMinute =
+                        people
+                            .lastScheduledMinute(weekday, row.personType, row.groupId, row.personId, row.date)
+                            .executeAsOne()
+                            .max
+                    val dayEnd =
+                        sessionDate
+                            .plus(DatePeriod(days = 1))
+                            .atStartOfDayIn(zone)
+                            .toEpochMilliseconds() - 1
+                    val scheduledEnd =
+                        lastMinute?.let { minute ->
+                            sessionDate.atStartOfDayIn(zone).toEpochMilliseconds() + minute * 60_000L
+                        } ?: dayEnd
+                    val checkout = maxOf(row.checkInTime, scheduledEnd)
+                    people.closeCheckIn(checkout, row.personType, row.personId, row.groupId, row.date)
+                }
+                rows.size
+            }
+        }
+
     override fun observePeriod(
         startInclusive: Long,
         endExclusive: Long,
@@ -133,7 +181,7 @@ class SqlAttendanceSessionRepository(
                     PersonType.STAFF -> require(people.selectStaffById(id).executeAsOneOrNull()?.isActive == true)
                 }
                 check(people.selectSession(type.name, id, group, date.toString()).executeAsOneOrNull() == null)
-                people.insertCheckIn(type.name, id, group, date.toString(), timestamp)
+                people.insertCheckIn(type.name, id, group, date.toString(), timestamp, timestamp)
                 lessonAttendance.forEach { item ->
                     require(type == PersonType.STUDENT && item.studentId == id && item.date == date)
                     require(database.operationsQueries.hasEnrollment(id, item.lessonId).executeAsOne())
@@ -243,6 +291,14 @@ class SqlAttendanceSessionRepository(
         checkOut,
     )
 }
+
+private data class OpenCheckIn(
+    val personType: String,
+    val personId: String,
+    val groupId: String,
+    val date: String,
+    val checkInTime: Long,
+)
 
 class SqlMakeupSessionRepository(
     private val database: CenterDatabase,

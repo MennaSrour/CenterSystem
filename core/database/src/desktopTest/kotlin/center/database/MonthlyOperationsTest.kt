@@ -119,6 +119,25 @@ class MonthlyOperationsTest {
                             .remainingMinor,
                     )
                     assertTrue(SqlMessageQueueRepository(database, dispatcher).getPendingMessages().first().isEmpty())
+
+                    payments.voidPayment(payment.id, now + 1_000L, "Duplicate entry")
+                    val voided = payments.getPaymentsForStudent(student.id).first().single()
+                    assertEquals(now + 1_000L, voided.voidedAt)
+                    assertEquals("Duplicate entry", voided.voidReason)
+                    assertEquals(
+                        100_000L,
+                        SqlMonthlyBillingRepository(database, dispatcher).remainingBalances(month).single().remainingMinor,
+                    )
+                    assertEquals(0L, treasury.observeTotals(day).first().drawerBalanceMinor)
+                    assertEquals(
+                        0.0,
+                        center.domain.usecase
+                            .GetTeacherMonthlyDuesUseCase(payments)("teacher", 11, 2026)
+                            .getOrThrow(),
+                    )
+                    val auditEntry = treasury.observeLedger(now, now + 2_000L).first().single()
+                    assertTrue(auditEntry.isVoided)
+                    assertEquals("Duplicate entry", auditEntry.voidReason)
                 }
             } finally {
                 path.toFile().deleteRecursively()

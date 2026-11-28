@@ -9,6 +9,21 @@ sealed interface FinancialsEvent {
         val value: String,
     ) : FinancialsEvent
 
+    data class VoidPaymentSelected(
+        val paymentId: String,
+    ) : FinancialsEvent
+
+    data class VoidReasonChanged(
+        val value: String,
+    ) : FinancialsEvent
+
+    data object ConfirmVoidPayment : FinancialsEvent
+
+    data class PaymentReceiptAction(
+        val paymentId: String,
+        val print: Boolean,
+    ) : FinancialsEvent
+
     data object OpenReceivePayment : FinancialsEvent
 
     data object OpenRecordExpense : FinancialsEvent
