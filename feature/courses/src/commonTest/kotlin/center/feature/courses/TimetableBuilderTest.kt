@@ -3,23 +3,36 @@ package center.feature.courses
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
-import kotlin.test.assertTrue
 
 class TimetableBuilderTest {
     @Test
-    fun calculatesWeekBoundsAndFiltersInactiveLessons() {
+    fun buildsOnlyDistinctActivePeriodsWithoutDuplicatingLessons() {
         val groups =
             listOf(
                 group("early", CourseLessonType.Arabic, "08:15", "09:10"),
+                group("early-sunday", CourseLessonType.Arabic, "08:15", "09:10", day = ScheduleDay.Sunday),
                 group("late", CourseLessonType.Languages, "18:05", "19:45"),
                 group("inactive", CourseLessonType.Mixed, "06:00", "21:00", active = false),
             )
         val all = TimetableBuilder.build(groups, emptyList(), gradeId = "grade-a", track = TimetableTrack.ALL)
-        assertEquals(8 * 60, all.startMinute)
-        assertEquals(20 * 60, all.endMinute)
-        assertEquals(2, all.lessons.size)
-        assertTrue(all.slots.first() <= all.lessons.minOf { it.startMinute })
-        assertTrue(all.slots.last() < all.endMinute!!)
+        assertEquals(2, all.periods.size)
+        assertEquals(listOf(1, 2), all.periods.map { it.number })
+        assertEquals(listOf(8 * 60 + 15, 18 * 60 + 5), all.periods.map { it.startMinute })
+        assertEquals(3, all.lessons.size)
+        val renderedLessonIds =
+            all.periods.flatMap { period ->
+                period.lessonsByDay.values
+                    .flatten()
+                    .map { it.id }
+            }
+        assertEquals(3, renderedLessonIds.toSet().size)
+        assertEquals(
+            2,
+            all.periods
+                .first()
+                .lessonsByDay.values
+                .sumOf { it.size },
+        )
     }
 
     @Test
@@ -68,6 +81,7 @@ class TimetableBuilderTest {
         to: String,
         grade: String = "grade-a",
         active: Boolean = true,
+        day: ScheduleDay = ScheduleDay.Saturday,
     ) = CourseGroup(
         id = id,
         subject = id,
@@ -79,7 +93,7 @@ class TimetableBuilderTest {
         roomId = "",
         enrolled = 0,
         maxCapacity = 20,
-        schedule = listOf(CourseSchedule("$id-sat", ScheduleDay.Saturday, from, to)),
+        schedule = listOf(CourseSchedule("$id-${day.name}", day, from, to)),
         isActive = active,
         lessonType = type,
     )
